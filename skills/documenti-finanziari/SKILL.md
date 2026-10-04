@@ -19,6 +19,14 @@ Skill per aggiornare i file annuali "AAAA - Documenti Finanziari" su Google Driv
 4. **Nessun dato inventato.** Se da foto o messaggio manca un valore (quantità, prezzo, data, piattaforma, P/L), chiedilo.
 5. Non scrivere il "realizzato" nel foglio "Portafoglio dettagliato".
 
+## Regole concordate con l'utente
+
+- **Dividendi da foto:** se l'utente manda una foto di un dividendo, ricava strumento, data, importo e piattaforma e registralo nel foglio "Dividendi AAAA" seguendone la struttura attuale.
+- **Valuta:** per le crypto (ticker `-USD`) prezzi e P/L restano sempre in **dollari**, senza conversione. Per gli altri strumenti usa la valuta già usata nel foglio per quello strumento (di solito €).
+- **Commissioni:** includile sempre nel profitto/perdita dell'operazione chiusa (es. guadagno 100 € con 3 € di commissioni → scrivi 97 €). Se non si vedono, chiedile.
+- **Piattaforma non indicata:** se messaggio o foto non indicano chiaramente il broker, chiedilo. Non ipotizzarlo.
+- **Nuovo anno senza file:** se per l'anno dell'operazione il file "AAAA - Documenti Finanziari" non esiste, segnalalo e fermati. Non creare file in autonomia: se ne crea uno nuovo solo dopo aver chiesto all'utente e averne ricevuto il consenso.
+
 ## Privacy — nessuna conservazione dei dati
 
 I dati finanziari dell'utente sono privati. Usali solo per l'operazione richiesta, poi non riutilizzarli.
