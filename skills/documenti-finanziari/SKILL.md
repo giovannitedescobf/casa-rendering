@@ -22,13 +22,13 @@ Skill per aggiornare i file annuali "AAAA - Documenti Finanziari" su Google Driv
 ## Passo 0 — Individuare file e struttura (sempre, la struttura può cambiare)
 
 1. Cerca i file: `search_files` con `title contains 'Documenti Finanziari'` (cartella "Documenti finanziari"). Il titolo segue il formato `AAAA - Documenti Finanziari`.
-2. Scegli il file in base alla **data dell'operazione** (anno = AAAA). Eccezione: il foglio "Portafoglio dettagliato" è unico e sta nel file più recente che lo contiene. Verifica con `get_spreadsheet` (fields `sheets.properties.title`) in quale file si trova (a ottobre 2026 è solo nel file 2026).
+2. Scegli il file in base alla **data dell'operazione** (anno = AAAA). Ogni file annuale ha (o avrà) il proprio "Portafoglio dettagliato", incluso il 2027. Usa quello del file dell'anno dell'operazione. Solo se in quel file il foglio non esiste ancora, usa quello del file dell'anno precedente e avvisa l'utente.
 3. Leggi i nomi dei fogli e **rileggi sempre le intestazioni** e le prime righe del foglio da modificare prima di scrivere. Le mappe sotto sono un riferimento rilevato a ottobre 2026: se le intestazioni non corrispondono, segui le intestazioni reali e segnala la differenza all'utente.
 4. Scrivi con `update_values` e `valueInputOption: USER_ENTERED`. Il file usa la localizzazione italiana: separatore decimale `,`, argomenti delle formule separati da `;`, date `gg/mm/aaaa`.
 
 ## Fogli principali (riferimento ottobre 2026)
 
-Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operazioni chiuse AAAA, Dividendi AAAA, Tassazione, Check Valore, Composizione Portafoglio, Portafoglio dettagliato (solo nel file 2026), Calcolo rendimento obbligazione, Operazioni a leva, Fondo Pensione, Salute.
+Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operazioni chiuse AAAA, Dividendi AAAA, Tassazione, Check Valore, Composizione Portafoglio, Portafoglio dettagliato, Calcolo rendimento obbligazione, Operazioni a leva, Fondo Pensione, Salute.
 
 ### Portafoglio dettagliato
 
@@ -39,7 +39,7 @@ Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operaz
 
 **Acquisto, ticker già presente:** inserisci una riga (`insert_dimension`) sotto la prima riga del gruppo e scrivi solo A–D. Se il nuovo lotto è il più recente, mettilo sotto la prima riga del gruppo e non al suo posto, così le formule restano dove sono.
 **Acquisto, nuovo ticker:** inserisci una riga nella posizione alfabetica, scrivi A–D e ricopia le formule E, F, H, I, K, L, N adattate al numero di riga.
-**Vendita:** riduci la quantità in C partendo dal lotto più vecchio (FIFO), salvo indicazione diversa dell'utente. Un lotto che arriva a 0 va eliminato, ma se è la prima riga del gruppo sposta prima le sue formule sulla riga successiva dello stesso ticker. Se l'intera posizione è venduta, elimina tutte le righe del ticker. Nessun "realizzato" qui. Se la vendita chiude un'operazione, registrala anche in "Operazioni chiuse".
+**Vendita:** riduci la quantità in C partendo dal lotto più vecchio (FIFO), salvo indicazione diversa dell'utente. Un lotto che arriva a 0 va eliminato, ma se è la prima riga del gruppo sposta prima le sue formule sulla riga successiva dello stesso ticker. Se l'intera posizione è venduta, elimina tutte le righe del ticker (`update_spreadsheet` con `deleteDimension` sulle sole righe del gruppo): lo strumento non deve restare con quantità 0. Nessun "realizzato" qui. Se la vendita chiude un'operazione, registrala anche in "Operazioni chiuse".
 
 ### Operazioni chiuse AAAA
 
