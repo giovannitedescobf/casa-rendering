@@ -28,7 +28,11 @@ L'utente può fornire qualsiasi formato: foto, screenshot, testo, messaggio voca
 Ogni domanda è **a scelta singola** (tool di domande con opzioni). Fare la domanda solo se il dato non è ricavabile dall'input.
 
 1. **Piattaforma** (valori esatti per colonna E): `Airbnb`, `Booking`, `Expedia`, `Bonifico`, `Contanti`, `Sum Up`, `Sito Internet`, `Satispay`.
-   Se il tool consente max 4 opzioni: prima chiedere "OTA (Airbnb/Booking/Expedia)" vs "Pagamento diretto", poi la piattaforma specifica.
+   Struttura obbligatoria a cascata (max 4 opzioni per domanda):
+   - Domanda 1: `Airbnb` / `Booking` / `Expedia` / `Pagamento diretto`
+   - Se "Pagamento diretto" → Domanda 2: `Bonifico` / `Sum Up` / `Contanti` / `Altro`
+   - Se "Altro" → Domanda 3: `Satispay` / `Sito Internet`
+   Per la piattaforma del saldo (caparra 30%) partire direttamente dalla Domanda 2.
 2. **Camera** (colonna D): `Il Terrazzino`, `La Floreale`, `Il Focolare` (Il Focolare va sempre proposta anche se non ancora in uso).
 3. **Data di arrivo** (colonna B): se non leggibile, chiederla. Mai lasciarla vuota.
 4. **Nome e Cognome** (colonna C): se non leggibile, chiederlo.
