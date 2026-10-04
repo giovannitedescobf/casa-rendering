@@ -22,7 +22,7 @@ Skill per aggiornare i file annuali "AAAA - Documenti Finanziari" su Google Driv
 ## Passo 0 — Individuare file e struttura (sempre, la struttura può cambiare)
 
 1. Cerca i file: `search_files` con `title contains 'Documenti Finanziari'` (cartella "Documenti finanziari"). Il titolo segue il formato `AAAA - Documenti Finanziari`.
-2. Scegli il file in base alla **data dell'operazione** (anno = AAAA). Ogni file annuale ha (o avrà) il proprio "Portafoglio dettagliato", incluso il 2027. Usa quello del file dell'anno dell'operazione. Solo se in quel file il foglio non esiste ancora, usa quello del file dell'anno precedente e avvisa l'utente.
+2. Scegli il file in base alla **data dell'operazione** (anno = AAAA). Dal 1° gennaio 2027 si lavora solo sul file 2027. **Non modificare il file 2026 (né quelli precedenti) salvo richiesta esplicita dell'utente.** Ogni file annuale ha (o avrà) il proprio "Portafoglio dettagliato", incluso il 2027. Usa quello del file dell'anno dell'operazione. Solo se in quel file il foglio non esiste ancora, usa quello del file dell'anno precedente e avvisa l'utente.
 3. Leggi i nomi dei fogli e **rileggi sempre le intestazioni** e le prime righe del foglio da modificare prima di scrivere. Le mappe sotto sono un riferimento rilevato a ottobre 2026: se le intestazioni non corrispondono, segui le intestazioni reali e segnala la differenza all'utente.
 4. Scrivi con `update_values` e `valueInputOption: USER_ENTERED`. Il file usa la localizzazione italiana: separatore decimale `,`, argomenti delle formule separati da `;`, date `gg/mm/aaaa`.
 
@@ -39,15 +39,15 @@ Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operaz
 
 **Acquisto, ticker già presente:** inserisci una riga (`insert_dimension`) sotto la prima riga del gruppo e scrivi solo A–D. Se il nuovo lotto è il più recente, mettilo sotto la prima riga del gruppo e non al suo posto, così le formule restano dove sono.
 **Acquisto, nuovo ticker:** inserisci una riga nella posizione alfabetica, scrivi A–D e ricopia le formule E, F, H, I, K, L, N adattate al numero di riga.
-**Vendita:** riduci la quantità in C partendo dal lotto più vecchio (FIFO), salvo indicazione diversa dell'utente. Un lotto che arriva a 0 va eliminato, ma se è la prima riga del gruppo sposta prima le sue formule sulla riga successiva dello stesso ticker. Se l'intera posizione è venduta, elimina tutte le righe del ticker (`update_spreadsheet` con `deleteDimension` sulle sole righe del gruppo): lo strumento non deve restare con quantità 0. Nessun "realizzato" qui. Se la vendita chiude un'operazione, registrala anche in "Operazioni chiuse".
+**Vendita:** riduci la quantità in C partendo dal lotto **più recente** (LIFO), salvo indicazione diversa dell'utente. Un lotto che arriva a 0 va eliminato, ma se è la prima riga del gruppo sposta prima le sue formule sulla riga successiva dello stesso ticker. Se l'intera posizione è venduta, elimina tutte le righe del ticker (`update_spreadsheet` con `deleteDimension` sulle sole righe del gruppo): lo strumento non deve restare con quantità 0. Nessun "realizzato" qui. Registra sempre la vendita anche in "Operazioni chiuse AAAA". Se non riesci a calcolare il profitto o la perdita, chiedilo all'utente e poi completa la riga.
 
 ### Operazioni chiuse AAAA
 
 - Riga 2: intestazioni. Dati da riga 3. Colonne: **A** `T.H.` se l'operazione è in perdita (tax harvesting), altrimenti vuota · **B** Data · **C** Ticker · **D** `GAIN`/`LOSS` · **E** Piattaforma (es. `TRADING 212`) · **F** Profitto in € (negativo se perdita) · **G** formula già presente `=IF(Fn<0;"<";Fn*$N$2)`: non toccarla.
 - Le colonne da I in poi sono riepiloghi con formule: non toccarle.
-- Possono esserci righe già preparate con data e ticker ma F vuota: se corrispondono all'operazione, completale. Altrimenti usa la prima riga con B:F vuote.
+- Possono esserci righe già preparate dall'utente con data e ticker ma D/F vuote: è normale. Completale solo quando l'utente manda la foto o lo chiede per quell'operazione. Altrimenti usa la prima riga con B:F vuote.
 
-**Da foto del broker:** estrai ticker, data di chiusura, quantità e P/L in €. Se il P/L è in valuta estera o non è visibile, chiedi. Mostra all'utente i dati letti prima di scrivere (anche in modalità autonomia, se la foto è poco leggibile).
+**Da foto del broker:** estrai ticker, data di chiusura, quantità e P/L in €. Se il P/L è in dollari (es. crypto `-USD`), scrivilo in dollari così com'è, **senza convertirlo in €**. Se il P/L non è visibile, chiedilo. Mostra all'utente i dati letti prima di scrivere (anche in modalità autonomia, se la foto è poco leggibile).
 
 ### Depositi AAAA (primo foglio)
 
