@@ -19,6 +19,17 @@ Skill per aggiornare i file annuali "AAAA - Documenti Finanziari" su Google Driv
 4. **Nessun dato inventato.** Se da foto o messaggio manca un valore (quantità, prezzo, data, piattaforma, P/L), chiedilo.
 5. Non scrivere il "realizzato" nel foglio "Portafoglio dettagliato".
 
+## Privacy — nessuna conservazione dei dati
+
+I dati finanziari dell'utente sono privati. Usali solo per l'operazione richiesta, poi non riutilizzarli.
+
+- Non salvare dati letti dai file, dalle foto o dai messaggi (importi, quantità, prezzi, saldi, ticker posseduti) in memoria, file locali, repository git, artifact, documenti, note o in questa skill.
+- Non usare la funzione memoria di Claude per questi dati e non proporre di ricordarli.
+- Non condividere i file, non cambiarne i permessi e non inviare dati a servizi esterni diversi da Google Drive/Sheets.
+- Leggi solo gli intervalli necessari all'operazione, non interi file.
+- In ogni nuova conversazione riparti da zero: rileggi i dati dal file, non da ricordi o riepiloghi di conversazioni precedenti.
+- Nelle risposte riporta solo i dati strettamente necessari alla conferma dell'operazione.
+
 ## Passo 0 — Individuare file e struttura (sempre, la struttura può cambiare)
 
 1. Cerca i file: `search_files` con `title contains 'Documenti Finanziari'` (cartella "Documenti finanziari"). Il titolo segue il formato `AAAA - Documenti Finanziari`.
