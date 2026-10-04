@@ -30,6 +30,19 @@ I dati finanziari dell'utente sono privati. Usali solo per l'operazione richiest
 - In ogni nuova conversazione riparti da zero: rileggi i dati dal file, non da ricordi o riepiloghi di conversazioni precedenti.
 - Nelle risposte riporta solo i dati strettamente necessari alla conferma dell'operazione.
 
+## Principio base: tutto può cambiare
+
+Le informazioni sotto sono **esempi rilevati a ottobre 2026**, non regole fisse. Da un anno all'altro, e anche durante l'anno, possono cambiare:
+- nomi dei fogli, intestazioni e posizione delle colonne;
+- etichette e categorie (es. `DEPOSITO`, `PRELIEVI`, `GAIN`/`LOSS`, `T.H.`), broker e piattaforme (es. `TRADING212`, `REVOLUT`) e i ticker;
+- fogli presenti nel file (se ne possono aggiungere o togliere).
+
+Questo vale per **tutti** i fogli: Depositi, Composizione Portafoglio, Portafoglio dettagliato, Operazioni chiuse, Dividendi e qualsiasi altro. Prima di scrivere, ricava sempre etichette, broker e formati attuali **dai dati reali del foglio** (intestazioni e valori già presenti nelle righe recenti), non da questa skill. Se l'utente usa un'etichetta o un broker nuovo, usalo così come lo indica. Se c'è ambiguità, chiedi.
+
+**Fogli con l'anno nel nome:** alcuni fogli contengono l'anno del file (es. `Depositi 2026`/`Depositi 2027`, `Dividendi 2026`/`Dividendi 2027`, `Operazioni chiuse 2026`/`Operazioni chiuse 2027`, `Tasse e Stipendi 2026`/`2027`). Nel file AAAA cerca il foglio con l'anno AAAA. In generale individua il foglio giusto per significato, non per nome esatto.
+
+La skill deve saper lavorare su **qualsiasi foglio** del file, non solo su quelli descritti sotto: per i fogli non descritti applica il metodo della sezione "Altri fogli".
+
 ## Passo 0 — Individuare file e struttura (sempre, la struttura può cambiare)
 
 1. Cerca i file: `search_files` con `title contains 'Documenti Finanziari'` (cartella "Documenti finanziari"). Il titolo segue il formato `AAAA - Documenti Finanziari`.
@@ -37,7 +50,7 @@ I dati finanziari dell'utente sono privati. Usali solo per l'operazione richiest
 3. Leggi i nomi dei fogli e **rileggi sempre le intestazioni** e le prime righe del foglio da modificare prima di scrivere. Le mappe sotto sono un riferimento rilevato a ottobre 2026: se le intestazioni non corrispondono, segui le intestazioni reali e segnala la differenza all'utente.
 4. Scrivi con `update_values` e `valueInputOption: USER_ENTERED`. Il file usa la localizzazione italiana: separatore decimale `,`, argomenti delle formule separati da `;`, date `gg/mm/aaaa`.
 
-## Fogli principali (riferimento ottobre 2026)
+## Fogli principali (esempi rilevati a ottobre 2026: verificare sempre)
 
 Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operazioni chiuse AAAA, Dividendi AAAA, Tassazione, Check Valore, Composizione Portafoglio, Portafoglio dettagliato, Calcolo rendimento obbligazione, Operazioni a leva, Fondo Pensione, Salute.
 
@@ -71,7 +84,11 @@ Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operaz
 
 ## Altri fogli
 
-Per qualsiasi altro foglio applica lo stesso metodo: rileggi intestazioni e formule, scrivi solo nelle celle di input e accoda righe rispettando il formato delle righe esistenti.
+Per qualsiasi altro foglio (Dividendi AAAA, Composizione Portafoglio, Valore Portafoglio, Tasse e Stipendi AAAA, Tassazione, Check Valore, Operazioni a leva, Fondo Pensione, Salute, Calcolo rendimento obbligazione o fogli nuovi):
+1. leggi intestazioni, alcune righe recenti e le formule (`userEnteredValue`) per capire quali celle sono di input e quali sono calcolate;
+2. ricava etichette e formati dalle righe esistenti;
+3. scrivi solo nelle celle di input, accodando righe con lo stesso formato delle precedenti e ricopiando le eventuali formule di riga dalla riga sopra;
+4. se il foglio è nuovo o non è chiaro come registrare il dato, descrivi all'utente cosa intendi fare e chiedi conferma (anche in modalità autonomia).
 
 ## Dopo ogni modifica
 
