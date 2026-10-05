@@ -84,13 +84,24 @@ Ogni domanda è **a scelta singola** (tool di domande con opzioni). Fare la doma
 |---|---|---|---|
 | A | Categoria | `Pagamenti a Booking` | `Ricavi di Booking` |
 | B | Tipologia | `Cedolare secca` / `Commissione` | vuota |
-| C | Data emissione | data emissione fattura | vuota |
+| C | Data emissione | data emissione fattura | **ultimo giorno del mese** del riepilogo |
 | D | Dal | inizio periodo considerato | inizio periodo considerato |
 | E | Al | fine periodo considerato | fine periodo considerato |
 | F | Data pagamento | data pagamento | data pagamento |
 | G | Importo | **negativo** (es. `-123.45`) | **positivo** |
 
 Nota: "Cedolare secca" = riepilogo pagamento cedolare secca.
+
+### Ricavi di Booking – regole specifiche
+- Il documento riporta una dicitura tipo **"Riepilogo pagamenti per aprile 2026"**.
+- **Data emissione (C)** = ultimo giorno di quel mese (es. aprile 2026 → `30/04/2026`; maggio → `31/05/2026`; febbraio → `28/02/2026` o `29/02` negli anni bisestili).
+- **Dal/Al (D–E)**: normalmente dal primo all'ultimo giorno del mese, ma leggere **sempre** il PDF: se riporta date diverse, usare quelle del documento.
+
+### Righe anno
+- Riga 2 = intestazione anno `2026`: cella unita A–G, grassetto, centrata, sfondo grigio.
+- Ogni anno ha la sua riga separatrice: le fatture con **Data emissione** in quell'anno vanno sotto la sua riga anno.
+- Alla prima fattura con Data emissione dal 01/01/2027 (poi 2028, ecc.): inserire, dopo l'ultima fattura dell'anno precedente, una nuova riga anno unita A–G con stesso formato (mergeCells, grassetto, centrato, sfondo grigio, nessuna convalida dati) e poi le fatture.
+- Le righe anno non vanno mai considerate fatture (escluderle da cross-check, duplicati e ordinamento).
 
 ## Fonti – domanda obbligatoria
 Subito dopo aver scelto "Fatture Booking", fare **solo** questa domanda a scelta singola con due opzioni:
@@ -115,7 +126,7 @@ Per i file dal Drive la categoria è data dalla cartella.
 
 ## Scrittura
 1. Leggere `'Fatture Booking'!A:G`.
-2. Inserire in **ordine cronologico per Data emissione (C)**; per i Ricavi (senza data emissione) usare la Data pagamento (F) come chiave di ordinamento. Inserire una riga nella posizione corretta (insertDimension) e compilarla; se va in fondo, usare la prima riga vuota.
+2. Inserire in **ordine cronologico per Data emissione (C)**, all'interno della sezione dell'anno corretto. Inserire una riga nella posizione corretta (insertDimension) e compilarla; se va in fondo, usare la prima riga vuota.
 3. Duplicati: se esiste già una riga con stessa categoria, tipologia, periodo (D–E) e importo, avvisare e chiedere (scelta singola) se procedere.
 4. Scrivere direttamente; poi mostrare riepilogo sintetico (righe inserite e valori).
 
