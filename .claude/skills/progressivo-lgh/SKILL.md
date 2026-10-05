@@ -1,9 +1,18 @@
 ---
 name: progressivo-lgh
-description: Registra le prenotazioni della Lùlù Guest House nel Google Sheet "Progressivo LGH 2026" (foglio "2026"). Usare SEMPRE quando l'utente condivide una prenotazione, un pagamento, una caparra o un saldo (foto, screenshot, testo, vocale) di Airbnb, Booking, Expedia, Bonifico, Contanti, Sum Up, Sito Internet o Satispay, o chiede di aggiornare il Progressivo LGH.
+description: Gestisce il Google Sheet "Progressivo LGH 2026" della Lùlù Guest House - registra prenotazioni nel foglio "2026" e fatture Booking nel foglio "Fatture Booking". Usare SEMPRE quando l'utente condivide una prenotazione, un pagamento, una caparra o un saldo (foto, screenshot, testo, vocale) di Airbnb, Booking, Expedia, Bonifico, Contanti, Sum Up, Sito Internet o Satispay, una fattura/PDF di Booking (commissione, cedolare secca, pagamento ricevuto), o chiede di aggiornare il Progressivo LGH.
 ---
 
-# Progressivo LGH – Registrazione prenotazioni
+# Progressivo LGH
+
+## Step 0 – Scelta azione (sempre, prima di tutto)
+Domanda a scelta singola: **"Che tipologia di dato vuoi inserire?"** → `Progressivo` / `Fatture Booking`
+- Progressivo → sezione **AZIONE 1**
+- Fatture Booking → sezione **AZIONE 2**
+
+---
+
+# AZIONE 1 – Progressivo (foglio "2026")
 
 ## File
 - Google Sheet: **Progressivo LGH 2026**
@@ -65,6 +74,40 @@ Ogni domanda è **a scelta singola** (tool di domande con opzioni). Fare la doma
 3. **Duplicati**: se esiste già una riga con stesso Nome e Cognome e stessa Data di arrivo, avvisare e chiedere (scelta singola) se procedere.
 4. Scrivere solo B–H (mai A). Date nel formato `GG/MM/AAAA`. Importi come numero (es. `57.26`), con `valueInputOption` USER_ENTERED.
 5. **Scrivere direttamente**, senza chiedere conferma del riepilogo. Dopo la scrittura mostrare un riepilogo sintetico: range aggiornato, valori inseriti, calcolo di F per le OTA.
+
+---
+
+# AZIONE 2 – Fatture Booking (foglio "Fatture Booking")
+
+## Struttura (tabella unica, intestazioni in riga 1)
+| Col | Campo | Pagamenti a Booking | Ricavi di Booking |
+|---|---|---|---|
+| A | Categoria | `Pagamenti a Booking` | `Ricavi di Booking` |
+| B | Tipologia | `Cedolare secca` / `Commissione` | vuota |
+| C | Data emissione | data emissione fattura | vuota |
+| D | Dal | inizio periodo considerato | inizio periodo considerato |
+| E | Al | fine periodo considerato | fine periodo considerato |
+| F | Data pagamento | data pagamento | data pagamento |
+| G | Importo | **negativo** (es. `-123.45`) | **positivo** |
+
+Nota: "Cedolare secca" = riepilogo pagamento cedolare secca.
+
+## Input
+PDF o screenshot di fatture Booking, anche più documenti insieme. Leggerli e analizzarli tutti; una riga per documento.
+
+## Regole
+1. Ricavare dal documento categoria, tipologia, date, periodo e importo.
+2. Se categoria o tipologia non sono chiare: domanda a scelta singola (`Pagamenti a Booking` / `Ricavi di Booking`; poi `Cedolare secca` / `Commissione`).
+3. Se manca un dato richiesto (es. data pagamento, periodo): **chiederlo** con domanda a scelta singola (es. "Data odierna" / "Altra data"). Mai lasciare vuoti i campi richiesti.
+4. Date `GG/MM/AAAA`, importi con 2 decimali, `valueInputOption` USER_ENTERED.
+
+## Scrittura
+1. Leggere `'Fatture Booking'!A:G`.
+2. Inserire in **ordine cronologico per Data emissione (C)**; per i Ricavi (senza data emissione) usare la Data pagamento (F) come chiave di ordinamento. Inserire una riga nella posizione corretta (insertDimension) e compilarla; se va in fondo, usare la prima riga vuota.
+3. Duplicati: se esiste già una riga con stessa categoria, tipologia, periodo (D–E) e importo, avvisare e chiedere (scelta singola) se procedere.
+4. Scrivere direttamente; poi mostrare riepilogo sintetico (righe inserite e valori).
+
+---
 
 ## Stile risposte
 Sintetico e preciso. Nessuna proposta non richiesta.
