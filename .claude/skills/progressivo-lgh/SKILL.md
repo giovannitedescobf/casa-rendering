@@ -83,7 +83,7 @@ Ogni domanda è **a scelta singola** (tool di domande con opzioni). Fare la doma
 | Col | Campo | Pagamenti a Booking | Ricavi di Booking |
 |---|---|---|---|
 | A | Categoria | `Pagamenti a Booking` | `Ricavi di Booking` |
-| B | Tipologia | `Cedolare secca` / `Commissione` | vuota |
+| B | Tipologia | `Cedolare secca` / `Commissione` | `Ricavi` (sempre) |
 | C | Data emissione | data emissione fattura | **ultimo giorno del mese** del riepilogo |
 | D | Dal | inizio periodo considerato | inizio periodo considerato |
 | E | Al | fine periodo considerato | fine periodo considerato |
@@ -120,7 +120,7 @@ Per i file dal Drive la categoria è data dalla cartella.
 
 ## Regole
 1. Ricavare dal documento categoria, tipologia, date, periodo e importo.
-2. Se categoria o tipologia non sono chiare: domanda a scelta singola (`Pagamenti a Booking` / `Ricavi di Booking`; poi `Cedolare secca` / `Commissione`).
+2. Se categoria o tipologia non sono chiare: domanda a scelta singola (`Pagamenti a Booking` / `Ricavi di Booking`; poi, solo per Pagamenti a Booking, `Cedolare secca` / `Commissione`). Per i Ricavi di Booking la Tipologia è sempre `Ricavi`.
 3. Se manca un dato richiesto (es. data pagamento, periodo): **chiederlo** con domanda a scelta singola (es. "Data odierna" / "Altra data"). Mai lasciare vuoti i campi richiesti.
 4. Date `GG/MM/AAAA`, importi con 2 decimali, `valueInputOption` USER_ENTERED.
 
