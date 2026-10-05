@@ -92,8 +92,18 @@ Ogni domanda è **a scelta singola** (tool di domande con opzioni). Fare la doma
 
 Nota: "Cedolare secca" = riepilogo pagamento cedolare secca.
 
-## Input
-PDF o screenshot di fatture Booking, anche più documenti insieme. Leggerli e analizzarli tutti; una riga per documento.
+## Fonti (scelta automatica, nessuna domanda)
+1. **File allegato in chat** (PDF, CSV, Excel) → usare quello.
+2. **Screenshot allegato in chat** → usare quello.
+3. **Nessun allegato** → leggere le fatture dalla cartella Drive condivisa **Fatture Booking** (proprietario luluguestshouse@gmail.com, ID `1JxNIiYnxy0XvRgyWBhxxzRMWJxK9xTtC`):
+   - `Pagamenti DOVUTI a Booking` (ID `1uROpyfIVr08k1-1yFZO3Ma_SsgOn2rgn`) → Categoria = `Pagamenti a Booking`
+   - `Pagamenti RICEVUTI da Booking` (ID `1ffIGkYFZKIkx68q3V9MNkT26BQaLCzp0`) → Categoria = `Ricavi di Booking`
+   - Elencare i file con `search_files` (`parentId = '<ID>'`) e leggerli con `read_file_content` / `download_file_content`.
+   - **Cross-check**: confrontare ogni fattura con le righe già presenti nel foglio `Fatture Booking` (stessa categoria, tipologia, periodo D–E e importo) e inserire **solo quelle mancanti**. Riportare in chat quante fatture sono state trovate, inserite e saltate perché già presenti.
+   - Se le cartelle sono vuote o non accessibili, avvisare l'utente.
+
+Più documenti insieme: leggerli e analizzarli tutti; una riga per documento.
+Per file da chat o screenshot la categoria si ricava dal contenuto; per i file dal Drive la categoria è data dalla cartella.
 
 ## Regole
 1. Ricavare dal documento categoria, tipologia, date, periodo e importo.
