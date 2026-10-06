@@ -7,6 +7,10 @@ description: Gestisce i Google Sheets "AAAA - Documenti Finanziari" (es. "2026 -
 
 Skill per aggiornare i file annuali "AAAA - Documenti Finanziari" su Google Drive tramite i connettori Google Drive e Google Sheets.
 
+## Stile delle risposte
+
+Rispondi solo per punti, brevi, con le sole informazioni fondamentali. Niente spiegazioni non richieste.
+
 ## Modalità operativa
 
 **Fase attuale: TEST.** Prima di ogni scrittura mostra un riepilogo (file, foglio, celle, valori vecchi → nuovi) e attendi conferma. Quando l'utente dichiara conclusa la fase di test, questa sezione va cambiata in "AUTONOMIA": si scrive direttamente e si riepiloga dopo.
@@ -77,7 +81,7 @@ Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operaz
 - Aggiungi o togli righe **solo** con `insert_dimension` / `deleteDimension` (righe intere), mai spostando valori con copia/incolla di celle: così Google Sheets aggiorna da solo i riferimenti.
 - Inserisci i nuovi lotti **sotto** la prima riga del gruppo, mai sopra.
 - **Non eliminare mai la prima riga di un gruppo** finché lo strumento resta in portafoglio: farebbe comparire `#REF!` in Composizione. Se il lotto da azzerare è nella prima riga, copia A–D del lotto successivo nella prima riga (le formule restano) ed elimina la riga del lotto successivo.
-- **Vendita totale:** eliminare le righe produce `#REF!` nella riga di Composizione collegata. Prima di eliminare, mostra all'utente la riga di Composizione interessata e chiedi come aggiornarla (eliminarla, azzerarla o altro).
+- **Vendita totale:** prima di eliminare le righe dello strumento, scrivi `0` (formato € → 0,00 €) nella cella D della riga collegata in "Composizione Portafoglio" al posto del riferimento, così non compare `#REF!`. Poi elimina le righe in "Portafoglio dettagliato".
 - **Nuovo ticker:** Composizione non lo conterrà. Dopo l'inserimento chiedi all'utente se aggiungerlo in Composizione e con quale Tipologia/Target. Non modificare Target o formule esistenti senza richiesta.
 - Dopo ogni modifica rileggi la colonna D di Composizione con `get_values` e verifica che non ci siano `#REF!` o valori a 0 inattesi. Se ci sono, segnalalo subito.
 
