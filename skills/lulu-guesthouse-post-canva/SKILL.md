@@ -79,11 +79,11 @@ Non creare post uguali o troppo simili a quelli di partenza: cambia foto, impagi
 2. Foto presenti nel contesto della conversazione
 3. Caricamenti su Canva (ultima priorità)
 
-**Leggibilità**: ogni foto di sfondo va scurita con **Luminosità −25** e **Bianchi −30**. Non modificare MAI la trasparenza (niente `opacity`/`update_opacity` sulla foto, niente rettangoli scuri semitrasparenti sopra). Il connettore Canva non ha queste regolazioni, quindi (come autorizzato dall'utente) scurisci la foto **prima** di caricarla, con lo script incluso nella skill:
+**Leggibilità**: ogni foto di sfondo va scurita con **Luminosità −25**, **Alte luci −20** e **Bianchi −20**. Non modificare MAI la trasparenza (niente `opacity`/`update_opacity` sulla foto, niente rettangoli scuri semitrasparenti sopra). Il connettore Canva non ha queste regolazioni, quindi (come autorizzato dall'utente) scurisci la foto **prima** di caricarla, con lo script incluso nella skill:
 
 `powershell -ExecutionPolicy Bypass -File "<cartella della skill>\scripts\scurisci-foto.ps1" -In foto.jpg -Out foto_scura.jpg`
 
-Lo script applica Luminosità −25 e Bianchi −30, rispetta l'orientamento, ridimensiona il lato lungo a 2400 px e lascia invariato il canale di trasparenza. Carica in Canva solo la versione scurita. Non applicare lo script due volte alla stessa foto.
+Lo script applica Luminosità −25, Alte luci −20 e Bianchi −20, rispetta l'orientamento, ridimensiona il lato lungo a 2400 px e lascia invariato il canale di trasparenza. Carica in Canva solo la versione scurita. Non applicare lo script due volte alla stessa foto.
 
 **Post con recensione** (opzione 3): apri le pagine delle recensioni con il **Browser interno**:
 - Google Maps: https://www.google.com/maps/place/L%C3%B9l%C3%B9+Guest+House/@44.779334,9.0649455,17z/data=!4m11!3m10!1s0x478751901ffe92a3:0x3c787c4b07a994ca!5m2!4m1!1i2!8m2!3d44.779334!4d9.0675204!9m1!1b1!16s%2Fg%2F11z3_j01k7?entry=ttu&g_ep=EgoyMDI2MDkyOC4wIKXMDSoASAFQAw%3D%3D
@@ -187,7 +187,7 @@ Se un campo non compare dove indicato (l'interfaccia di Meta può cambiare), cer
 - Tipo di post scelto dall'utente prima di iniziare (opz. 5: tema e fonte foto chiesti)
 - Post aggiunto dopo l'ultima pagina di "Post pronti 2026", nessuna pagina esistente modificata
 - Stessa dimensione; logo, font, colori, e-mail e telefono nelle stesse posizioni dei riferimenti
-- Foto da Drive/Foto Guest House (mai Lightroom Dark); foto scurita con lo script (Luminosità −25, Bianchi −30) prima del caricamento; trasparenza intatta
+- Foto da Drive/Foto Guest House (mai Lightroom Dark); foto scurita con lo script (Luminosità −25, Alte luci −20, Bianchi −20) prima del caricamento; trasparenza intatta
 - Partito da una copia di una pagina di riferimento; nuova pagina inserita in fondo con `merge-designs`; pagine totali +1
 - Post nuovo, non simile a quelli esistenti; recensione mai usata prima, ordine IT → EN → FR, icona Google/Booking/Airbnb corretta e nella stessa posizione dei post precedenti
 - 3 pagine IT/EN/FR se l'immagine contiene testo; una sola pagina se è solo foto + logo + contatti
