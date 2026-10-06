@@ -84,6 +84,9 @@ Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operaz
 - **Vendita totale:** prima di eliminare le righe dello strumento, scrivi `0` (formato € → 0,00 €) nella cella D della riga collegata in "Composizione Portafoglio" al posto del riferimento, così non compare `#REF!`. Poi elimina le righe in "Portafoglio dettagliato".
 - **Nuovo ticker:** Composizione non lo conterrà. Dopo l'inserimento chiedi all'utente se aggiungerlo in Composizione e con quale Tipologia/Target. Non modificare Target o formule esistenti senza richiesta.
 - Dopo ogni modifica rileggi la colonna D di Composizione con `get_values` e verifica che non ci siano `#REF!` o valori a 0 inattesi. Se ci sono, segnalalo subito.
+- **Catena di collegamenti:** "Portafoglio dettagliato" → "Composizione Portafoglio" → "Valore Portafoglio". Nel blocco del mese corrente di "Valore Portafoglio" la colonna D usa celle di Composizione (es. a ottobre 2026: `'Composizione Portafoglio'!$D$11` per Credit Agricole, `$D$9+$D$10` per Crypto, `$K$2-$D$9-$D$10-$D$11` per Trading212). I riferimenti possono cambiare: rileggili ogni volta.
+- In "Composizione Portafoglio" **non eliminare mai righe** e non spostare celle: romperebbe "Valore Portafoglio". Per uno strumento venduto metti solo 0. Aggiungi righe solo su richiesta dell'utente.
+- Dopo ogni modifica rileggi anche il blocco del mese corrente di "Valore Portafoglio" e segnala `#REF!` o valori anomali.
 
 ### Operazioni chiuse AAAA
 
