@@ -73,6 +73,14 @@ Fogli presenti: Depositi AAAA, Valore Portafoglio, Tasse e Stipendi AAAA, Operaz
 **Acquisto, nuovo ticker:** inserisci una riga nella posizione alfabetica, scrivi A–D e ricopia le formule E, F, H, I, K, L, N adattate al numero di riga.
 **Vendita:** riduci la quantità in C partendo dal lotto **più recente** (LIFO), salvo indicazione diversa dell'utente. Un lotto che arriva a 0 va eliminato, ma se è la prima riga del gruppo sposta prima le sue formule sulla riga successiva dello stesso ticker. Se l'intera posizione è venduta, elimina tutte le righe del ticker (`update_spreadsheet` con `deleteDimension` sulle sole righe del gruppo): lo strumento non deve restare con quantità 0. Nessun "realizzato" qui. Registra sempre la vendita anche in "Operazioni chiuse AAAA". Se non riesci a calcolare il profitto o la perdita, chiedilo all'utente e poi completa la riga.
 
+**Collegamento con "Composizione Portafoglio" e dashboard (fondamentale).** In "Composizione Portafoglio" la colonna D punta direttamente alla cella N della **prima riga** di ogni ticker in "Portafoglio dettagliato" (es. `='Portafoglio dettagliato'!N34`; le crypto USD sono moltiplicate per `GOOGLEFINANCE("CURRENCY:USDEUR")`). Per non rompere questi collegamenti:
+- Aggiungi o togli righe **solo** con `insert_dimension` / `deleteDimension` (righe intere), mai spostando valori con copia/incolla di celle: così Google Sheets aggiorna da solo i riferimenti.
+- Inserisci i nuovi lotti **sotto** la prima riga del gruppo, mai sopra.
+- **Non eliminare mai la prima riga di un gruppo** finché lo strumento resta in portafoglio: farebbe comparire `#REF!` in Composizione. Se il lotto da azzerare è nella prima riga, copia A–D del lotto successivo nella prima riga (le formule restano) ed elimina la riga del lotto successivo.
+- **Vendita totale:** eliminare le righe produce `#REF!` nella riga di Composizione collegata. Prima di eliminare, mostra all'utente la riga di Composizione interessata e chiedi come aggiornarla (eliminarla, azzerarla o altro).
+- **Nuovo ticker:** Composizione non lo conterrà. Dopo l'inserimento chiedi all'utente se aggiungerlo in Composizione e con quale Tipologia/Target. Non modificare Target o formule esistenti senza richiesta.
+- Dopo ogni modifica rileggi la colonna D di Composizione con `get_values` e verifica che non ci siano `#REF!` o valori a 0 inattesi. Se ci sono, segnalalo subito.
+
 ### Operazioni chiuse AAAA
 
 - Riga 2: intestazioni. Dati da riga 3. Colonne: **A** `T.H.` se l'operazione è in perdita (tax harvesting), altrimenti vuota · **B** Data · **C** Ticker · **D** `GAIN`/`LOSS` · **E** Piattaforma (es. `TRADING 212`) · **F** Profitto in € (negativo se perdita) · **G** formula già presente `=IF(Fn<0;"<";Fn*$N$2)`: non toccarla.
