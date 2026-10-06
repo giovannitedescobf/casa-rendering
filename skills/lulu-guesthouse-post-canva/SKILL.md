@@ -163,21 +163,20 @@ Per la pubblicazione usa i file salvati in questa cartella.
 
 L'utente ha già fatto l'accesso a Meta Business Suite nel Browser interno. **Non pubblicare mai subito: pianifica sempre** alla data e ora indicate dall'utente.
 
-1. Apri https://business.facebook.com nel Browser interno.
-2. In alto a destra trova il pulsante **"Pianificazione"**.
-3. Clicca **"Crea post"**.
-4. Seleziona come destinazioni **Instagram e Facebook** della Lùlù Guest House.
-5. Carica le immagini dalla cartella "Post N+1" nell'ordine **IT, EN, FR**. Se c'è una sola immagine, carica solo IT. IT è sempre in prima posizione.
-6. Chiedi all'utente **giorno e ora** di pubblicazione con una domanda (`AskUserQuestion`; l'utente scrive data e ora in "Altro") e attendi la risposta. Non andare avanti senza.
-7. Incolla il copy da `Copy.txt` nel campo testo e verifica che sia completo (emoji e separatori inclusi). Sotto, in **posizione/luogo**, cerca "Lulu Guest House" e seleziona **Lùlù Guest House – Dernice** (di solito il primo risultato).
-8. Imposta la pianificazione alla data e ora indicate dall'utente.
-9. **Verifica finale** prima di confermare:
+1. Apri https://business.facebook.com nel Browser interno: si apre la **Home** di Meta Business Suite della Lùlù Guest House (account in alto a sinistra "Lùlù Guest House").
+2. Clicca il pulsante blu **"Crea post"** sotto il nome della pagina (accanto a "Crea inserzione", "Crea reel", "Crea storia"). Si apre direttamente l'editor del post.
+3. Verifica che come destinazioni siano selezionati **Instagram e Facebook** della Lùlù Guest House.
+4. Carica le immagini dalla cartella "Post N+1" nell'ordine **IT, EN, FR**. Se c'è una sola immagine, carica solo IT. IT è sempre in prima posizione.
+5. Chiedi all'utente **giorno e ora** di pubblicazione con una domanda (`AskUserQuestion`; l'utente scrive data e ora in "Altro") e attendi la risposta. Non andare avanti senza.
+6. Incolla il copy da `Copy.txt` nel campo testo e verifica che sia completo (emoji e separatori inclusi). Sotto, in **posizione/luogo**, cerca "Lulu Guest House" e seleziona **Lùlù Guest House – Dernice** (di solito il primo risultato).
+7. Imposta la pianificazione alla data e ora indicate dall'utente.
+8. **Verifica finale** prima di confermare:
    - ordine delle foto (IT, EN, FR)
    - copy inserito e completo
    - data e ora di pianificazione corrette
    - luogo Lùlù Guest House (Dernice) selezionato
    - destinazioni Instagram e Facebook attive
-10. Conferma con **"Pianifica"** (mai "Pubblica ora"). Controlla nel calendario della Pianificazione che il post compaia alla data giusta e comunica all'utente data e ora pianificate.
+9. Conferma con **"Pianifica"** (mai "Pubblica ora"). Controlla nel calendario della Pianificazione che il post compaia alla data giusta e comunica all'utente data e ora pianificate.
 
 Se un campo non compare dove indicato (l'interfaccia di Meta può cambiare), cercalo nella pagina; se non lo trovi, fermati e chiedi all'utente invece di procedere a caso. Se un caricamento file non riesce nel Browser interno, usa gli strumenti di riserva indicati sopra.
 
