@@ -31,6 +31,22 @@ Rispondi solo per punti, brevi, con le sole informazioni fondamentali. Niente sp
 - **Piattaforma non indicata:** se messaggio o foto non indicano chiaramente il broker, chiedilo. Non ipotizzarlo.
 - **Nuovo anno senza file:** se per l'anno dell'operazione il file "AAAA - Documenti Finanziari" non esiste, segnalalo e fermati. Non creare file in autonomia: se ne crea uno nuovo solo dopo aver chiesto all'utente e averne ricevuto il consenso.
 
+## Revolut: valore portafoglio e deposito automatico
+
+Quando l'utente manda uno screen di Revolut o scrive il valore totale del portafoglio Revolut:
+
+1. **Dati:** ricava valore totale e guadagno (es. +5,73 €). Se manca il guadagno, chiedilo.
+2. **Valore Portafoglio:** scrivi il valore totale nella riga `REVOLUT` del blocco del mese corrente nel foglio "Valore Portafoglio" del file dell'anno in corso.
+   - Se il blocco del mese non esiste, crealo sotto l'ultimo, copiando struttura e formule del blocco precedente (data del 1° del mese in B, stesse piattaforme in C, formule di somma e di riepilogo adattate alle nuove righe). Le formule devono puntare alle stesse celle del blocco precedente (es. Composizione Portafoglio, Depositi). Poi verifica che il riepilogo mensile punti al nuovo blocco.
+3. **Depositi Revolut fino ad ora:** somma tutti gli importi con piattaforma `REVOLUT` nei fogli "Depositi AAAA" di **tutti i file dal 2026** all'anno in corso.
+   - Se tra questi ci sono prelievi Revolut, fermati e chiedi all'utente come trattarli.
+4. **Calcolo:** differenza = valore totale − guadagno − depositi Revolut fino ad ora.
+5. **Registrazione** nel foglio "Depositi AAAA" dell'anno in corso, con data uguale alla data del messaggio:
+   - differenza > 0 → categoria `DEPOSITO`, piattaforma `REVOLUT`, importo positivo;
+   - differenza < 0 → categoria `PRELIEVI`, piattaforma `REVOLUT`, importo negativo;
+   - differenza = 0 → nessuna riga.
+6. **Riepilogo all'utente:** valore, guadagno, depositi precedenti, differenza e riga inserita.
+
 ## Privacy — nessuna conservazione dei dati
 
 I dati finanziari dell'utente sono privati. Usali solo per l'operazione richiesta, poi non riutilizzarli.
