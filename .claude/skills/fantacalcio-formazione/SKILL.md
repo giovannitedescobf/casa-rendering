@@ -55,9 +55,11 @@ Da eseguire ogni settimana PRIMA del calcio d'inizio della prima partita della g
 
 ## Output (sintetico, in italiano)
 
-1. Giornata e orario prima partita.
-2. Tabella 3-4-3: Ruolo | Giocatore | Partita (fattore) | Titolarità % per fonte | Nota.
-3. Panchina in ordine.
-4. Modulo consigliato (una riga di motivazione).
-5. Dubbi/ballottaggi da ricontrollare prima della consegna.
-6. Fonti con link.
+Per ogni giocatore della 3-4-3: Ruolo – Giocatore (partita) – motivazione in una riga: stato di titolarità secondo OGNI fonte consultata (es. "titolare per Gazzetta e SOS Fanta, ballottaggio 60% per Fantacalcio.it"), fattore partita, forma.
+Se un giocatore è in dubbio, scrivilo esplicitamente.
+In fondo: fonti consultate con link ed elenco delle fonti NON raggiungibili con il motivo.
+Nient'altro.
+
+## Accesso alle fonti
+
+Prova sempre prima WebFetch sulle pagine dirette (gazzetta.it, fantacalcio.it, sosfanta.com, gianlucadimarzio.com); se falliscono usa WebSearch con allowed_domains su quel dominio. Una fonte va dichiarata "non raggiungibile" solo dopo entrambi i tentativi.
