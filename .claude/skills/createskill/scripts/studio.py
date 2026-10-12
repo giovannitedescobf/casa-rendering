@@ -1,27 +1,44 @@
-"""Fondale da studio per foto prodotto Vinted (opzione B).
+"""Foto prodotto Vinted in stile set fotografico (opzione B).
 Uso: python3 studio.py OUT_DIR foto1.jpg [foto2.jpg ...]
-(per capi chiari impostare CAPO_CHIARO=1: usa solo lo scontorno rembg)
+  CAPO_CHIARO=1  -> capi chiari: usa solo lo scontorno rembg
 Richiede: pip install rembg onnxruntime pillow numpy scipy
 Per screenshot del telefono ritagliare prima barre e pulsanti dell'interfaccia.
+Risultato: fondale da studio (parete + pavimento), capo appeso a un'asta cromata
+con ombra realistica; primi piani a tutto campo. Nessun elemento dell'originale.
 """
 import sys, os
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageEnhance, ImageFilter, ImageDraw
 from scipy import ndimage as nd
 from rembg import remove, new_session
 
-W, H = 1200, 1600  # 3:4
+W, H = 1200, 1600      # 3:4
+RAIL_Y = 150           # quota asta appendiabiti
+HORIZON = 0.86         # linea parete/pavimento
 
 def fondale():
     y = np.linspace(0, 1, H)[:, None]; x = np.linspace(-1, 1, W)[None, :]
-    a = np.clip(248 - 14 * y - 7 * x ** 2, 0, 255).astype('uint8')
-    return Image.fromarray(np.dstack([a, a, a]))
+    wall = 250 - 10 * y - 8 * x ** 2
+    floor = 236 - 18 * (y - HORIZON) - 6 * x ** 2
+    t = np.clip((y - HORIZON) / 0.03 + 0.5, 0, 1)        # raccordo morbido (limbo)
+    a = np.clip(wall * (1 - t) + floor * t, 0, 255)
+    return Image.fromarray(np.dstack([a, a, a * 0.995]).astype('uint8'))
 
-def maschera(im, sess, scuro=True):
+def asta(img, x0, x1):
+    d = ImageDraw.Draw(img)
+    for i, c in enumerate([150, 200, 235, 205, 160, 130]):   # cilindro cromato
+        d.line([(x0, RAIL_Y - 3 + i), (x1, RAIL_Y - 3 + i)], fill=(c, c, c))
+    for xb in (x0, x1):                                      # supporti a parete
+        d.rectangle([xb - 7, RAIL_Y - 14, xb + 7, RAIL_Y + 14], fill=(175, 175, 175))
+        d.rectangle([xb - 7, RAIL_Y - 14, xb + 7, RAIL_Y - 10], fill=(215, 215, 215))
+    sh = Image.new('L', (W, H), 0)
+    ImageDraw.Draw(sh).line([(x0, RAIL_Y + 12), (x1, RAIL_Y + 12)], fill=70, width=6)
+    img.paste(Image.new('RGB', (W, H), (120, 120, 120)), (0, 0), sh.filter(ImageFilter.GaussianBlur(6)))
+
+def maschera(im, sess, scuro):
     rb = np.array(remove(im, session=sess))[..., 3] > 128
     if not scuro:
         return nd.binary_fill_holes(rb)
-    # capi scuri: maschera per luminosità (più precisa con specchi/pareti) + gruccia da rembg
     lum = np.array(im).astype(float).mean(2)
     dark = nd.binary_opening(lum < 75, iterations=2)
     lab, n = nd.label(dark)
@@ -32,38 +49,49 @@ def maschera(im, sess, scuro=True):
     m = capo | gruccia; lab, _ = nd.label(m)
     return nd.binary_fill_holes(lab == lab[np.where(capo)][0])
 
+def brillante(im):
+    a = np.asarray(im).astype(float) / 255
+    a = a ** 0.85                                  # apre le ombre (texture dei neri)
+    im = Image.fromarray((a * 255).clip(0, 255).astype('uint8'))
+    im = ImageEnhance.Contrast(im).enhance(1.08)
+    im = ImageEnhance.Color(im).enhance(1.05)
+    return im.filter(ImageFilter.UnsharpMask(radius=2, percent=90, threshold=2))
+
 def elabora(path, out, sess, scuro):
-    im = Image.open(path).convert('RGB')
+    im = Image.open(path).convert('RGB'); w0, h0 = im.size
     m = maschera(im, sess, scuro)
-    a = Image.fromarray((m * 255).astype('uint8')).filter(ImageFilter.GaussianBlur(1.2))
-    rgb = ImageEnhance.Brightness(im).enhance(1.2)
-    rgb = ImageEnhance.Contrast(rgb).enhance(1.05)
-    rgb = ImageEnhance.Sharpness(rgb).enhance(1.3)
-    cut = rgb.convert('RGBA'); cut.putalpha(a)
-    bb = cut.getbbox(); cut = cut.crop(bb); w0, h0 = im.size
+    a = Image.fromarray((m * 255).astype('uint8')).filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(1))
+    cut = brillante(im).convert('RGBA'); cut.putalpha(a)
+    bb = cut.getbbox(); cut = cut.crop(bb); mm = np.array(cut.split()[3]) > 128
     bg = fondale()
-    intero = bb[0] > 5 and bb[2] < w0 - 5 and bb[3] < h0 - 5
-    if intero:  # capo intero: centrato con ombra morbida
-        s = min(W * 0.8 / cut.width, H * 0.88 / cut.height)
+    if bb[1] <= 5:                                  # primo piano senza gruccia: a tutto campo
+        s = max(W / cut.width, H / cut.height)
         cut = cut.resize((int(cut.width * s), int(cut.height * s)), Image.LANCZOS)
         x, y = (W - cut.width) // 2, (H - cut.height) // 2
-        sh = Image.new('L', (W, H), 0)
-        sh.paste(cut.split()[3].point(lambda p: p * 0.3), (x + 12, y + 16))
-        bg.paste(Image.new('RGB', (W, H), (110, 110, 110)), (0, 0), sh.filter(ImageFilter.GaussianBlur(26)))
-    else:  # capo tagliato nello scatto: ancorato ai bordi
-        s = max(H * 0.92 / cut.height, W * 0.75 / cut.width)
+    else:                                           # capo appeso: gancio sull'asta
+        hook_x = np.where(mm[:8].any(0))[0].mean()
+        intero = bb[0] > 5 and bb[2] < w0 - 5 and bb[3] < h0 - 5
+        avail = (H * HORIZON - 60 - RAIL_Y) if intero else (H - RAIL_Y)
+        s = avail / cut.height
+        if not intero: s = max(s, W * 0.8 / cut.width)
         cut = cut.resize((int(cut.width * s), int(cut.height * s)), Image.LANCZOS)
-        if bb[0] <= 5 and bb[2] >= w0 - 5:
-            cut = cut.resize((W, int(cut.height * W / cut.width)), Image.LANCZOS)
-        y = H - cut.height; x = (W - cut.width) // 2
-        if bb[2] >= w0 - 5: x = W - cut.width
-        if bb[0] <= 5: x = 0
+        x = int(W / 2 - hook_x * s); y = RAIL_Y - 6
+        if not intero:
+            if bb[2] >= w0 - 5: x = W - cut.width
+            if bb[0] <= 5: x = 0
+        asta(bg, 90, W - 90)
+        sh = Image.new('L', (W, H), 0)              # ombra proiettata sulla parete
+        sh.paste(cut.split()[3].point(lambda p: p * 0.28), (x + 18, y + 22))
+        bg.paste(Image.new('RGB', (W, H), (105, 105, 105)), (0, 0), sh.filter(ImageFilter.GaussianBlur(24)))
     bg.paste(cut, (x, y), cut)
-    bg.save(out, quality=93)
+    if bb[1] > 5:                                   # ridisegna l'asta davanti al gancio
+        ImageDraw.Draw(bg).line([(x + hook_x * s - 14, RAIL_Y), (x + hook_x * s + 14, RAIL_Y)], fill=(215, 215, 215), width=4)
+    bg.save(out, quality=95)
 
 if __name__ == '__main__':
     od = sys.argv[1]; os.makedirs(od, exist_ok=True)
     sess = new_session('isnet-general-use')
+    scuro = os.environ.get('CAPO_CHIARO') is None
     for i, p in enumerate(sys.argv[2:], 1):
-        elabora(p, os.path.join(od, f'foto-{i}.jpg'), sess, os.environ.get('CAPO_CHIARO') is None)
+        elabora(p, os.path.join(od, f'foto-{i}.jpg'), sess, scuro)
         print('ok', p)

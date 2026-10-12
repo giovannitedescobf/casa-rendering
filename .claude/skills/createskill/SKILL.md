@@ -70,21 +70,22 @@ Usa lo script `scripts/studio.py` (rembg + Pillow):
 1. `pip install rembg onnxruntime pillow numpy scipy`
 2. Se l'input è uno screenshot del telefono, ritaglia prima barre di stato, pulsanti ("Chiudi") e pallini delle pagine.
 3. `python3 scripts/studio.py <cartella_output> foto1.jpg foto2.jpg ...` (per capi chiari: `CAPO_CHIARO=1`).
-4. Controlla ogni risultato: se lo scontorno è sbagliato su una foto (es. primo piano di un'etichetta), per quella foto usa solo ritaglio 3:4 + luce/contrasto/nitidezza.
+4. Controlla ogni risultato rispetto ai 7 requisiti sopra; se lo scontorno non è perfetto su una foto, correggi la maschera (soglie, ritaglio iniziale) e rifalla. Lo scontorno va fatto anche su primi piani ed etichette.
 
 Se una delle due opzioni fallisce, passa all'altra e dillo in una riga. Se falliscono entrambe, dichiaralo: non consegnare semplici correzioni di colore come se fossero il risultato finale.
 
-## Obiettivo
-Il risultato deve essere **visibilmente più bello e professionale** dell'originale. NON limitarti a luce/colore: modifica le foto nel miglior modo possibile, scegliendo liberamente gli interventi.
-
-## Interventi (applicali tutti quando servono)
-- **Sfondo da studio fotografico (priorità):** scontorna il prodotto e sostituisci lo sfondo con un fondale da studio (bianco/grigio chiaro uniforme o leggero gradiente), con ombra morbida realistica sotto/dietro il prodotto. Rimuovi stanza, quadri, specchi, pavimenti, oggetti estranei. Se la gruccia è brutta, si può rimuovere o sostituire con una neutra.
-- **Composizione:** formato verticale **3:4** (1200×1600 px), prodotto centrato, dritto, ben riempito, margini uniformi e coerenti tra tutte le foto.
-- **Luce:** illuminazione uniforme da studio, esposizione corretta, ombre e riflessi controllati; per capi neri recupera i dettagli nelle ombre (texture, cuciture).
-- **Colore:** bilanciamento del bianco neutro, colori fedeli al reale, nitidezza e riduzione del rumore.
-- **Pulizia:** rimuovi elementi dell'interfaccia del telefono (barre, pulsanti) se l'input è uno screenshot, polvere sullo sfondo, oggetti estranei.
-- **Coerenza:** stesso fondale, luce e inquadratura in tutte le foto dello stesso annuncio.
-- Prima di consegnare, confronta mentalmente prima/dopo: se il miglioramento non è evidente, rifai.
+## Obiettivo: qualità da set fotografico (SEMPRE)
+Ogni foto consegnata deve sembrare scattata in uno studio fotografico professionale. Requisiti obbligatori, per TUTTE le foto (anche primi piani ed etichette):
+1. **Scontorno sempre, e perfetto:** bordi puliti e precisi, nessun alone, nessun residuo dello sfondo originale, nessun pezzo del prodotto tagliato o bucato (bottoni, gruccia, cuciture inclusi).
+2. **Brillante:** esposizione luminosa da studio, bianchi puliti, neri profondi ma con texture leggibile, colori vivi ma fedeli, nitidezza alta.
+3. **Sfondo nuovo e pulito:** NESSUN elemento della foto originale (stanza, quadri, specchi, pavimenti, mobili, ombre della casa).
+4. **Mai oggetto fluttuante nel nulla:** l'immagine deve avere un senso fisico. Esempi:
+   - capo su gruccia → gruccia appesa a un appendiabiti/asta o gancio da studio visibile;
+   - capo/oggetto appoggiato → fondale da studio con linea del pavimento (limbo/cyclorama) e ombra di contatto realistica;
+   - primo piano/etichetta → dettaglio che riempie l'inquadratura su fondale coerente con le altre foto.
+5. **Coerenza:** stesso fondale, luce, appendiabiti e inquadratura in tutte le foto dello stesso annuncio.
+6. **Composizione:** verticale 3:4 (1200×1600 px), prodotto centrato e dritto, margini uniformi.
+7. **Controllo finale obbligatorio:** guarda ogni foto prima di consegnarla. Se lo scontorno non è perfetto, se resta un elemento dell'originale o se l'oggetto sembra fluttuare, rifalla. Non consegnare risultati sotto lo standard senza dichiararlo.
 
 ## Regola anti-inganno (inderogabile)
 Vinted vieta di ingannare su condizioni, brand, autenticità o caratteristiche (vinted.com/catalog-rules) e vieta foto prese da altri siti o stock (vinted.com/help/62). Quindi:
