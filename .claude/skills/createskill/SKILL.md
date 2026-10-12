@@ -1,9 +1,20 @@
 ---
 name: createskill
-description: Riscrive o crea da zero descrizioni accattivanti e SEO-ottimizzate per articoli in vendita su Vinted, con emoji opzionali e nel rispetto delle regole Vinted. Usare quando l'utente fornisce un testo da riformulare, un link Vinted o foto/dettagli di un oggetto da vendere.
+description: Ottimizza annunci Vinted - riscrive o crea descrizioni accattivanti e SEO-ottimizzate (con emoji) e/o migliora le foto del prodotto con Claude Design (luce, contrasto, ritaglio 3:4, sfondo), nel rispetto delle regole Vinted. Usare quando l'utente fornisce un testo, un link Vinted o foto di un oggetto da vendere.
 ---
 
-# Descrizioni Vinted (createskill)
+# Annunci Vinted (createskill)
+
+## Step 0 - Domanda iniziale (OBBLIGATORIA)
+Prima di qualsiasi lavoro, fai SEMPRE una domanda a scelta singola (usa lo strumento di domanda a scelta multipla se disponibile):
+**Cosa vuoi fare?**
+1. Modificare solo la descrizione → esegui la Parte A
+2. Modificare solo le foto del prodotto → esegui la Parte B
+3. Modificare la descrizione e le foto del prodotto → esegui la Parte A, poi la Parte B
+
+Se l'opzione richiede foto e non sono allegate, chiedile.
+
+# Parte A - Descrizione
 
 ## Input possibili
 1. **Testo in chat** → riformulalo.
@@ -46,3 +57,31 @@ Se mancano dati essenziali (taglia, condizioni, brand) e non sono deducibili, ch
 - Emoji: usale con moderazione (una per riga max); omettile se l'utente lo chiede.
 - Lingua: italiano, salvo diversa richiesta. Tono amichevole, frasi brevi.
 - Nessun commento extra oltre a titolo e descrizione, salvo richiesta.
+
+# Parte B - Foto del prodotto
+
+## Strumento
+Usa SEMPRE **Claude Design** per le modifiche (mai Canva, salvo richiesta esplicita). Se Claude Design non è disponibile, dillo e usa elaborazione immagini locale (es. Python/Pillow) per luce, contrasto e ritaglio.
+
+## Interventi
+- **Formato:** verticale **3:4** (es. 1200×1600 px), prodotto centrato e ben riempito, margini uniformi.
+- **Luce e colore:** luminosità, contrasto, bilanciamento del bianco, nitidezza; colori fedeli al reale.
+- **Ritaglio:** elimina elementi di disturbo, raddrizza l'inquadratura.
+- **Interventi AI ammessi:** pulizia o sostituzione dello sfondo (neutro chiaro o ambientato coerente), rimozione di oggetti estranei, ombre morbide, miglioramento della resa generale.
+
+## Regola anti-inganno (inderogabile)
+Vinted vieta di ingannare su condizioni, brand, autenticità o caratteristiche (vinted.com/catalog-rules) e vieta foto prese da altri siti o stock (vinted.com/help/62). Quindi:
+- NON nascondere o ritoccare difetti, usura, macchie, pilling.
+- NON cambiare colore, forma, taglia apparente, materiale o loghi del prodotto.
+- NON generare il prodotto da zero né usare immagini stock: si parte sempre dalle foto dell'utente.
+- Se un difetto è visibile, mantienilo e indicalo nella descrizione.
+
+## Testo sulle foto
+- Di default **nessun testo**.
+- Se aggiunto: font unico e sempre lo stesso per tutte le foto e tutte le volte: **Playfair Display** (elegante), colore bianco o nero in base allo sfondo, testo breve (es. brand / taglia), posizione coerente tra le foto.
+- Mai contatti, link o prezzi nelle foto.
+
+## Output
+- Restituisci le foto modificate come **file immagine direttamente in chat** (JPG, 3:4), nominate in ordine (foto-1.jpg, foto-2.jpg, ...).
+- Suggerisci l'ordine: la prima foto è la copertina (prodotto intero, sfondo pulito).
+- Elenca in una riga per foto le modifiche fatte.
