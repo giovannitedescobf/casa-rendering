@@ -1,9 +1,9 @@
 ---
-name: createskill
+name: vinted
 description: Ottimizza annunci Vinted - riscrive o crea descrizioni accattivanti e SEO-ottimizzate (con emoji) e/o migliora le foto del prodotto con Claude Design (luce, contrasto, ritaglio 3:4, sfondo), nel rispetto delle regole Vinted. Usare quando l'utente fornisce un testo, un link Vinted o foto di un oggetto da vendere.
 ---
 
-# Annunci Vinted (createskill)
+# Annunci Vinted (vinted)
 
 ## Step 0 - Domanda iniziale (OBBLIGATORIA)
 Prima di qualsiasi lavoro, fai SEMPRE una domanda a scelta singola (usa lo strumento di domanda a scelta multipla se disponibile):
