@@ -12,15 +12,21 @@ description: Riscrive o crea da zero descrizioni accattivanti e SEO-ottimizzate 
 
 Se mancano dati essenziali (taglia, condizioni, brand) e non sono deducibili, chiedili in una sola domanda sintetica.
 
-## Regole Vinted (rispettarle sempre)
-- Descrizione veritiera: niente condizioni migliori del reale; segnala difetti.
-- Vietato: contatti esterni (telefono, email, social, link), pagamenti fuori piattaforma, keyword stuffing di brand non pertinenti ("tipo Nike", "stile Zara"), contenuti offensivi, articoli contraffatti/vietati.
-- Usare i nomi ufficiali di brand e condizioni Vinted: Nuovo con cartellino, Nuovo senza cartellino, Ottime, Buone, Discrete.
+## Regole Vinted (fonti ufficiali: vinted.com/catalog-rules, help/307, help/62)
+- Vietato "simile a", "ispirato a", "tipo", "replica" + nome brand, sia nel campo brand sia nella descrizione.
+- Vietati brand o hashtag non pertinenti all'articolo.
+- Vietato ingannare su condizioni, origine, brand, autenticità, taglia; segnala sempre i difetti.
+- Niente annunci duplicati: per più pezzi uguali, un solo annuncio con "disponibili 2+ pezzi" in descrizione.
+- Niente foto prese da altri siti o stock.
+- Prudenziale (non confermato nelle fonti consultate): niente contatti esterni, link o pagamenti fuori piattaforma.
+- Condizioni con i nomi Vinted: Nuovo con cartellino, Nuovo senza cartellino, Ottime, Buone, Discrete.
 
 ## SEO Vinted
 - Le parole chiave più importanti (brand, tipo articolo, colore, taglia) nel **titolo** e nella **prima riga** della descrizione.
 - Usa sinonimi naturali che gli utenti cercano (es. "felpa / hoodie", "jeans / denim").
-- Hashtag finali: 3–6, pertinenti (es. #nike #felpa #vintage). Niente brand non pertinenti.
+- Titolo specifico, mai generico ("Bel vestito" no): marca + tipo capo + caratteristica + uomo/donna.
+- Hashtag finali: 3–6, solo pertinenti allo stile/articolo (es. #vintage #anni90).
+- Su richiesta: aggiungere traduzione breve in inglese/francese per acquirenti esteri.
 
 ## Output (formato fisso)
 **Titolo** (max ~60 caratteri): Brand + Articolo + Dettaglio chiave + Taglia
