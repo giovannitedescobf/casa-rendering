@@ -60,8 +60,19 @@ Se mancano dati essenziali (taglia, condizioni, brand) e non sono deducibili, ch
 
 # Parte B - Foto del prodotto
 
-## Strumento
-Usa SEMPRE **Claude Design** per le modifiche (mai Canva, salvo richiesta esplicita). Se Claude Design non è disponibile, dillo e usa gli strumenti migliori disponibili (es. scontorno automatico con rembg + Pillow per fondale da studio e ombra). Non consegnare semplici correzioni di colore: se lo scontorno non è possibile, dichiaralo.
+## Strumento (due opzioni, in quest'ordine)
+Mai Canva, salvo richiesta esplicita.
+
+**Opzione A - Claude Design (prima scelta).** Usala se disponibile per scontorno, fondale da studio, luce e composizione.
+
+**Opzione B - Programma di scontorno automatico (se A non è disponibile o non funziona).**
+Usa lo script `scripts/studio.py` (rembg + Pillow):
+1. `pip install rembg onnxruntime pillow numpy scipy`
+2. Se l'input è uno screenshot del telefono, ritaglia prima barre di stato, pulsanti ("Chiudi") e pallini delle pagine.
+3. `python3 scripts/studio.py <cartella_output> foto1.jpg foto2.jpg ...` (per capi chiari: `CAPO_CHIARO=1`).
+4. Controlla ogni risultato: se lo scontorno è sbagliato su una foto (es. primo piano di un'etichetta), per quella foto usa solo ritaglio 3:4 + luce/contrasto/nitidezza.
+
+Se una delle due opzioni fallisce, passa all'altra e dillo in una riga. Se falliscono entrambe, dichiaralo: non consegnare semplici correzioni di colore come se fossero il risultato finale.
 
 ## Obiettivo
 Il risultato deve essere **visibilmente più bello e professionale** dell'originale. NON limitarti a luce/colore: modifica le foto nel miglior modo possibile, scegliendo liberamente gli interventi.
