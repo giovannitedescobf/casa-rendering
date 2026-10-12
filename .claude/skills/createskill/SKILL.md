@@ -61,13 +61,19 @@ Se mancano dati essenziali (taglia, condizioni, brand) e non sono deducibili, ch
 # Parte B - Foto del prodotto
 
 ## Strumento
-Usa SEMPRE **Claude Design** per le modifiche (mai Canva, salvo richiesta esplicita). Se Claude Design non è disponibile, dillo e usa elaborazione immagini locale (es. Python/Pillow) per luce, contrasto e ritaglio.
+Usa SEMPRE **Claude Design** per le modifiche (mai Canva, salvo richiesta esplicita). Se Claude Design non è disponibile, dillo e usa gli strumenti migliori disponibili (es. scontorno automatico con rembg + Pillow per fondale da studio e ombra). Non consegnare semplici correzioni di colore: se lo scontorno non è possibile, dichiaralo.
 
-## Interventi
-- **Formato:** verticale **3:4** (es. 1200×1600 px), prodotto centrato e ben riempito, margini uniformi.
-- **Luce e colore:** luminosità, contrasto, bilanciamento del bianco, nitidezza; colori fedeli al reale.
-- **Ritaglio:** elimina elementi di disturbo, raddrizza l'inquadratura.
-- **Interventi AI ammessi:** pulizia o sostituzione dello sfondo (neutro chiaro o ambientato coerente), rimozione di oggetti estranei, ombre morbide, miglioramento della resa generale.
+## Obiettivo
+Il risultato deve essere **visibilmente più bello e professionale** dell'originale. NON limitarti a luce/colore: modifica le foto nel miglior modo possibile, scegliendo liberamente gli interventi.
+
+## Interventi (applicali tutti quando servono)
+- **Sfondo da studio fotografico (priorità):** scontorna il prodotto e sostituisci lo sfondo con un fondale da studio (bianco/grigio chiaro uniforme o leggero gradiente), con ombra morbida realistica sotto/dietro il prodotto. Rimuovi stanza, quadri, specchi, pavimenti, oggetti estranei. Se la gruccia è brutta, si può rimuovere o sostituire con una neutra.
+- **Composizione:** formato verticale **3:4** (1200×1600 px), prodotto centrato, dritto, ben riempito, margini uniformi e coerenti tra tutte le foto.
+- **Luce:** illuminazione uniforme da studio, esposizione corretta, ombre e riflessi controllati; per capi neri recupera i dettagli nelle ombre (texture, cuciture).
+- **Colore:** bilanciamento del bianco neutro, colori fedeli al reale, nitidezza e riduzione del rumore.
+- **Pulizia:** rimuovi elementi dell'interfaccia del telefono (barre, pulsanti) se l'input è uno screenshot, polvere sullo sfondo, oggetti estranei.
+- **Coerenza:** stesso fondale, luce e inquadratura in tutte le foto dello stesso annuncio.
+- Prima di consegnare, confronta mentalmente prima/dopo: se il miglioramento non è evidente, rifai.
 
 ## Regola anti-inganno (inderogabile)
 Vinted vieta di ingannare su condizioni, brand, autenticità o caratteristiche (vinted.com/catalog-rules) e vieta foto prese da altri siti o stock (vinted.com/help/62). Quindi:
