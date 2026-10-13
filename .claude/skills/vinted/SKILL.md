@@ -42,17 +42,25 @@ Se mancano dati essenziali (taglia, condizioni, brand) e non sono deducibili, ch
 ## Output (formato fisso)
 **Titolo** (max ~60 caratteri): Brand + Articolo + Dettaglio chiave + Taglia
 
-**Descrizione:**
+**Descrizione:** ogni riga separata da una riga vuota (obbligatorio). Esempio:
 ```
-[Emoji] Hook di 1 riga con brand, articolo, colore
-✨ Condizioni: ...
-📏 Taglia: ... (+ misure se disponibili)
-🧵 Materiale: ...
-🎨 Colore: ...
-💡 Perché sceglierlo / abbinamenti (1-2 righe)
-⚠️ Difetti: ... (se presenti)
+🩳 Bermuda bianchi Zara Man in cotone, taglia 44 ITA
+
+✨ Condizioni: Ottime, indossati poche volte
+
+📏 Taglia: 44 ITA (EUR 38, USA 30, MEX 30)
+
+🧵 Materiale: cotone
+
+🎨 Colore: bianco panna
+
+💡 Freschi e leggeri, ideali per l'estate con polo o camicia e sneakers
+
+⚠️ Difetti: nessuno visibile
+
 📦 Spedizione rapida e imballo curato
-#hashtag #hashtag #hashtag
+
+#zara #zaraman #bermuda #bianco #cotone #estate
 ```
 - Emoji: usale con moderazione (una per riga max); omettile se l'utente lo chiede.
 - Lingua: italiano, salvo diversa richiesta. Tono amichevole, frasi brevi.
@@ -69,7 +77,7 @@ Mai Canva, salvo richiesta esplicita.
 Usa lo script `scripts/studio.py` (rembg + Pillow):
 1. `pip install rembg onnxruntime pillow numpy scipy`
 2. Se l'input è uno screenshot del telefono, ritaglia prima barre di stato, pulsanti ("Chiudi") e pallini delle pagine.
-3. `python3 scripts/studio.py <cartella_output> foto1.jpg foto2.jpg ...` (per capi chiari: `CAPO_CHIARO=1`).
+3. `python3 scripts/studio.py <cartella_output> foto1.jpg foto2.jpg ...` (per capi chiari: `CAPO_CHIARO=1`). Lo script fa già un check automatico della maschera (frammenti, buchi, bordi irregolari, residui) e riprova con parametri diversi; stampa il punteggio di ogni foto. Dopo lo script, guarda comunque ogni immagine (check visivo del punto 7).
 4. Controlla ogni risultato rispetto ai 7 requisiti sopra; se lo scontorno non è perfetto su una foto, correggi la maschera (soglie, ritaglio iniziale) e rifalla. Lo scontorno va fatto anche su primi piani ed etichette.
 
 Se una delle due opzioni fallisce, passa all'altra e dillo in una riga. Se falliscono entrambe, dichiaralo: non consegnare semplici correzioni di colore come se fossero il risultato finale.
@@ -85,7 +93,12 @@ Ogni foto consegnata deve sembrare scattata in uno studio fotografico profession
    - primo piano/etichetta → dettaglio che riempie l'inquadratura su fondale coerente con le altre foto.
 5. **Coerenza:** stesso fondale, luce, appendiabiti e inquadratura in tutte le foto dello stesso annuncio.
 6. **Composizione:** verticale 3:4 (1200×1600 px), prodotto centrato e dritto, margini uniformi.
-7. **Controllo finale obbligatorio:** guarda ogni foto prima di consegnarla. Se lo scontorno non è perfetto, se resta un elemento dell'originale o se l'oggetto sembra fluttuare, rifalla. Non consegnare risultati sotto lo standard senza dichiararlo.
+7. **Check autonomo dei contorni (obbligatorio, prima di consegnare):** per ogni foto verifica da solo:
+   - maschera corretta: nessun residuo dello sfondo originale, nessun buco nel prodotto;
+   - contorni non tagliati: bottoni, maniche, colletto, gruccia e bordi completi;
+   - contorni ben definiti: niente aloni, frange, seghettature o bordi sfocati;
+   - nessun elemento dell'originale nello sfondo, oggetto non fluttuante.
+   Se anche un solo punto fallisce: **riprova automaticamente** (cambia soglie, modello di scontorno, ritaglio iniziale o opzione A/B) e ricontrolla, fino a ottenere un'immagine perfetta. Consegna solo immagini che superano il check. Se dopo 3 tentativi non è perfetta, consegna la migliore dichiarando esattamente il difetto residuo.
 
 ## Regola anti-inganno (inderogabile)
 Vinted vieta di ingannare su condizioni, brand, autenticità o caratteristiche (vinted.com/catalog-rules) e vieta foto prese da altri siti o stock (vinted.com/help/62). Quindi:
