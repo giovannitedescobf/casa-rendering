@@ -99,6 +99,11 @@ group('porte', () => {
     wall('/Pittura/Camera_Nord', P, [XC0, YC1 - s, XR, YC1], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
     wall('/Pittura/Camera_Ovest', P, [XC0, 0, XC0 + s, YC1], H);
     wall('/Pittura/Camera_Est', P, [XR - s, 0, XR, YC1], H);
+    wall('/Pittura/Ingresso_Sud', P, [0, YI0, XR, YI0 + s], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
+    wall('/Pittura/Ingresso_Nord', P, [XB0, YI1 - s, XR, YI1], H, [{ from: XB0 + 30, to: XB0 + 100, head: DOOR_H }]);
+    wall('/Pittura/Ingresso_Ovest', P, [0, YI0, s, YI1], H, [ENTRY]);
+    wall('/Pittura/Ingresso_Est', P, [XR - s, YI0, XR, YI1], H);
+    wall('/Pittura/Facciata_Camera', [224, 186, 124, 255], [XC0 - TE, -TE - s, XR + TE, -TE], H, [CAM_PF]);   // outside face of the camera wall, yellow like the balcony
     wall('/Pittura/Soggiorno_Nord', P, [0, YS1 - s, ROOMS.soggiorno.w, YS1], H, [SOG_PF]);
     wall('/Pittura/Soggiorno_Ovest', P, [0, YS0, s, YS1], H, [KD]);
     wall('/Pittura/Soggiorno_Est', P, [ROOMS.soggiorno.w - s, YS0, ROOMS.soggiorno.w, YS1], H);
