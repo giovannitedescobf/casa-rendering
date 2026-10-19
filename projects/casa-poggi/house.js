@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno'] });
 const { box, wall, slab, tube, group, defGroup } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -94,6 +94,25 @@ group('porte', () => {
 box('/Casa/Vetro_PF_Soggiorno', C.glass, SOG_PF.from, YS1 + 14, 0, SOG_PF.to, YS1 + 16, PF.h);
 box('/Casa/Vetro_PF_Camera', C.glass, CAM_PF.from, -16, 0, CAM_PF.to, -14, PF.h);
 box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.sill, BAGNO_WIN.to, YS1 + 16, BAGNO_WIN.head);
+
+// ---------- bathroom door (from the user's photo): cream leaf with 5 raised panels, hinged on the east jamb, left open into the bagno ----------
+// the viewer can't rotate boxes, so the leaf and its panels are slab polygons in a local frame (u along the leaf, v across it)   open angle, panel sizes estimate
+{ const BD = { x0: XB0 + 30, x1: XB0 + 100, ang: 65, t: 4, c: [238, 228, 204, 255], p: [230, 218, 190, 255] };
+  const a = BD.ang * Math.PI / 180, w = BD.x1 - BD.x0 - 2, hx = BD.x1 - 1, hy = YS0;
+  const u = [-Math.cos(a), Math.sin(a)], v = [Math.sin(a), Math.cos(a)];
+  const P = (pu, pv) => [hx + u[0] * pu + v[0] * pv, hy + u[1] * pu + v[1] * pv];
+  const quad = (u0, u1, v0, v1) => ccw([P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)]);
+  defGroup('porta-bagno', 'Porta del bagno', 'Porte');
+  group('porta-bagno', () => {
+    slab('/Casa/Porta_Bagno/Anta', BD.c, quad(0, w, 0, BD.t), 0, DOOR_H - 1);
+    const m = 9, zs = [15, 50, 85, 120, 155, DOOR_H - 11];   // bottom rail 15, 7 cm rails, top rail 11
+    for (let i = 0; i < 5; i++)
+      slab(`/Casa/Porta_Bagno/Riquadro_${i + 1}`, BD.p, quad(m, w - m, -0.6, 0), zs[i] + (i ? 3.5 : 0), zs[i + 1] - 3.5);
+    const g = [205, 170, 80, 255], hu = w - 6, pa = P(hu, -0.6), pb = P(hu, -6), pc = P(hu - 11, -6);
+    slab('/Casa/Porta_Bagno/Placca', g, quad(hu - 2, hu + 2, -1, -0.6), 90, 120);
+    tube('/Casa/Porta_Bagno/Maniglia', g, [[...pa, 105], [...pb, 105], [...pc, 105]], [1, 1, 1]);
+  });
+}
 
 // ---------- balconies ----------
 const balcony = (n, x0, x1, y0, y1, side) => {
