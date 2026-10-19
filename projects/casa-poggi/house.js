@@ -71,12 +71,13 @@ wall('/Casa/Tramezzo_Cucina_Soggiorno', C.wall, [XK1, YK0 - TK, 0, YS1], H, [{ f
 wall('/Casa/Tramezzo_Soggiorno_Bagno', C.wall, [ROOMS.soggiorno.w, YS0, XB0, YS1], H);
 wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [XB0, YI1, XR, YS0], H, [{ from: XB0 + 30, to: XB0 + 30 + 70, head: DOOR_H }]);
 
-// ---------- front door: brown leaf, open 90 degrees into the ingresso, hinged on the north jamb ----------
+// ---------- front door: brown leaf, open 90 degrees outward onto the common stair landing, hinged on the north jamb ----------
 const DOOR_C = [112, 72, 44, 255], DOOR_T = 5;
 defGroup('porte', 'Porta di ingresso', 'Porte');
 group('porte', () => {
-  box('/Casa/Porta_Ingresso/Anta', DOOR_C, 0, ENTRY.to - DOOR_T, 0, ENTRY_W - 4, ENTRY.to, DOOR_H - 2);
-  tube('/Casa/Porta_Ingresso/Maniglia', [200, 200, 200, 255], [[ENTRY_W - 14, ENTRY.to - DOOR_T - 1, 105], [ENTRY_W - 14, ENTRY.to - DOOR_T - 7, 105], [ENTRY_W - 26, ENTRY.to - DOOR_T - 7, 105]], [1.2, 1.2, 1.2]);
+  const XO = -TE;                                                       // outer face of the wall
+  box('/Casa/Porta_Ingresso/Anta', DOOR_C, XO - (ENTRY_W - 4), ENTRY.to - DOOR_T, 0, XO, ENTRY.to, DOOR_H - 2);
+  tube('/Casa/Porta_Ingresso/Maniglia', [200, 200, 200, 255], [[XO - (ENTRY_W - 14), ENTRY.to - DOOR_T - 1, 105], [XO - (ENTRY_W - 14), ENTRY.to - DOOR_T - 7, 105], [XO - (ENTRY_W - 26), ENTRY.to - DOOR_T - 7, 105]], [1.2, 1.2, 1.2]);
 });
 
 // ---------- glass ----------
@@ -97,7 +98,7 @@ balcony('Balcone_Via_Poggi', XC0 - TE, XC0 + 210, -TE - BALC_D, -TE, -1);
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
 kit.write(out, {
-  camera: kit.camera([1400, -900, 1900], [200, 550, 40]),
+  camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),
   ceiling: kit.ceiling([[XC0, 0], [XR, 0], [XR, YS1], [XK0, YS1], KA, KB, [0, YK0], [0, YI0], [XC0, YI0]], H, H + 2),
 });
