@@ -180,7 +180,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
 // built-in wardrobe on the east end wall of the ingresso (from the user's photos): full corridor width, 10 cm side frames,
 // 2 upper doors (1 panel, lock on the right one) + 2 tall lower doors (4 panels)   width/top gap measured, recessed: only 5 cm (frame + doors) stand out of the wall, split heights estimate
-{ const W = { d: 2.4, side: 10, top: H - 10, split: 225, rail: 10, c: [242, 234, 214, 255], line: [238, 229, 208, 255] };
+{ const W = { d: 2.4, side: 10, top: H - 10, split: 225, rail: 10, c: [226, 213, 186, 255], line: [222, 208, 180, 255] };
   const xf = XR - W.d, y0 = YI0, y1 = YI1, yd0 = y0 + W.side, yd1 = y1 - W.side, ym = (yd0 + yd1) / 2;
   group('armadio', () => {
     box('/Armadio/Corpo', W.c, xf, y0, 0, XR, y1, W.top);
@@ -196,6 +196,11 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     leaf('Anta_Bassa_Dx', ym, yd1, 0, W.split, 4);
     leaf('Anta_Alta_Sx', yd0, ym, W.split + W.rail, W.top - W.rail, 1);
     leaf('Anta_Alta_Dx', ym, yd1, W.split + W.rail, W.top - W.rail, 1);
+    // simple outer moulding along the sides and the top of the wardrobe (not up to the ceiling)
+    const MC = [205, 190, 160, 255], mw = 3;
+    box('/Armadio/Cornice_Sx', MC, xf - 3, y0, 0, xf, y0 + mw, W.top + mw);
+    box('/Armadio/Cornice_Dx', MC, xf - 3, y1 - mw, 0, xf, y1, W.top + mw);
+    box('/Armadio/Cornice_Alta', MC, xf - 3, y0, W.top, xf, y1, W.top + mw);
     tube('/Armadio/Serratura', [80, 60, 40, 255], [[xf - 2, ym + 6, W.split + 70], [xf - 3, ym + 6, W.split + 70]], [1, 1]);
   });
   defGroup('armadio', 'Armadio a muro', 'Arredi'); }
