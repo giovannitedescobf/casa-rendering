@@ -260,7 +260,8 @@ function freePort() {
       }
 
       {   // shortcuts, menus, groups, phones (read-only against the real projects)
-        const p = await open(`/${ids[0]}/`); await loaded(p);
+        const gid = ids.find(id => JSON.parse(fs.readFileSync(path.join(PROJECTS, id, 'scene.json'), 'utf8')).groups?.length) || ids[0];   // a project with groups (a bare shell has no Groups button)
+        const p = await open(`/${gid}/`); await loaded(p);
         await p.keyboard.press('n'); const nightOn = await p.$eval('#nightbtn', e => e.classList.contains('active')); await p.keyboard.press('n');
         ok('keys: plain N toggles Night (positive control) and the button says aria-pressed', nightOn && (await p.getAttribute('#nightbtn', 'aria-pressed')) === 'false');
         await p.keyboard.press('Control+n'); await p.keyboard.press('Meta+f');
@@ -273,7 +274,7 @@ function freePort() {
         }
         await p.click('#camBtn'); await p.keyboard.press('Escape');
         ok('keys: Esc folds the camera dropdown', !(await p.isVisible('#views')));
-        if (JSON.parse(fs.readFileSync(path.join(PROJECTS, ids[0], 'scene.json'), 'utf8')).groups?.some(g => g.on)) {
+        if (JSON.parse(fs.readFileSync(path.join(PROJECTS, gid, 'scene.json'), 'utf8')).groups?.some(g => g.on)) {
           await p.click('#gbtn'); await p.click('#groups .acts button >> nth=1'); await p.waitForTimeout(300);
           await p.reload({ waitUntil: 'networkidle' }); await loaded(p);
           ok('groups: "All off" survives a reload when the scene has default-on groups', (await p.textContent('#gbtn')) === 'Groups');
