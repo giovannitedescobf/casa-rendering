@@ -91,8 +91,6 @@ group('porte', () => {
 });
 
 // ---------- glass ----------
-box('/Casa/Vetro_PF_Soggiorno', C.glass, SOG_PF.from, YS1 + 14, 0, SOG_PF.to, YS1 + 16, PF.h);
-box('/Casa/Vetro_PF_Camera', C.glass, CAM_PF.from, -16, 0, CAM_PF.to, -14, PF.h);
 box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.sill, BAGNO_WIN.to, YS1 + 16, BAGNO_WIN.head);
 
 // ---------- bathroom door (from the user's photo): cream leaf with 5 raised panels, hinged on the east jamb, left open into the bagno ----------
