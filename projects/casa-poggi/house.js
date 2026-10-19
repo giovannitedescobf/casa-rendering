@@ -3,8 +3,8 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: [] });
-const { box, wall } = kit;
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte'] });
+const { box, wall, slab, tube, group, defGroup } = kit;
 
 // ---------- dimensions (cm) ----------
 const H = 330;                     // ceiling height                                   measured
@@ -23,6 +23,8 @@ const PF = { w: 120, h: 280 };     // porte-finestre (soggiorno, camera)        
 const WB = { w: 40, h: 150, sill: 110 };   // bathroom window; sill                    measured w/h, sill estimate
 const DOOR_H = 210, DOOR_W = 80;   // interior doors                                   estimate
 const ENTRY_W = 90;                // front door                                       estimate
+const K_SLANT = { west: 134, south: 63 };   // cucina oblique corner: straight west side 134 of 185, straight south side from the slant to the partition 99 - 63 = 36   estimate (read off the drawing)
+const TK = 15;                     // cucina outer walls (thin on the drawing)         estimate
 
 // ---------- layout (derived) ----------
 const XR = ROOMS.ingresso.w;                       // inner face of the east wall (500)
@@ -40,25 +42,42 @@ const pf = (cx) => ({ from: cx - PF.w / 2, to: cx + PF.w / 2, head: PF.h });
 
 // ---------- floor ----------
 box('/Casa/Pavimento_Zona_Giorno', C.floor, -TE, YI0 - TI, -4, XR + TE, YS1 + TE, 0);
-box('/Casa/Pavimento_Cucina', C.floor, XK0 - TE, YK0 - TI, -4, -TE, YS1 + TE, 0);
 box('/Casa/Pavimento_Camera', C.floor, XC0 - TE, -TE, -4, XR + TE, YI0 - TI, 0);
 
 // ---------- exterior walls ----------
+const ENTRY = { from: YI0 + 35, to: YI0 + 35 + ENTRY_W, head: DOOR_H };
 const SOG_PF = pf(140), CAM_PF = pf(XC0 + 145), BAGNO_WIN = { from: XB0 + 30, to: XB0 + 30 + WB.w, sill: WB.sill, head: WB.sill + WB.h };
-wall('/Casa/Muro_Nord', C.wall, [XK0 - TE, YS1, XR + TE, YS1 + TE], H, [SOG_PF, BAGNO_WIN]);
+wall('/Casa/Muro_Nord', C.wall, [XK0 - TK, YS1, XR + TE, YS1 + TE], H, [SOG_PF, BAGNO_WIN]);
 wall('/Casa/Muro_Est', C.wall, [XR, -TE, XR + TE, YS1], H);
 wall('/Casa/Muro_Sud', C.wall, [XC0 - TE, -TE, XR, 0], H, [CAM_PF]);
 wall('/Casa/Muro_Ovest_Camera', C.wall, [XC0 - TE, 0, XC0, YC1], H);
-wall('/Casa/Muro_Ovest_Ingresso', C.wall, [-TE, YC1, 0, YK0 - TI], H, [{ from: YI0 + 35, to: YI0 + 35 + ENTRY_W, head: DOOR_H }]);   // front door from the common stair
+wall('/Casa/Muro_Ovest_Ingresso', C.wall, [-TE, YC1, 0, YK0 - TK], H, [ENTRY]);   // front door from the common stair
 wall('/Casa/Muro_Ingresso_Camera_Ovest', C.wall, [-TE, YC1, XC0, YI0], H);
-wall('/Casa/Muro_Ovest_Cucina', C.wall, [XK0 - TE, YK0 - TI, XK0, YS1], H);
-wall('/Casa/Muro_Sud_Cucina', C.wall, [XK0 - TE, YK0 - TI, XK1, YK0], H);
+
+// ---------- cucina: west wall, oblique wall, south wall in one polygon (inner path, then the outer path offset by TK) ----------
+const KA = [XK0, YS1 - K_SLANT.west], KB = [XK0 + K_SLANT.south, YK0];       // ends of the slant (inner face)
+const meet = (p1, d1, p2, d2) => { const t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / (d1[0] * d2[1] - d1[1] * d2[0]); return [p1[0] + t * d1[0], p1[1] + t * d1[1]]; };
+const dS = [KB[0] - KA[0], KB[1] - KA[1]], lS = Math.hypot(...dS), nS = [dS[1] / lS, -dS[0] / lS];   // outward normal of the slant (down-left)
+const oS = [KA[0] + nS[0] * TK, KA[1] + nS[1] * TK];
+const KA_out = meet(oS, dS, [XK0 - TK, 0], [0, 1]), KB_out = meet(oS, dS, [0, YK0 - TK], [1, 0]);
+const ccw = (poly) => poly.reduce((a, p, i) => { const q = poly[(i + 1) % poly.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0) > 0 ? poly : poly.slice().reverse();
+const kWall = ccw([[XK0, YS1], KA, KB, [XK1, YK0], [XK1, YK0 - TK], KB_out, KA_out, [XK0 - TK, YS1]]);
+slab('/Casa/Muro_Cucina_Obliquo', C.wall, kWall, 0, H);
+slab('/Casa/Pavimento_Cucina', C.floor, ccw([[XK0 - TK, YS1 + TE], KA_out, KB_out, [XK1, YK0 - TK], [0, YK0 - TK], [0, YS1 + TE]]), -4, 0);
 
 // ---------- partitions ----------
 wall('/Casa/Tramezzo_Ingresso_Camera', C.wall, [XC0, YC1, XR, YI0], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
-wall('/Casa/Tramezzo_Cucina_Soggiorno', C.wall, [XK1, YK0 - TI, 0, YS1], H, [{ from: YS1 - 25 - 70, to: YS1 - 25, head: DOOR_H }]);
+wall('/Casa/Tramezzo_Cucina_Soggiorno', C.wall, [XK1, YK0 - TK, 0, YS1], H, [{ from: YS1 - 25 - 70, to: YS1 - 25, head: DOOR_H }]);
 wall('/Casa/Tramezzo_Soggiorno_Bagno', C.wall, [ROOMS.soggiorno.w, YS0, XB0, YS1], H);
 wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [XB0, YI1, XR, YS0], H, [{ from: XB0 + 30, to: XB0 + 30 + 70, head: DOOR_H }]);
+
+// ---------- front door: brown leaf, open 90 degrees into the ingresso, hinged on the north jamb ----------
+const DOOR_C = [112, 72, 44, 255], DOOR_T = 5;
+defGroup('porte', 'Porta di ingresso', 'Porte');
+group('porte', () => {
+  box('/Casa/Porta_Ingresso/Anta', DOOR_C, 0, ENTRY.to - DOOR_T, 0, ENTRY_W - 4, ENTRY.to, DOOR_H - 2);
+  tube('/Casa/Porta_Ingresso/Maniglia', [200, 200, 200, 255], [[ENTRY_W - 14, ENTRY.to - DOOR_T - 1, 105], [ENTRY_W - 14, ENTRY.to - DOOR_T - 7, 105], [ENTRY_W - 26, ENTRY.to - DOOR_T - 7, 105]], [1.2, 1.2, 1.2]);
+});
 
 // ---------- glass ----------
 box('/Casa/Vetro_PF_Soggiorno', C.glass, SOG_PF.from, YS1 + 14, 0, SOG_PF.to, YS1 + 16, PF.h);
@@ -80,6 +99,6 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
 kit.write(out, {
   camera: kit.camera([1400, -900, 1900], [200, 550, 40]),
   spawn: kit.spawn([30, YI0 + 80], 0),
-  ceiling: kit.ceiling([[XC0, 0], [XR, 0], [XR, YS1], [XK0, YS1], [XK0, YK0], [0, YK0], [0, YI0], [XC0, YI0]], H, H + 2),
+  ceiling: kit.ceiling([[XC0, 0], [XR, 0], [XR, YS1], [XK0, YS1], KA, KB, [0, YK0], [0, YI0], [XC0, YI0]], H, H + 2),
 });
 console.log('wrote', path.relative(process.cwd(), out), '-', kit.items.length, 'items');
