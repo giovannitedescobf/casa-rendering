@@ -132,7 +132,7 @@ balcony('Balcone_Via_Poggi', XC0 - TE, XC0 + 210, -TE - BALC_D, -TE, -1);
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
 // built-in wardrobe on the east end wall of the ingresso (from the user's photos): full corridor width, 10 cm side frames,
 // 2 upper doors (1 panel, lock on the right one) + 2 tall lower doors (4 panels)   width/top gap measured, recessed: only 5 cm (frame + doors) stand out of the wall, split heights estimate
-{ const W = { d: 2.4, side: 10, top: H - 10, split: 225, rail: 10, c: [232, 222, 200, 255], line: [175, 165, 145, 255] };
+{ const W = { d: 2.4, side: 10, top: H - 10, split: 225, rail: 10, c: [232, 222, 200, 255], line: [218, 205, 178, 255] };
   const xf = XR - W.d, y0 = YI0, y1 = YI1, yd0 = y0 + W.side, yd1 = y1 - W.side, ym = (yd0 + yd1) / 2;
   group('armadio', () => {
     box('/Armadio/Corpo', W.c, xf, y0, 0, XR, y1, W.top);
@@ -141,10 +141,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
       const m = 7, ph = (zb - za - m * (rows + 1)) / rows;
       for (let r = 0; r < rows; r++) {
         const z0 = za + m + r * (ph + m), z1 = z0 + ph;
-        box(`/Armadio/${n}_Riquadro${r + 1}_S`, W.line, xf - 2.6, ya + m, z0, xf - 2, yb - m, z0 + 1.2);
-        box(`/Armadio/${n}_Riquadro${r + 1}_N`, W.line, xf - 2.6, ya + m, z1 - 1.2, xf - 2, yb - m, z1);
-        box(`/Armadio/${n}_Riquadro${r + 1}_O`, W.line, xf - 2.6, ya + m, z0, xf - 2, ya + m + 1.2, z1);
-        box(`/Armadio/${n}_Riquadro${r + 1}_E`, W.line, xf - 2.6, yb - m - 1.2, z0, xf - 2, yb - m, z1);
+        box(`/Armadio/${n}_Riquadro${r + 1}`, W.line, xf - 2.6, ya + m, z0, xf - 2, yb - m, z1);   // one raised panel: a single outline instead of 4 strips
       }
     };
     leaf('Anta_Bassa_Sx', yd0, ym, 0, W.split, 4);
