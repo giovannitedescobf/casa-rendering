@@ -18,6 +18,7 @@ const ROOMS = {                    // clear interior sizes
   ingresso:  { w: 500, d: 160 },   // measured
   camera:    { w: 350, d: 485 },   // measured
 };
+const PARQUET = { tile: 59.4, bandOff: 25, bandW: 5, band: [92, 52, 28, 255] };   // tile = texture repeat (6 * sqrt(2) * 7 cm); border band 25 cm from the walls, 5 cm wide   estimate
 const BALC_D = 120;                // balcony depth                                    estimate (2 balconies ~ 7 m2 as on the drawing)
 const PF = { w: 120, h: 280 };     // porte-finestre (soggiorno, camera)               measured
 const WB = { w: 40, h: 150, sill: 110 };   // bathroom window; sill                    measured w/h, sill estimate
@@ -41,7 +42,16 @@ const C = { wall: [236, 233, 228, 255], floor: [196, 186, 172, 255], balcony: [1
 const pf = (cx) => ({ from: cx - PF.w / 2, to: cx + PF.w / 2, head: PF.h });
 
 // ---------- floor ----------
-box('/Casa/Pavimento_Zona_Giorno', C.floor, -TE, YI0 - TI, -4, XR + TE, YS1 + TE, 0);
+box('/Casa/Pavimento_Ingresso', C.floor, -TE, YI0 - TI, -4, XR + TE, YS0, 0);
+box('/Casa/Pavimento_Bagno', C.floor, ROOMS.soggiorno.w, YS0, -4, XR + TE, YS1 + TE, 0);
+// soggiorno: herringbone parquet (honey oak, 7 x 42 cm boards at 45 degrees, from the user's photo) + darker border band   pattern measured on photo, sizes estimate
+slab('/Casa/Soggiorno/Parquet', [150, 95, 50, 255], [[0, YS0], [ROOMS.soggiorno.w, YS0], [ROOMS.soggiorno.w, YS1 + TE], [0, YS1 + TE]], -4, 0);
+kit.items[kit.items.length - 1].tex = { url: 'textures/parquet-spina.png', tile: kit.inch(PARQUET.tile) };
+{ const o = PARQUET.bandOff, w = PARQUET.bandW, x1 = ROOMS.soggiorno.w, z = 0.3;
+  box('/Casa/Soggiorno/Fascia_Sud', PARQUET.band, o, YS0 + o, 0, x1 - o, YS0 + o + w, z);
+  box('/Casa/Soggiorno/Fascia_Nord', PARQUET.band, o, YS1 - o - w, 0, x1 - o, YS1 - o, z);
+  box('/Casa/Soggiorno/Fascia_Ovest', PARQUET.band, o, YS0 + o + w, 0, o + w, YS1 - o - w, z);
+  box('/Casa/Soggiorno/Fascia_Est', PARQUET.band, x1 - o - w, YS0 + o + w, 0, x1 - o, YS1 - o - w, z); }
 box('/Casa/Pavimento_Camera', C.floor, XC0 - TE, -TE, -4, XR + TE, YI0 - TI, 0);
 
 // ---------- exterior walls ----------
