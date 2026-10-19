@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura'] });
 const { box, wall, slab, tube, group, defGroup } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -89,6 +89,21 @@ group('porte', () => {
   box('/Casa/Porta_Ingresso/Anta', DOOR_C, XO - (ENTRY_W - 4), ENTRY.to - DOOR_T, 0, XO, ENTRY.to, DOOR_H - 2);
   tube('/Casa/Porta_Ingresso/Maniglia', [200, 200, 200, 255], [[XO - (ENTRY_W - 14), ENTRY.to - DOOR_T - 1, 105], [XO - (ENTRY_W - 14), ENTRY.to - DOOR_T - 7, 105], [XO - (ENTRY_W - 26), ENTRY.to - DOOR_T - 7, 105]], [1.2, 1.2, 1.2]);
 });
+
+// ---------- cream paint on the walls of camera and soggiorno (bagno, cucina, ingresso stay white) ----------
+// thin skins on the room faces, in a default-on group so the Plan sheet keeps measuring the bare walls   colour estimate from photos
+{ const P = [240, 230, 208, 255], s = 0.3, KD = { from: YS1 - 25 - 70, to: YS1 - 25, head: DOOR_H };
+  defGroup('pittura', 'Pareti color panna', 'Finiture');
+  group('pittura', () => {
+    wall('/Pittura/Camera_Sud', P, [XC0, 0, XR, s], H, [CAM_PF]);
+    wall('/Pittura/Camera_Nord', P, [XC0, YC1 - s, XR, YC1], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
+    wall('/Pittura/Camera_Ovest', P, [XC0, 0, XC0 + s, YC1], H);
+    wall('/Pittura/Camera_Est', P, [XR - s, 0, XR, YC1], H);
+    wall('/Pittura/Soggiorno_Nord', P, [0, YS1 - s, ROOMS.soggiorno.w, YS1], H, [SOG_PF]);
+    wall('/Pittura/Soggiorno_Ovest', P, [0, YS0, s, YS1], H, [KD]);
+    wall('/Pittura/Soggiorno_Est', P, [ROOMS.soggiorno.w - s, YS0, ROOMS.soggiorno.w, YS1], H);
+  });
+}
 
 // ---------- glass ----------
 box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.sill, BAGNO_WIN.to, YS1 + 16, BAGNO_WIN.head);
