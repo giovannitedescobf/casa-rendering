@@ -44,15 +44,15 @@ const pf = (cx) => ({ from: cx - PF.w / 2, to: cx + PF.w / 2, head: PF.h });
 // ---------- floor ----------
 box('/Casa/Pavimento_Ingresso', C.floor, -TE, YI0 - TI, -4, XR + TE, YS0, 0);
 box('/Casa/Pavimento_Bagno', C.floor, ROOMS.soggiorno.w, YS0, -4, XR + TE, YS1 + TE, 0);
-// soggiorno: herringbone parquet (honey oak, 7 x 42 cm boards at 45 degrees, from the user's photo) + darker border band   pattern measured on photo, sizes estimate
-slab('/Casa/Soggiorno/Parquet', [150, 95, 50, 255], [[0, YS0], [ROOMS.soggiorno.w, YS0], [ROOMS.soggiorno.w, YS1 + TE], [0, YS1 + TE]], -4, 0);
+box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + TE, 0);
+// camera: herringbone parquet (honey oak, 7 x 42 cm boards at 45 degrees, from the user's photo) + darker border band   pattern measured on photo, sizes estimate
+slab('/Casa/Camera/Parquet', [150, 95, 50, 255], [[XC0 - TE, -TE], [XR + TE, -TE], [XR + TE, YI0 - TI], [XC0 - TE, YI0 - TI]], -4, 0);
 kit.items[kit.items.length - 1].tex = { url: 'textures/parquet-spina.png', tile: kit.inch(PARQUET.tile) };
-{ const o = PARQUET.bandOff, w = PARQUET.bandW, x1 = ROOMS.soggiorno.w, z = 0.3;
-  box('/Casa/Soggiorno/Fascia_Sud', PARQUET.band, o, YS0 + o, 0, x1 - o, YS0 + o + w, z);
-  box('/Casa/Soggiorno/Fascia_Nord', PARQUET.band, o, YS1 - o - w, 0, x1 - o, YS1 - o, z);
-  box('/Casa/Soggiorno/Fascia_Ovest', PARQUET.band, o, YS0 + o + w, 0, o + w, YS1 - o - w, z);
-  box('/Casa/Soggiorno/Fascia_Est', PARQUET.band, x1 - o - w, YS0 + o + w, 0, x1 - o, YS1 - o - w, z); }
-box('/Casa/Pavimento_Camera', C.floor, XC0 - TE, -TE, -4, XR + TE, YI0 - TI, 0);
+{ const o = PARQUET.bandOff, w = PARQUET.bandW, x0 = XC0, x1 = XR, y0 = 0, y1 = YC1, z = 0.3;
+  box('/Casa/Camera/Fascia_Sud', PARQUET.band, x0 + o, y0 + o, 0, x1 - o, y0 + o + w, z);
+  box('/Casa/Camera/Fascia_Nord', PARQUET.band, x0 + o, y1 - o - w, 0, x1 - o, y1 - o, z);
+  box('/Casa/Camera/Fascia_Ovest', PARQUET.band, x0 + o, y0 + o + w, 0, x0 + o + w, y1 - o - w, z);
+  box('/Casa/Camera/Fascia_Est', PARQUET.band, x1 - o - w, y0 + o + w, 0, x1 - o, y1 - o - w, z); }
 
 // ---------- exterior walls ----------
 const ENTRY = { from: YI0 + 35, to: YI0 + 35 + ENTRY_W, head: DOOR_H };
