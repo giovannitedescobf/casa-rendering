@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio'] });
 const { box, wall, slab, tube, group, defGroup } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -107,6 +107,31 @@ balcony('Balcone_Cortile', 0, 330, YS1 + TE, YS1 + TE + BALC_D, 1);
 balcony('Balcone_Via_Poggi', XC0 - TE, XC0 + 210, -TE - BALC_D, -TE, -1);
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
+// built-in wardrobe on the east end wall of the ingresso (from the user's photos): full corridor width, 10 cm side frames,
+// 2 upper doors (1 panel, lock on the right one) + 2 tall lower doors (4 panels)   width/depth/top gap measured, split heights estimate
+{ const W = { d: 25, side: 10, top: H - 10, split: 225, rail: 10, c: [232, 222, 200, 255], line: [175, 165, 145, 255] };
+  const xf = XR - W.d, y0 = YI0, y1 = YI1, yd0 = y0 + W.side, yd1 = y1 - W.side, ym = (yd0 + yd1) / 2;
+  group('armadio', () => {
+    box('/Armadio/Corpo', W.c, xf, y0, 0, XR, y1, W.top);
+    const leaf = (n, ya, yb, za, zb, rows) => {
+      box(`/Armadio/${n}`, W.c, xf - 2, ya + 0.3, za + 0.3, xf, yb - 0.3, zb - 0.3);
+      const m = 7, ph = (zb - za - m * (rows + 1)) / rows;
+      for (let r = 0; r < rows; r++) {
+        const z0 = za + m + r * (ph + m), z1 = z0 + ph;
+        box(`/Armadio/${n}_Riquadro${r + 1}_S`, W.line, xf - 2.6, ya + m, z0, xf - 2, yb - m, z0 + 1.2);
+        box(`/Armadio/${n}_Riquadro${r + 1}_N`, W.line, xf - 2.6, ya + m, z1 - 1.2, xf - 2, yb - m, z1);
+        box(`/Armadio/${n}_Riquadro${r + 1}_O`, W.line, xf - 2.6, ya + m, z0, xf - 2, ya + m + 1.2, z1);
+        box(`/Armadio/${n}_Riquadro${r + 1}_E`, W.line, xf - 2.6, yb - m - 1.2, z0, xf - 2, yb - m, z1);
+      }
+    };
+    leaf('Anta_Bassa_Sx', yd0, ym, 0, W.split, 4);
+    leaf('Anta_Bassa_Dx', ym, yd1, 0, W.split, 4);
+    leaf('Anta_Alta_Sx', yd0, ym, W.split + W.rail, W.top - W.rail, 1);
+    leaf('Anta_Alta_Dx', ym, yd1, W.split + W.rail, W.top - W.rail, 1);
+    tube('/Armadio/Serratura', [80, 60, 40, 255], [[xf - 2, ym + 6, W.split + 70], [xf - 3, ym + 6, W.split + 70]], [1, 1]);
+  });
+  defGroup('armadio', 'Armadio a muro', 'Arredi'); }
+
 kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),
