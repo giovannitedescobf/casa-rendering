@@ -97,7 +97,7 @@ box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.s
 
 // ---------- bathroom door (from the user's photo): cream leaf with 5 raised panels, hinged on the east jamb, left open into the bagno ----------
 // the viewer can't rotate boxes, so the leaf and its panels are slab polygons in a local frame (u along the leaf, v across it)   open angle, panel sizes estimate
-{ const BD = { x0: XB0 + 30, x1: XB0 + 100, ang: 65, t: 4, c: [238, 228, 204, 255], p: [230, 218, 190, 255] };
+{ const BD = { x0: XB0 + 30, x1: XB0 + 100, ang: 90, t: 4, c: [242, 234, 214, 255], p: [238, 229, 208, 255] };
   const a = BD.ang * Math.PI / 180, w = BD.x1 - BD.x0 - 2, hx = BD.x1 - 1, hy = YS0;
   const u = [-Math.cos(a), Math.sin(a)], v = [Math.sin(a), Math.cos(a)];
   const P = (pu, pv) => [hx + u[0] * pu + v[0] * pv, hy + u[1] * pu + v[1] * pv];
@@ -162,7 +162,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
 // built-in wardrobe on the east end wall of the ingresso (from the user's photos): full corridor width, 10 cm side frames,
 // 2 upper doors (1 panel, lock on the right one) + 2 tall lower doors (4 panels)   width/top gap measured, recessed: only 5 cm (frame + doors) stand out of the wall, split heights estimate
-{ const W = { d: 2.4, side: 10, top: H - 10, split: 225, rail: 10, c: [232, 222, 200, 255], line: [218, 205, 178, 255] };
+{ const W = { d: 2.4, side: 10, top: H - 10, split: 225, rail: 10, c: [242, 234, 214, 255], line: [238, 229, 208, 255] };
   const xf = XR - W.d, y0 = YI0, y1 = YI1, yd0 = y0 + W.side, yd1 = y1 - W.side, ym = (yd0 + yd1) / 2;
   group('armadio', () => {
     box('/Armadio/Corpo', W.c, xf, y0, 0, XR, y1, W.top);
