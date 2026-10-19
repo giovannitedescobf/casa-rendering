@@ -146,7 +146,18 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     bar(`Barra_Ovest_${i}`, xa, y); bar(`Barra_Est_${i}`, xb, y);
   }
 }
-balcony('Balcone_Via_Poggi', XC0 - TE, XC0 + 210, -TE - BALC_D, -TE, -1);
+// camera balcony, from the user's photos: medium-grey concrete floor, solid yellow parapet on the three open sides,
+// granite coping 10 cm wide that overhangs the yellow wall by 2 cm on both faces   heights estimate
+{ const x0 = XC0 - TE, x1 = XC0 + 210, y0 = -TE - BALC_D, y1 = -TE, B = 'Casa/Balcone_Via_Poggi';
+  const YEL = [224, 186, 124, 255], GRAN = [168, 166, 160, 255], cap = 10, ov = 2, wt = cap - 2 * ov, hp = 95, hc = 5;
+  box(`/${B}/Soletta`, [128, 128, 126, 255], x0, y0, -16, x1, y1, -2);
+  box(`/${B}/Parapetto_Fronte`, YEL, x0 + ov, y0 + ov, -2, x1 - ov, y0 + ov + wt, hp);
+  box(`/${B}/Parapetto_Ovest`, YEL, x0 + ov, y0 + ov + wt, -2, x0 + ov + wt, y1, hp);
+  box(`/${B}/Parapetto_Est`, YEL, x1 - ov - wt, y0 + ov + wt, -2, x1 - ov, y1, hp);
+  box(`/${B}/Copertina_Fronte`, GRAN, x0, y0, hp, x1, y0 + cap, hp + hc);
+  box(`/${B}/Copertina_Ovest`, GRAN, x0, y0 + cap, hp, x0 + cap, y1, hp + hc);
+  box(`/${B}/Copertina_Est`, GRAN, x1 - cap, y0 + cap, hp, x1, y1, hp + hc);
+}
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
 // built-in wardrobe on the east end wall of the ingresso (from the user's photos): full corridor width, 10 cm side frames,
