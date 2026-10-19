@@ -103,7 +103,30 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   box(`/Casa/${n}/Parapetto_Ovest`, C.rail, x0, Math.min(y0, y1), -2, x0 + 4, Math.max(y0, y1), 100);
   box(`/Casa/${n}/Parapetto_Est`, C.rail, x1 - 4, Math.min(y0, y1), -2, x1, Math.max(y0, y1), 100);
 };
-balcony('Balcone_Cortile', 0, 330, YS1 + TE, YS1 + TE + BALC_D, 1);
+// soggiorno balcony, from the user's photos: beige 30 x 30 cm tiles, stone curb, grey railing with vertical bars on the three open sides   tile size, curb, rail sizes estimate
+{ const x0 = 0, x1 = 330, y0 = YS1 + TE, y1 = y0 + BALC_D, G = [150, 154, 158, 255], CURB = [226, 214, 190, 255];
+  box('/Casa/Balcone_Cortile/Soletta', C.balcony, x0, y0, -16, x1, y1, -3);
+  slab('/Casa/Balcone_Cortile/Piastrelle', [214, 198, 172, 255], [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], -3, -2);
+  kit.items[kit.items.length - 1].tex = { url: 'textures/piastrelle-balcone.png', tile: kit.inch(60) };
+  const cb = 10, ch = 8;   // curb width / height
+  box('/Casa/Balcone_Cortile/Cordolo_Fronte', CURB, x0, y1 - cb, -2, x1, y1, ch);
+  box('/Casa/Balcone_Cortile/Cordolo_Ovest', CURB, x0, y0, -2, x0 + cb, y1 - cb, ch);
+  box('/Casa/Balcone_Cortile/Cordolo_Est', CURB, x1 - cb, y0, -2, x1, y1 - cb, ch);
+  const c = cb / 2, xa = x0 + c, xb = x1 - c, yb = y1 - c, R = 'Casa/Balcone_Cortile/Ringhiera';
+  // rails: bottom flat bar on the curb, a second rail and the handrail on top
+  for (const [k, z, h, w] of [['Base', ch, 3, 4], ['Traverso', 88, 2, 3], ['Corrimano', 100, 4, 6]]) {
+    box(`/${R}/${k}_Fronte`, G, xa - w / 2, yb - w / 2, z, xb + w / 2, yb + w / 2, z + h);
+    box(`/${R}/${k}_Ovest`, G, xa - w / 2, y0, z, xa + w / 2, yb - w / 2, z + h);
+    box(`/${R}/${k}_Est`, G, xb - w / 2, y0, z, xb + w / 2, yb - w / 2, z + h);
+  }
+  const bar = (n, x, y) => box(`/${R}/${n}`, G, x - 1, y - 1, ch + 3, x + 1, y + 1, 100);
+  const STEP = 12;
+  for (let i = 0, nx = Math.round((xb - xa) / STEP); i <= nx; i++) bar(`Barra_Fronte_${i}`, xa + i * (xb - xa) / nx, yb);
+  for (let i = 0, ny = Math.round((yb - y0) / STEP); i < ny; i++) {
+    const y = y0 + 4 + i * (yb - y0 - 4) / ny;
+    bar(`Barra_Ovest_${i}`, xa, y); bar(`Barra_Est_${i}`, xb, y);
+  }
+}
 balcony('Balcone_Via_Poggi', XC0 - TE, XC0 + 210, -TE - BALC_D, -TE, -1);
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
