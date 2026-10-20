@@ -179,7 +179,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 
 // air-conditioner outdoor unit on the camera balcony, from the user's photo: beside the door,
 // touching nothing   sizes estimate
-{ const xp = CAM_PF.from + PF.w / 2 + 120 - 8, l = 55, w = 25, h = 27, x1 = xp - 6, x0 = x1 - l, y1 = -TE - 6, y0 = y1 - w;   // east of the door (left seen from inside), long side along the facade
+{ const xp = CAM_PF.from + PF.w / 2 + 120 - 8, l = 50, w = 25, h = 27, x1 = xp - 6, x0 = x1 - l, y1 = -TE - 6, y0 = y1 - w;   // east of the door (left seen from inside), long side along the facade
   defGroup('condizionatore', 'Motore condizionatore', 'Impianti');
   group('condizionatore', () => {
     const WH = [244, 244, 240, 255], BK = [30, 30, 30, 255], cx = x0 + 20, cz = 3 + h / 2;
