@@ -393,7 +393,10 @@ function moveKey(item) {
   const parts = item.n.split('/'), leaf = parts.pop().split('_');
   return parts.join('/') + '/' + leaf[0] + '#' + (leaf.find(w => /^\d+$/.test(w)) ?? '');
 }
-const moved = new Map();                                           // moveKey -> [dx, dy] inches
+const MV_STORE = 'moved:' + location.pathname;                     // per project, in this browser only
+const moved = new Map((() => { try { return JSON.parse(localStorage.getItem(MV_STORE)) || []; } catch (e) { return []; } })());   // moveKey -> [dx, dy] inches
+const saveMoved = () => { try { localStorage.setItem(MV_STORE, JSON.stringify([...moved])); } catch (e) {} };
+let walls = [];                                                    // fixed shell (items without a group) for the move collisions: {b: [x0,y0,z0,x1,y1,z1], o?: polygon}
 let mvKey = null;                                                  // the piece selected for moving
 let colliders = [];                                               // first-person walls/furniture, rebuilt with the meshes
 function addCollider(item) {                                      // only what can block a standing person: z between ~8" and ~62"
@@ -408,6 +411,12 @@ function addCollider(item) {                                      // only what c
 }
 function build(data) {
   colliders = [];
+  walls = [];
+  for (const item of data.items) {
+    if (item.g || (item.c && item.c[3] < 255) || /Rimosso|Removed/.test(item.n)) continue;
+    if (item.box) walls.push({ b: item.box });
+    else if (item.slab) { const o = item.slab.o; walls.push({ b: [Math.min(...o.map(p => p[0])), Math.min(...o.map(p => p[1])), item.slab.z[0], Math.max(...o.map(p => p[0])), Math.max(...o.map(p => p[1])), item.slab.z[1]], o }); }
+  }
   for (const o of [...model.children]) {
     model.remove(o);
     o.traverse(n => {
@@ -1037,7 +1046,11 @@ function floorPoint(ev, z) {
 function startDrag(ev, hit) {
   const z = new THREE.Box3().setFromObject(hit).min.z, p = floorPoint(ev, z);
   if (!p) return;
-  drag = { z, p, off: [...(moved.get(mvKey) || [0, 0])], id: ev.pointerId };
+  const off = [...(moved.get(mvKey) || [0, 0])], box = new THREE.Box3();
+  for (const o of model.children) if (o.isMesh && o.userData.mv === mvKey) box.expandByObject(o);
+  drag = { z, p, off, id: ev.pointerId,
+    base: [box.min.x - off[0], box.min.y - off[1], box.min.z, box.max.x - off[0], box.max.y - off[1], box.max.z] };
+  drag.free = hitsWall(drag.base, off);                           // already inside a wall: don't lock it there
   controls.enabled = false;
   tipEl.style.display = 'none';
 }
@@ -1058,12 +1071,35 @@ renderer.domElement.addEventListener('pointermove', ev => {
   if (!drag) return;
   const q = floorPoint(ev, drag.z);
   if (!q) return;
-  const off = [drag.off[0] + q.x - drag.p.x, drag.off[1] + q.y - drag.p.y];
+  const cur = moved.get(mvKey) || [0, 0], want = [drag.off[0] + q.x - drag.p.x, drag.off[1] + q.y - drag.p.y];
+  let off = cur;                                                   // small steps, so a fast drag can't jump through a thin wall
+  const n = Math.ceil(Math.hypot(want[0] - cur[0], want[1] - cur[1]) / 2);
+  for (let i = 1; i <= n; i++) {
+    const t1 = [off[0] + (want[0] - cur[0]) / n, off[1] + (want[1] - cur[1]) / n];
+    off = [t1, [t1[0], off[1]], [off[0], t1[1]]].find(o => drag.free || !hitsWall(drag.base, o)) || off;   // slide along a wall
+  }
   moved.set(mvKey, off);
   for (const o of model.children) if (o.userData.mv === mvKey) o.position.set(off[0], off[1], 0);
   if (selected) refreshDims();
 });
-const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) { drag = null; controls.enabled = !fp; } };
+// Does the piece's footprint (its box shifted by off, shrunk 0.5" so touching is allowed) cross a wall?
+// Walls count when they overlap the piece's height above its bottom (so the floor it stands on does not).
+function hitsWall(b, off) {
+  const r = [b[0] + off[0] + 0.5, b[1] + off[1] + 0.5, b[3] + off[0] - 0.5, b[4] + off[1] - 0.5], z0 = b[2] + 1, z1 = b[5];
+  const inR = p => p[0] > r[0] && p[0] < r[2] && p[1] > r[1] && p[1] < r[3];
+  const inPoly = (o, x, y) => { let c = false; for (let i = 0, j = o.length - 1; i < o.length; j = i++) if ((o[i][1] > y) !== (o[j][1] > y) && x < (o[j][0] - o[i][0]) * (y - o[i][1]) / (o[j][1] - o[i][1]) + o[i][0]) c = !c; return c; };
+  const cross = (a, c, d, e) => { const f = (p, q, s) => (q[0] - p[0]) * (s[1] - p[1]) - (q[1] - p[1]) * (s[0] - p[0]);
+    return f(a, c, d) * f(a, c, e) < 0 && f(d, e, a) * f(d, e, c) < 0; };
+  const rc = [[r[0], r[1]], [r[2], r[1]], [r[2], r[3]], [r[0], r[3]]];
+  return walls.some(w => {
+    const k = w.b;
+    if (k[5] <= z0 || k[2] >= z1 || k[3] <= r[0] || k[0] >= r[2] || k[4] <= r[1] || k[1] >= r[3]) return false;
+    if (!w.o) return true;
+    return w.o.some(inR) || rc.some(p => inPoly(w.o, ...p)) ||
+      w.o.some((p, i) => rc.some((q, j) => cross(p, w.o[(i + 1) % w.o.length], q, rc[(j + 1) % 4])));
+  });
+}
+const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) { drag = null; controls.enabled = !fp; saveMoved(); } };
 renderer.domElement.addEventListener('pointerup', endDrag);
 renderer.domElement.addEventListener('pointercancel', endDrag);
 addEventListener('keydown', e => { if (e.key === 'Escape' && mvKey) setMv(null); });
