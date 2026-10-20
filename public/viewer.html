@@ -386,6 +386,15 @@ function normalizeRemoved(data) {                                 // items named
   if (any && !(data.groups || []).some(g => g.id === REMOVED_ID)) (data.groups = data.groups || []).push({ id: REMOVED_ID, label: t('g.removed'), cat: t('g.removedCat'), skipAll: true });
 }
 let ceilingMesh = null;                                           // white ceiling (scene.json "ceiling": {o, z}), shown only in first person; outside `model` so presets/bounds ignore it
+// The piece an item belongs to, for moving: only grouped items (furniture), keyed by its path, the first
+// word of the leaf and its first number ('/Kitchen/Stool_Leg_1_2' -> '/Kitchen/Stool#1').
+function moveKey(item) {
+  if (!item.g) return null;
+  const parts = item.n.split('/'), leaf = parts.pop().split('_');
+  return parts.join('/') + '/' + leaf[0] + '#' + (leaf.find(w => /^\d+$/.test(w)) ?? '');
+}
+const moved = new Map();                                           // moveKey -> [dx, dy] inches
+let mvKey = null;                                                  // the piece selected for moving
 let colliders = [];                                               // first-person walls/furniture, rebuilt with the meshes
 function addCollider(item) {                                      // only what can block a standing person: z between ~8" and ~62"
   const Z0 = 8, Z1 = 62;
@@ -418,8 +427,11 @@ function build(data) {
     model.add(mesh);
     addCollider(item);
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20),
-      new THREE.LineBasicMaterial({ color: 0x2a2d33 }));
+      new THREE.LineBasicMaterial({ color: mvKey && mvKey === moveKey(item) ? 0xb5532a : 0x2a2d33 }));
     model.add(edges);
+    const mk = moveKey(item), off = mk && moved.get(mk);
+    mesh.userData.mv = edges.userData.mv = mk;
+    if (off) { mesh.position.set(off[0], off[1], 0); edges.position.copy(mesh.position); }
   }
   if (ceilingMesh) { scene.remove(ceilingMesh); ceilingMesh.geometry.dispose(); ceilingMesh = null; }
   if (data.ceiling) {
@@ -1008,6 +1020,59 @@ renderer.domElement.addEventListener('pointermove', ev => {
 renderer.domElement.addEventListener('pointerleave', () => tipEl.style.display = 'none');
 let downAt = null;
 renderer.domElement.addEventListener('pointerdown', ev => downAt = [ev.clientX, ev.clientY]);
+
+// Moving furniture: a long press (500 ms) or a double click on an item that belongs to a group selects
+// its whole piece (moveKey); then dragging it slides it on the floor plane. Offsets live in memory only.
+let mvTimer = null, drag = null;
+function setMv(k) {
+  mvKey = k;
+  for (const o of model.children) if (o.isLineSegments) o.material.color.setHex(k && o.userData.mv === k ? 0xb5532a : 0x2a2d33);
+}
+function floorPoint(ev, z) {
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  return ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -z), new THREE.Vector3());
+}
+function startDrag(ev, hit) {
+  const z = new THREE.Box3().setFromObject(hit).min.z, p = floorPoint(ev, z);
+  if (!p) return;
+  drag = { z, p, off: [...(moved.get(mvKey) || [0, 0])], id: ev.pointerId };
+  controls.enabled = false;
+  tipEl.style.display = 'none';
+}
+renderer.domElement.addEventListener('pointerdown', ev => {             // capture: runs before OrbitControls
+  if (fp || ev.button > 0) return;
+  const hit = pick(ev);
+  if (mvKey && hit?.userData.mv === mvKey) { startDrag(ev, hit); return; }
+  clearTimeout(mvTimer);
+  if (hit?.userData.mv) mvTimer = setTimeout(() => { setMv(hit.userData.mv); startDrag(ev, hit); downAt = null; }, 500);
+}, { capture: true });
+renderer.domElement.addEventListener('dblclick', ev => {
+  const hit = fp ? null : pick(ev);
+  setMv(hit?.userData.mv || null);
+});
+renderer.domElement.addEventListener('contextmenu', ev => { if (mvKey || mvTimer) ev.preventDefault(); });
+renderer.domElement.addEventListener('pointermove', ev => {
+  if (downAt && Math.hypot(ev.clientX - downAt[0], ev.clientY - downAt[1]) > 6) clearTimeout(mvTimer);
+  if (!drag) return;
+  const q = floorPoint(ev, drag.z);
+  if (!q) return;
+  const off = [drag.off[0] + q.x - drag.p.x, drag.off[1] + q.y - drag.p.y];
+  moved.set(mvKey, off);
+  for (const o of model.children) if (o.userData.mv === mvKey) o.position.set(off[0], off[1], 0);
+  if (selected) refreshDims();
+});
+const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) { drag = null; controls.enabled = !fp; } };
+renderer.domElement.addEventListener('pointerup', endDrag);
+renderer.domElement.addEventListener('pointercancel', endDrag);
+addEventListener('keydown', e => { if (e.key === 'Escape' && mvKey) setMv(null); });
+window.mvState = name => {                                         // for headless tests: selection, offsets, screen point of an item
+  const o = name && model.children.find(m => m.isMesh && m.name === name), r = renderer.domElement.getBoundingClientRect();
+  const v = o && new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).project(camera);
+  return { key: mvKey, moved: Object.fromEntries(moved), at: v && [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height] };
+};
+
 renderer.domElement.addEventListener('pointerup', ev => {                 // a click, not a drag
   if (!downAt || Math.hypot(ev.clientX - downAt[0], ev.clientY - downAt[1]) > 4) return;
   if (!selDims) return;
