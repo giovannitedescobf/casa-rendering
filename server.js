@@ -61,6 +61,10 @@ const server = http.createServer((req, res) => {
       req.on('close', () => clients.get(id).delete(res));
       return;
     }
+    if (rest === '/moved.json') {                                  // furniture positions saved from the viewer; none yet = {}
+      const f = path.join(PROJECTS, id, 'moved.json');
+      return fs.existsSync(f) ? serveFile(res, f) : send(res, 200, 'application/json', '{}');
+    }
     if (rest === '/scene.json' || rest === '/project.json' || rest === '/thumb.jpg' || rest.startsWith('/textures/')) {
       const base = path.join(PROJECTS, id), f = path.normalize(path.join(base, rest));
       if (!f.startsWith(base + path.sep)) return send(res, 403, 'text/plain', 'forbidden');

@@ -37,6 +37,8 @@ for (const id of ids) {
   fs.writeFileSync(path.join(to, 'index.html'), viewer);
   fs.copyFileSync(path.join(from, 'scene.json'), path.join(to, 'scene.json'));
   if (fs.existsSync(path.join(from, 'project.json'))) fs.copyFileSync(path.join(from, 'project.json'), path.join(to, 'project.json'));   // room names for the plan sheet
+  if (fs.existsSync(path.join(from, 'moved.json'))) fs.copyFileSync(path.join(from, 'moved.json'), path.join(to, 'moved.json'));   // furniture positions saved from the viewer
+  else fs.writeFileSync(path.join(to, 'moved.json'), '{}');           // so the viewer's fetch never logs a 404
   if (fs.existsSync(path.join(from, 'textures'))) copyDir(path.join(from, 'textures'), path.join(to, 'textures'));
   if (fs.existsSync(path.join(from, 'thumb.jpg'))) fs.copyFileSync(path.join(from, 'thumb.jpg'), path.join(to, 'thumb.jpg'));   // fallback when the screenshot can't be taken
 }

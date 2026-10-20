@@ -123,6 +123,7 @@
   <button id="snap" data-i18n-title="v.png.title" title="Save the image on screen as a PNG, without buttons or labels (P)">PNG</button>
   <span id="nightctl"><button id="nightbtn" data-i18n="v.night" data-i18n-title="v.night.title" title="Night mode: turns the lights on (N)">Night</button></span>
   <span id="fpctl"><button id="fpbtn" data-i18n="v.fp" data-i18n-title="v.fp.title" title="First person: walk through the model (F)">First person</button></span>
+  <button id="mvsave" hidden data-i18n="v.mvsave" data-i18n-title="v.mvsave.title" title="Publish the moved furniture on the site, for everyone (GitHub)">Save positions</button>
   <span id="planctl"><button id="planbtn" data-i18n="v.plan" data-i18n-title="v.plan.title" title="Plan: only the walls seen from above, with the interior measures of the rooms (print, SVG, PNG)">Plan</button></span>
   </span>
 </div>
@@ -388,14 +389,64 @@ function normalizeRemoved(data) {                                 // items named
 let ceilingMesh = null;                                           // white ceiling (scene.json "ceiling": {o, z}), shown only in first person; outside `model` so presets/bounds ignore it
 // The piece an item belongs to, for moving: only grouped items (furniture), keyed by its path, the first
 // word of the leaf and its first number ('/Kitchen/Stool_Leg_1_2' -> '/Kitchen/Stool#1').
+const fixedGroups = new Set();                                     // groups declared "fixed": true (built-ins, paint) can't be moved
 function moveKey(item) {
-  if (!item.g) return null;
+  const gs = [].concat(item.g || []);
+  if (!gs.length || gs.every(g => fixedGroups.has(g))) return null;
   const parts = item.n.split('/'), leaf = parts.pop().split('_');
   return parts.join('/') + '/' + leaf[0] + '#' + (leaf.find(w => /^\d+$/.test(w)) ?? '');
 }
-const MV_STORE = 'moved:' + location.pathname;                     // per project, in this browser only
-const moved = new Map((() => { try { return JSON.parse(localStorage.getItem(MV_STORE)) || []; } catch (e) { return []; } })());   // moveKey -> [dx, dy] inches
-const saveMoved = () => { try { localStorage.setItem(MV_STORE, JSON.stringify([...moved])); } catch (e) {} };
+// Positions: moved.json next to scene.json is the shared, published state ({moveKey: [dx, dy]} inches);
+// unsaved moves are a draft in this browser (localStorage) until 'Save positions' commits moved.json to GitHub.
+const MV_STORE = 'moved:' + location.pathname;
+const moved = new Map();                                           // moveKey -> [dx, dy] inches
+let savedMoved = null;                                             // the published moved.json, as a JSON string of sorted entries
+const mvJSON = m => JSON.stringify(Object.fromEntries([...m].map(([k, v]) => [k, v.map(x => Math.round(x * 100) / 100)]).sort((a, b) => a[0] < b[0] ? -1 : 1)), null, 1);
+async function loadMoved() {
+  let file = {};
+  try { const r = await fetch('moved.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) file = await r.json(); } catch (e) {}
+  savedMoved = mvJSON(new Map(Object.entries(file)));
+  let draft = null;
+  try { draft = JSON.parse(localStorage.getItem(MV_STORE)); } catch (e) {}
+  if (draft && mvJSON(new Map(draft)) === savedMoved) { try { localStorage.removeItem(MV_STORE); } catch (e) {} draft = null; }   // published now
+  for (const [k, v] of draft || Object.entries(file)) moved.set(k, v);
+  showSave();
+}
+function saveMoved() {
+  try { localStorage.setItem(MV_STORE, JSON.stringify([...moved])); } catch (e) {}
+  showSave();
+}
+const SAVE_REPO = location.hostname.endsWith('.github.io') && [location.hostname.split('.')[0], location.pathname.split('/')[1]];   // owner, repo of a GitHub Pages site
+function showSave() {
+  const b = document.getElementById('mvsave');
+  if (b) b.hidden = !SAVE_REPO || savedMoved === null || mvJSON(moved) === savedMoved;
+}
+async function publishMoved() {
+  const [owner, repo] = SAVE_REPO, id = location.pathname.split('/').filter(Boolean).pop();
+  let tok = null;
+  try { tok = localStorage.getItem('ghToken'); } catch (e) {}
+  if (!tok) tok = prompt(t('v.mvsave.token'));
+  if (!tok) return;
+  const api = `https://api.github.com/repos/${owner}/${repo}/contents/projects/${id}/moved.json`;
+  const h = { Authorization: 'Bearer ' + tok.trim(), Accept: 'application/vnd.github+json' };
+  const btn = document.getElementById('mvsave'), body = mvJSON(moved) + '\n';
+  btn.disabled = true;
+  try {
+    const cur = await fetch(api + '?ref=main', { headers: h });
+    if (cur.status === 401) throw new Error('401');
+    const sha = cur.ok ? (await cur.json()).sha : undefined;
+    const r = await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify({ message: `${id}: furniture positions`, branch: 'main', sha,
+      content: btoa(String.fromCharCode(...new TextEncoder().encode(body))) }) });
+    if (!r.ok) throw new Error(String(r.status));
+    try { localStorage.setItem('ghToken', tok.trim()); } catch (e) {}
+    savedMoved = mvJSON(moved);
+    showSave();
+    alert(t('v.mvsave.ok'));
+  } catch (e) {
+    if (e.message === '401') try { localStorage.removeItem('ghToken'); } catch (_) {}
+    alert(t('v.mvsave.fail', { err: e.message }));
+  } finally { btn.disabled = false; }
+}
 let walls = [];                                                    // fixed shell (items without a group) for the move collisions: {b: [x0,y0,z0,x1,y1,z1], o?: polygon}
 let mvKey = null;                                                  // the piece selected for moving
 let colliders = [];                                               // first-person walls/furniture, rebuilt with the meshes
@@ -410,6 +461,8 @@ function addCollider(item) {                                      // only what c
   }
 }
 function build(data) {
+  fixedGroups.clear();
+  for (const g of data.groups || []) if (g.fixed) fixedGroups.add(g.id);
   colliders = [];
   walls = [];
   for (const item of data.items) {
@@ -466,6 +519,7 @@ function applyCamera(cam) {
 }
 
 async function load() {
+  if (savedMoved === null) await loadMoved();
   try {
     const res = await fetch('scene.json?t=' + Date.now(), { cache: 'no-store' });
     const data = await res.json();
@@ -1103,6 +1157,7 @@ const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) { drag 
 renderer.domElement.addEventListener('pointerup', endDrag);
 renderer.domElement.addEventListener('pointercancel', endDrag);
 addEventListener('keydown', e => { if (e.key === 'Escape' && mvKey) setMv(null); });
+document.getElementById('mvsave').onclick = publishMoved;
 window.mvState = name => {                                         // for headless tests: selection, offsets, screen point of an item
   const o = name && model.children.find(m => m.isMesh && m.name === name), r = renderer.domElement.getBoundingClientRect();
   const v = o && new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).project(camera);

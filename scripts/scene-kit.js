@@ -40,9 +40,9 @@ function createScene({ defaultOn = [] } = {}) {
   };
 
   // Switchable groups (all off in the viewer unless in `defaultOn`; items without a group are always drawn).
-  //   defGroup(id, label, category, [variant])  -> groups with the same `variant` are mutually exclusive
+  //   defGroup(id, label, category, [variant], [{fixed: true}])  -> groups with the same `variant` are mutually exclusive; fixed = can't be moved in the viewer
   //   group(id, () => { ...box()/tube()/slab()... })  -> everything drawn inside takes the group `id`
-  const defGroup = (id, label, cat, variant) => GROUPS.push(Object.assign({ id, label, cat }, variant ? { variant } : {}, defaultOn.includes(id) ? { on: true } : {}));
+  const defGroup = (id, label, cat, variant, opt = {}) => GROUPS.push(Object.assign({ id, label, cat }, variant ? { variant } : {}, defaultOn.includes(id) ? { on: true } : {}, opt.fixed ? { fixed: true } : {}));
   const group = (id, fn) => { const from = items.length; fn(); for (let k = from; k < items.length; k++) items[k].g = id; };
   // Night-mode light source (position in cm; the rest as in the schema: d, a, pen, c, i, r, sh, g)
   const light = d => lights.push(Object.assign({ t: 'spot' }, d, { p: d.p.map(inch) }));   // pass g: '<group id>' to tie the light to a group (no default)

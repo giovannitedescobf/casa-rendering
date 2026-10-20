@@ -83,7 +83,7 @@ wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [XB0, YI1, XR, YS0], H, [{ from: X
 
 // ---------- front door: brown leaf, open 90 degrees outward onto the common stair landing, hinged on the north jamb ----------
 const DOOR_C = [112, 72, 44, 255], DOOR_T = 5;
-defGroup('porte', 'Porta di ingresso', 'Porte');
+defGroup('porte', 'Porta di ingresso', 'Porte', null, { fixed: true });
 group('porte', () => {
   const XO = -TE;                                                       // outer face of the wall
   box('/Casa/Porta_Ingresso/Anta', DOOR_C, XO - (ENTRY_W - 4), ENTRY.to - DOOR_T, 0, XO, ENTRY.to, DOOR_H - 2);
@@ -93,7 +93,7 @@ group('porte', () => {
 // ---------- cream paint on the walls of camera and soggiorno (bagno, cucina, ingresso stay white) ----------
 // thin skins on the room faces, in a default-on group so the Plan sheet keeps measuring the bare walls   colour estimate from photos
 { const P = [240, 230, 208, 255], s = 0.3, KD = { from: YS1 - 25 - 70, to: YS1 - 25, head: DOOR_H };
-  defGroup('pittura', 'Pareti color panna', 'Finiture');
+  defGroup('pittura', 'Pareti color panna', 'Finiture', null, { fixed: true });
   group('pittura', () => {
     wall('/Pittura/Camera_Sud', P, [XC0, 0, XR, s], H, [CAM_PF]);
     wall('/Pittura/Camera_Nord', P, [XC0, YC1 - s, XR, YC1], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
@@ -120,7 +120,7 @@ box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.s
   const u = [-Math.cos(a), Math.sin(a)], v = [Math.sin(a), Math.cos(a)];
   const P = (pu, pv) => [hx + u[0] * pu + v[0] * pv, hy + u[1] * pu + v[1] * pv];
   const quad = (u0, u1, v0, v1) => ccw([P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)]);
-  defGroup('porta-bagno', 'Porta del bagno', 'Porte');
+  defGroup('porta-bagno', 'Porta del bagno', 'Porte', null, { fixed: true });
   group('porta-bagno', () => {
     slab('/Casa/Porta_Bagno/Anta', BD.c, quad(0, w, 0, BD.t), 0, DOOR_H - 1);
     const m = 9, zs = [15, 50, 85, 120, 155, DOOR_H - 11];   // bottom rail 15, 7 cm rails, top rail 11
@@ -203,7 +203,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     box('/Armadio/Cornice_Alta', MC, xf - 3, y0, W.top, xf, y1, W.top + mw);
     tube('/Armadio/Serratura', [80, 60, 40, 255], [[xf - 2, ym + 6, W.split + 70], [xf - 3, ym + 6, W.split + 70]], [1, 1]);
   });
-  defGroup('armadio', 'Armadio a muro', 'Arredi'); }
+  defGroup('armadio', 'Armadio a muro', 'Arredi', null, { fixed: true }); }
 
 kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
