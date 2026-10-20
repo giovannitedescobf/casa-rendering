@@ -3,8 +3,8 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura'] });
-const { box, wall, slab, tube, group, defGroup } = kit;
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore'] });
+const { box, wall, slab, tube, rbox, group, defGroup } = kit;
 
 // ---------- dimensions (cm) ----------
 const H = 330;                     // ceiling height                                   measured
@@ -175,6 +175,18 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   box(`/${B}/Copertina_Fronte`, GRAN, x0, y0, hp, x1, y0 + cap, hp + hc);
   box(`/${B}/Copertina_Ovest`, GRAN, x0, y0 + cap, hp, x0 + cap, y1, hp + hc);
   box(`/${B}/Copertina_Est`, GRAN, x1 - cap, y0 + cap, hp, x1, y1, hp + hc);
+}
+
+// air-conditioner outdoor unit on the camera balcony, from the user's photo: west side, long side along the west parapet,
+// starting near the facade, touching nothing   width = 1/4 of the parapet-to-door stretch, length < half the depth, all estimate
+{ const xp = XC0 - TE + 8, xd = CAM_PF.from, w = (xd - xp) / 4, l = 55, h = 50, gap = 8, x0 = xp + gap, y1 = -TE - 6, y0 = y1 - l;
+  defGroup('condizionatore', 'Motore condizionatore', 'Impianti');
+  group('condizionatore', () => {
+    rbox('/Condizionatore/Motore_Corpo', [226, 222, 208, 255], [x0, y0, 3, x0 + w, y1, h], 2, 3);
+    box('/Condizionatore/Motore_Piede_Nord', [90, 90, 90, 255], x0 + 2, y1 - 8, 0, x0 + w - 2, y1 - 4, 3);
+    box('/Condizionatore/Motore_Piede_Sud', [90, 90, 90, 255], x0 + 2, y0 + 4, 0, x0 + w - 2, y0 + 8, 3);
+    box('/Condizionatore/Motore_Griglia', [70, 72, 74, 255], x0 + w, y0 + 8, 10, x0 + w + 0.5, y0 + 36, h - 8);
+  });
 }
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
