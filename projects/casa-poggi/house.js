@@ -166,7 +166,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 }
 // camera balcony, from the user's photos: medium-grey concrete floor, solid yellow parapet on the three open sides,
 // granite coping 10 cm wide that overhangs the yellow wall by 2 cm on both faces   heights estimate
-{ const x0 = XC0 - TE, x1 = XC0 + 210, y0 = -TE - BALC_D, y1 = -TE, B = 'Casa/Balcone_Via_Poggi';
+{ const x0 = CAM_PF.from + PF.w / 2 - 120, x1 = x0 + 240, y0 = -TE - BALC_D, y1 = -TE, B = 'Casa/Balcone_Via_Poggi';
   const YEL = [224, 186, 124, 255], GRAN = [168, 166, 160, 255], cap = 10, ov = 2, wt = cap - 2 * ov, hp = 95, hc = 5;
   box(`/${B}/Soletta`, [128, 128, 126, 255], x0, y0, -16, x1, y1, -2);
   box(`/${B}/Parapetto_Fronte`, YEL, x0 + ov, y0 + ov, -2, x1 - ov, y0 + ov + wt, hp);
@@ -177,15 +177,15 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   box(`/${B}/Copertina_Est`, GRAN, x1 - cap, y0 + cap, hp, x1, y1, hp + hc);
 }
 
-// air-conditioner outdoor unit on the camera balcony, from the user's photo: west side, long side along the west parapet,
-// starting near the facade, touching nothing   width = 1/4 of the parapet-to-door stretch, length < half the depth, all estimate
-{ const xp = XC0 - TE + 8, xd = CAM_PF.from, w = (xd - xp) / 4, l = 55, h = 50, gap = 8, x0 = xp + gap, y1 = -TE - 6, y0 = y1 - l;
+// air-conditioner outdoor unit on the camera balcony, from the user's photo: beside the door,
+// touching nothing   sizes estimate
+{ const xp = CAM_PF.from + PF.w / 2 + 120 - 8, l = 55, w = 25, h = 50, x1 = xp - 6, x0 = x1 - l, y1 = -TE - 6, y0 = y1 - w;   // east of the door (left seen from inside), long side along the facade
   defGroup('condizionatore', 'Motore condizionatore', 'Impianti');
   group('condizionatore', () => {
     rbox('/Condizionatore/Motore_Corpo', [226, 222, 208, 255], [x0, y0, 3, x0 + w, y1, h], 2, 3);
-    box('/Condizionatore/Motore_Piede_Nord', [90, 90, 90, 255], x0 + 2, y1 - 8, 0, x0 + w - 2, y1 - 4, 3);
-    box('/Condizionatore/Motore_Piede_Sud', [90, 90, 90, 255], x0 + 2, y0 + 4, 0, x0 + w - 2, y0 + 8, 3);
-    box('/Condizionatore/Motore_Griglia', [70, 72, 74, 255], x0 + w, y0 + 8, 10, x0 + w + 0.5, y0 + 36, h - 8);
+    box('/Condizionatore/Motore_Piede_Ovest', [90, 90, 90, 255], x0 + 4, y0 + 2, 0, x0 + 8, y1 - 2, 3);
+    box('/Condizionatore/Motore_Piede_Est', [90, 90, 90, 255], x1 - 8, y0 + 2, 0, x1 - 4, y1 - 2, 3);
+    box('/Condizionatore/Motore_Griglia', [70, 72, 74, 255], x0 + 8, y0 - 0.5, 10, x0 + 36, y0, h - 8);
   });
 }
 
