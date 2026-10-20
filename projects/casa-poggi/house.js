@@ -179,13 +179,16 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 
 // air-conditioner outdoor unit on the camera balcony, from the user's photo: beside the door,
 // touching nothing   sizes estimate
-{ const xp = CAM_PF.from + PF.w / 2 + 120 - 8, l = 55, w = 25, h = 50, x1 = xp - 6, x0 = x1 - l, y1 = -TE - 6, y0 = y1 - w;   // east of the door (left seen from inside), long side along the facade
+{ const xp = CAM_PF.from + PF.w / 2 + 120 - 8, l = 55, w = 25, h = 27, x1 = xp - 6, x0 = x1 - l, y1 = -TE - 6, y0 = y1 - w;   // east of the door (left seen from inside), long side along the facade
   defGroup('condizionatore', 'Motore condizionatore', 'Impianti');
   group('condizionatore', () => {
-    rbox('/Condizionatore/Motore_Corpo', [226, 222, 208, 255], [x0, y0, 3, x0 + w, y1, h], 2, 3);
+    const WH = [244, 244, 240, 255], BK = [30, 30, 30, 255], cx = x0 + 20, cz = 3 + h / 2;
+    box('/Condizionatore/Motore_Corpo', WH, x0, y0, 3, x1, y1, 3 + h);
     box('/Condizionatore/Motore_Piede_Ovest', [90, 90, 90, 255], x0 + 4, y0 + 2, 0, x0 + 8, y1 - 2, 3);
     box('/Condizionatore/Motore_Piede_Est', [90, 90, 90, 255], x1 - 8, y0 + 2, 0, x1 - 4, y1 - 2, 3);
-    box('/Condizionatore/Motore_Griglia', [70, 72, 74, 255], x0 + 8, y0 - 0.5, 10, x0 + 36, y0, h - 8);
+    tube('/Condizionatore/Motore_Ventola', [60, 62, 64, 255], [[cx, y0 + 0.2, cz], [cx, y0 - 0.5, cz]], [11, 11], 24);   // fan grille on the front
+    tube('/Condizionatore/Motore_Mozzo', WH, [[cx, y0 - 0.5, cz], [cx, y0 - 1, cz]], [3, 3], 16);
+    tube('/Condizionatore/Motore_Tubo', BK, [[x1 - 8, y1, cz], [x1 - 8, -TE + 1, cz], [x1 - 8, -TE + 1, cz + 25]], [1.5, 1.5, 1.5], 12);   // black pipe behind, into the facade
   });
 }
 
