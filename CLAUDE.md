@@ -33,6 +33,7 @@ Tell the user in one short line when you add something ("Added to CLAUDE.md: ...
 - Never save a `.skp` unless asked (see "Saves are limited" in `docs/sketchup.md`).
 - Tracked files are public-facing: no personal data (addresses, emails, phone numbers) and no hosting-provider names; deployment notes live in the untracked, git-ignored `CLAUDE.local.md`.
 - **Alternative versions (user rule, important)**: when the user says they want an alternative version, first ask whether to duplicate the current base version, then copy only the base project (`projects/casa-poggi/`, "_Versione Base") to a new folder with its own id and title; never duplicate a project that already holds version-specific changes. The base keeps the changes and objects common to every version.
+- **MANDATORY (user rules, never skip)**: (1) every object added is movable as one piece (non-`fixed` group, leaf names with one first word and no digits, also for walls that belong to it); (2) an object added to an alternative version is also added to the base, hidden (group not in the base's `defaultOn`). Details in the `add-furniture` skill.
 - Commit and push only when asked (the `check-and-publish` skill describes the flow); never rewrite history without an explicit request and a backup.
 
 ## Layout

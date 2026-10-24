@@ -4,7 +4,7 @@
   "generator": "house.js",
   "rooms": [
     {
-      "name": "Soggiorno + Ingresso",
+      "name": "Soggiorno + Cucina + Ingresso",
       "at": [
         180,
         900
@@ -22,13 +22,6 @@
       "at": [
         320,
         240
-      ]
-    },
-    {
-      "name": "Cucina",
-      "at": [
-        -100,
-        1000
       ]
     }
   ]

@@ -7,6 +7,10 @@ description: Use when the user wants to add a piece of furniture, an appliance, 
 
 Everything the user can switch on and off in the viewer's **Groups** panel is a group. Furniture and variants always live in groups; the fixed shell (walls, floor) never does. Reply in the user's language; repo files stay English except the user's project data.
 
+## MANDATORY RULES (user, imperative, never skip)
+1. **Every object you add is movable as one piece**: put it in a group that is NOT `fixed`, and give all its leaf names the same first word with no digits (letters instead: `Part_a`, `Part_b`), so the viewer's move key is one per object. This includes things built like walls (a header wall above a door belongs to the door's group); verify with `mvState` after a double click that the whole object has one key.
+2. **An object added to an alternative version is also added to the base version** (`projects/casa-poggi/`), with the same code, but hidden there: its group is left out of the base's `defaultOn`, so it is off until ticked in Groups.
+
 ## 1. Understand what to add
 Ask only what is missing, one question at a time:
 - which project and which room (and where in it: against which wall, how far from a corner);
