@@ -196,25 +196,30 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   });
 }
 
-// Mogg Costantina Opal floor lamp (Nava + Arosio): totem of mouth-blown opal glass spheres on a thin polished chrome frame,
-// round chrome base   overall Ø 40, H 178 (retailer datasheets); sphere sizes and order estimate (from photos)
+// Mogg Costantina Opal floor lamp (Nava + Arosio): a totem of 7 opal glass elements (cylinders, cones, double cones)
+// on a polished chrome disc base   overall Ø 40 (base), H 178 (retailer datasheets); element profiles traced from the
+// user's product photo (scaled on the 40 cm base disc), so their sizes are estimate
 // placed in the soggiorno corner on the left when entering (west wall / ingresso side); the user moves it
-{ const cx = 25, cy = YS0 + 25, OP = [246, 244, 238, 255], CR = [205, 208, 212, 255];
+{ const cx = 25, cy = YS0 + 25, OP = [246, 244, 238, 255], CR = [205, 208, 212, 255], k = 178 / 625, zp = y => (770 - y) * k;
+  const EL = [   // [photo y px, half width px], top to bottom
+    [[145, 31], [180, 31], [232, 13]],
+    [[235, 13], [280, 32], [332, 13]],
+    [[335, 13], [365, 30], [425, 30]],
+    [[427, 14], [458, 41], [490, 14]],
+    [[492, 30], [540, 30], [580, 13]],
+    [[582, 13], [610, 40], [640, 13]],
+    [[642, 13], [680, 34], [748, 12]],
+  ];
   defGroup('lampada-terra', 'Lampada da terra Costantina Opal (Mogg)', 'Luci');
   group('lampada-terra', () => {
-    tube('/Lampada/Lampada_Base', CR, [[cx, cy, 0], [cx, cy, 1.5]], [15, 15], 28);
-    const sph = [[40, 0, 0], [28, 6, -4], [34, -4, 5], [24, 3, 2], [30, -2, -3]];   // [diameter, dx, dy]
-    let z = 1.5 + (178 - 1.5 - sph.reduce((a, s) => a + s[0], 0));   // the stack ends at 178
-    const rod = [[cx, cy, 1.5], [cx, cy, z]];
-    sph.forEach(([d, dx, dy], i) => {
-      const r = d / 2, x = cx + dx, y = cy + dy, p = [], rr = [];
-      for (let k = 0; k <= 10; k++) { const a = Math.PI * k / 10; p.push([x, y, z + r - r * Math.cos(a)]); rr.push(Math.max(0.3, r * Math.sin(a))); }
-      tube(`/Lampada/Lampada_Sfera_${i + 1}`, OP, p, rr, 24);
-      z += d;
+    tube('/Lampada/Lampada_Base', CR, [[cx, cy, 0], [cx, cy, 1.5]], [20, 20], 32);
+    tube('/Lampada/Lampada_Attacco', CR, [[cx, cy, 1.5], [cx, cy, zp(748) + 0.5]], [3, 3], 16);
+    EL.forEach((pr, i) => {
+      const p = pr.slice().reverse().map(([y]) => [cx, cy, zp(y)]), r = pr.slice().reverse().map(([, w]) => w * k);
+      tube(`/Lampada/Lampada_Vetro_${i + 1}`, OP, p, r, 28);
     });
-    tube('/Lampada/Lampada_Stelo', CR, rod, [0.8, 0.8], 10);
   });
-  kit.items.filter(i => i.n.startsWith('/Lampada/Lampada_Sfera')).forEach(i => { i.em = 1; });
+  kit.items.filter(i => i.n.startsWith('/Lampada/Lampada_Vetro')).forEach(i => { i.em = 1; });
   light({ p: [cx, cy, 120], a: 85, pen: 1, c: [255, 236, 210], i: 60, r: 600, g: 'lampada-terra' });
 }
 
