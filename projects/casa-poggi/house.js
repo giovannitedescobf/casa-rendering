@@ -36,7 +36,8 @@ const YI0 = YC1 + TI, YI1 = YI0 + ROOMS.ingresso.d;   // ingresso 495..655
 const YS0 = YI1 + TI, YS1 = YS0 + ROOMS.soggiorno.d;  // soggiorno / bagno 665..1105
 const XC0 = XR - ROOMS.camera.w;                   // camera west face (150)
 const XB0 = ROOMS.soggiorno.w + TB;                // bagno west face (371)
-const XK1 = -TI, XK0 = XK1 - ROOMS.cucina.w;       // cucina -109..-10
+const KP = { w: 50, d: 35 };                       // pier left of the old cucina doorway, against the cortile wall (kept: can't be removed)   measured on the drawing
+const XK1 = -KP.w, XK0 = XK1 - ROOMS.cucina.w;     // cucina -149..-50 (the 99 cm run ends at the pier)
 const YK0 = YS1 - ROOMS.cucina.d;                  // cucina south face (920)
 
 const C = { wall: [236, 233, 228, 255], floor: [196, 186, 172, 255], balcony: [170, 168, 164, 255],
@@ -73,13 +74,14 @@ const dS = [KB[0] - KA[0], KB[1] - KA[1]], lS = Math.hypot(...dS), nS = [dS[1] /
 const oS = [KA[0] + nS[0] * TK, KA[1] + nS[1] * TK];
 const KA_out = meet(oS, dS, [XK0 - TK, 0], [0, 1]), KB_out = meet(oS, dS, [0, YK0 - TK], [1, 0]);
 const ccw = (poly) => poly.reduce((a, p, i) => { const q = poly[(i + 1) % poly.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0) > 0 ? poly : poly.slice().reverse();
-const kWall = ccw([[XK0, YS1], KA, KB, [XK1, YK0], [XK1, YK0 - TK], KB_out, KA_out, [XK0 - TK, YS1]]);
+const kWall = ccw([[XK0, YS1], KA, KB, [-TS, YK0], [-TS, YK0 - TK], KB_out, KA_out, [XK0 - TK, YS1]]);
 slab('/Casa/Muro_Cucina_Obliquo', C.wall, kWall, 0, H);
-slab('/Casa/Pavimento_Cucina', C.floor, ccw([[XK0 - TK, YS1 + TE], KA_out, KB_out, [XK1, YK0 - TK], [0, YK0 - TK], [0, YS1 + TE]]), -4, 0);
+slab('/Casa/Pavimento_Cucina', C.floor, ccw([[XK0 - TK, YS1 + TE], KA_out, KB_out, [-TS, YK0 - TK], [0, YK0 - TK], [0, YS1 + TE]]), -4, 0);
 
 // ---------- partitions ----------
 wall('/Casa/Tramezzo_Ingresso_Camera', C.wall, [XC0, YC1, XR, YI0], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
-// the cucina / soggiorno partition is removed on request: open plan (no wall, no door)
+// the cucina / soggiorno partition is removed on request: open plan (no wall, no door); only the pier at the cortile wall stays
+box('/Casa/Pilastro_Cucina', C.wall, XK1, YS1 - KP.d, 0, 0, YS1, H);
 wall('/Casa/Tramezzo_Soggiorno_Bagno', C.wall, [ROOMS.soggiorno.w, YS0, XB0, YS1], H);
 wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [XB0, YI1, XR, YS0], H, [{ from: XB0 + 30, to: XB0 + 30 + 70, head: DOOR_H }]);
 
