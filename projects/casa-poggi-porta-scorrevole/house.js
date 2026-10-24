@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria', 'porta-cucina'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -296,6 +296,35 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     tube('/Libreria/Libreria_Legno_Candeliere', WOOD[1], [[x0 + 92, yc2, z(5)], [x0 + 92, yc2, z(5) + 1.5], [x0 + 92, yc2, z(5) + 18]], [3.5, 1.6, 1.4], 14);
   });
   kit.items.filter(i => /Libreria_Legno_(Vaso|Ciotola|Sfera|Candeliere)/.test(i.n)).forEach(i => { i.ne = 1; });
+}
+
+// VERSION: bifold glass door between soggiorno and cucina (from the user's photo), on the line where the old partition ended
+// (x = XK1, the end of the recess), from the cucina south wall to the pier; 250 cm high under an 80 cm wall up to the ceiling
+// two halves, each = 2 leaves hinged at its jamb, meeting in the middle; drawn half open, folded towards the soggiorno
+// door height user; leaf frame sizes, transom heights (from the photo) and the opening angle estimate
+{ const DH = 250, y0 = YK0, y1 = YS1 - KP.d, x = XK1, GR = [62, 64, 67, 255], GL = [205, 218, 222, 60];
+  const L = (y1 - y0) / 4, th = 35 * Math.PI / 180, fw = 4, ft = 1.5;   // leaf width, half fold angle, frame width, half thickness
+  box('/Casa/Architrave_Cucina', C.wall, x - 5, y0, DH, x + 5, y1, H);   // wall from the door head to the ceiling
+  defGroup('porta-cucina', 'Porta a soffietto cucina (vetro, grigio scuro)', 'Porte', null, { fixed: true });
+  group('porta-cucina', () => {
+    const leaf = (n, A, B) => {                      // one leaf from hinge line A to hinge line B (plan points)
+      const d = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], nr = [-d[1], d[0]];
+      const P = (u, v) => [A[0] + d[0] * u + nr[0] * v, A[1] + d[1] * u + nr[1] * v];
+      const part = (m, c, u0, u1, z0, z1, v) => slab(`/Porta_Cucina/${n}_${m}`, c, ccw([P(u0, -v), P(u1, -v), P(u1, v), P(u0, v)]), z0, z1);
+      part('Montante_A', GR, 0, fw, 0, DH, ft);
+      part('Montante_B', GR, L - fw, L, 0, DH, ft);
+      part('Traverso_Basso', GR, fw, L - fw, 0, 8, ft);
+      part('Traverso_Alto', GR, fw, L - fw, DH - fw, DH, ft);
+      [0.25, 0.5, 0.75].forEach((f, i) => part(`Traverso_${'abc'[i]}`, GR, fw, L - fw, DH * f - 1, DH * f + 1, ft));
+      part('Vetro', GL, fw, L - fw, 8, DH - fw, 0.4);
+    };
+    const c = Math.cos(th) * L, s2 = Math.sin(th) * L;
+    leaf('Anta_Sud_a', [x, y0], [x + s2, y0 + c]);            // south half: hinge on the cucina south wall
+    leaf('Anta_Sud_b', [x + s2, y0 + c], [x, y0 + 2 * c]);
+    leaf('Anta_Nord_a', [x, y1], [x + s2, y1 - c]);           // north half: hinge on the pier
+    leaf('Anta_Nord_b', [x + s2, y1 - c], [x, y1 - 2 * c]);
+  });
+  kit.items.filter(i => i.n.endsWith('_Vetro')).forEach(i => { i.ne = 1; });
 }
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
