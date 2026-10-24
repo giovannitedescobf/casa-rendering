@@ -216,7 +216,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     tube('/Lampada/Lampada_Attacco', CR, [[cx, cy, 1.5], [cx, cy, zp(748) + 0.5]], [3, 3], 16);
     EL.forEach((pr, i) => {
       const p = pr.slice().reverse().map(([y]) => [cx, cy, zp(y)]), r = pr.slice().reverse().map(([, w]) => w * k);
-      tube(`/Lampada/Lampada_Vetro_${i + 1}`, OP, p, r, 28);
+      tube(`/Lampada/Lampada_Vetro_${String.fromCharCode(97 + i)}`, OP, p, r, 28);
     });
   });
   kit.items.filter(i => i.n.startsWith('/Lampada/Lampada_Vetro')).forEach(i => { i.em = 1; i.ne = 1; });   // glowing glass, no outlines between the elements

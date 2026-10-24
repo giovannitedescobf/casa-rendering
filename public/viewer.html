@@ -123,6 +123,7 @@
   <button id="snap" data-i18n-title="v.png.title" title="Save the image on screen as a PNG, without buttons or labels (P)">PNG</button>
   <span id="nightctl"><button id="nightbtn" data-i18n="v.night" data-i18n-title="v.night.title" title="Night mode: turns the lights on (N)">Night</button></span>
   <span id="fpctl"><button id="fpbtn" data-i18n="v.fp" data-i18n-title="v.fp.title" title="First person: walk through the model (F)">First person</button></span>
+  <button id="mvundo" hidden data-i18n="v.mvundo" data-i18n-title="v.mvundo.title" title="Undo the last move (Ctrl+Z)">Undo</button>
   <button id="mvsave" hidden data-i18n="v.mvsave" data-i18n-title="v.mvsave.title" title="Publish the moved furniture on the site, for everyone (GitHub)">Save positions</button>
   <span id="planctl"><button id="planbtn" data-i18n="v.plan" data-i18n-title="v.plan.title" title="Plan: only the walls seen from above, with the interior measures of the rooms (print, SVG, PNG)">Plan</button></span>
   </span>
@@ -415,14 +416,29 @@ async function loadMoved() {
   for (const [k, v] of draft || Object.entries(file)) moved.set(k, v);
   showSave();
 }
+// undo history of the moves: [{k, prev}] (prev = the offset before the drag, null = never moved), kept with the draft
+const MV_UNDO = 'mvundo:' + location.pathname;
+let mvUndo = [];
+try { mvUndo = JSON.parse(localStorage.getItem(MV_UNDO)) || []; } catch (e) {}
 function saveMoved() {
-  try { localStorage.setItem(MV_STORE, JSON.stringify([...moved])); } catch (e) {}
+  try { localStorage.setItem(MV_STORE, JSON.stringify([...moved])); localStorage.setItem(MV_UNDO, JSON.stringify(mvUndo.slice(-50))); } catch (e) {}
   showSave();
+}
+function undoMove() {
+  const u = mvUndo.pop();
+  if (!u) return;
+  if (u.prev) moved.set(u.k, u.prev); else moved.delete(u.k);
+  const off = u.prev || [0, 0];
+  for (const o of model.children) if (o.userData.mv === u.k) o.position.set(off[0], off[1], 0);
+  if (selected) refreshDims();
+  saveMoved();
 }
 const SAVE_REPO = location.hostname.endsWith('.github.io') && [location.hostname.split('.')[0], location.pathname.split('/')[1]];   // owner, repo of a GitHub Pages site
 function showSave() {
   const b = document.getElementById('mvsave');
   if (b) b.hidden = !SAVE_REPO || savedMoved === null || mvJSON(moved) === savedMoved;
+  const u = document.getElementById('mvundo');
+  if (u) u.hidden = !mvUndo.length;
 }
 async function publishMoved() {
   const [owner, repo] = SAVE_REPO, id = location.pathname.split('/').filter(Boolean).pop();
@@ -1107,7 +1123,7 @@ function startDrag(ev, hit) {
   if (!p) return;
   const off = [...(moved.get(mvKey) || [0, 0])], box = new THREE.Box3();
   for (const o of model.children) if (o.isMesh && o.userData.mv === mvKey) box.expandByObject(o);
-  drag = { z, p, off, id: ev.pointerId,
+  drag = { z, p, off, id: ev.pointerId, k: mvKey, prev: moved.has(mvKey) ? [...moved.get(mvKey)] : null,
     base: [box.min.x - off[0], box.min.y - off[1], box.min.z, box.max.x - off[0], box.max.y - off[1], box.max.z] };
   drag.free = hitsWall(drag.base, off);                           // already inside a wall: don't lock it there
   controls.enabled = false;
@@ -1158,11 +1174,16 @@ function hitsWall(b, off) {
       w.o.some((p, i) => rc.some((q, j) => cross(p, w.o[(i + 1) % w.o.length], q, rc[(j + 1) % 4])));
   });
 }
-const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) { drag = null; controls.enabled = !fp; saveMoved(); } };
+const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) {
+  const now = moved.get(drag.k) || [0, 0], was = drag.prev || [0, 0];
+  if (Math.hypot(now[0] - was[0], now[1] - was[1]) > 0.01) mvUndo.push({ k: drag.k, prev: drag.prev });
+  drag = null; controls.enabled = !fp; saveMoved(); } };
 renderer.domElement.addEventListener('pointerup', endDrag);
 renderer.domElement.addEventListener('pointercancel', endDrag);
 addEventListener('keydown', e => { if (e.key === 'Escape' && mvKey) setMv(null); });
 document.getElementById('mvsave').onclick = publishMoved;
+document.getElementById('mvundo').onclick = undoMove;
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && mvUndo.length && !drag) { e.preventDefault(); undoMove(); } });
 window.mvState = name => {                                         // for headless tests: selection, offsets, screen point of an item
   const o = name && model.children.find(m => m.isMesh && m.name === name), r = renderer.domElement.getBoundingClientRect();
   const v = o && new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).project(camera);
