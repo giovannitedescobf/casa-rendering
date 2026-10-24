@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -200,7 +200,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // on a polished chrome disc base   overall Ø 40 (base), H 178 (retailer datasheets); element profiles traced from the
 // user's product photo (scaled on the 40 cm base disc), so their sizes are estimate
 // placed in the soggiorno corner on the left when entering (west wall / ingresso side); the user moves it
-{ const cx = 25, cy = YS0 + 25, OP = [246, 244, 238, 255], CR = [205, 208, 212, 255], k = 178 / 625, zp = y => (770 - y) * k;
+{ const cx = 25, cy = YS0 + 50, OP = [246, 244, 238, 255], CR = [205, 208, 212, 255], k = 178 / 625, zp = y => (770 - y) * k;
   const EL = [   // [photo y px, half width px], top to bottom
     [[145, 31], [180, 31], [232, 13]],
     [[235, 13], [280, 32], [332, 13]],
@@ -247,6 +247,55 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     tube('/Gatto/Gatto_Coda', BK, [[x + 1, y, bz + 3], [x - 7, y, bz + 6], [x - 11, y, bz + 16], [x - 10, y + 2, bz + 28], [x - 6, y + 3, bz + 34]], [3, 2.6, 2.4, 2.2, 1.2], 12);
   });
   kit.items.filter(i => i.n.startsWith('/Gatto/')).forEach(i => { i.ne = 1; });   // fur: no outlines
+}
+
+// open steel bookcase (from the user's photo): 3 floor-to-ceiling black flat-bar frames, staggered black steel shelves,
+// books upright and in stacks, a few wooden objects; on the open line between soggiorno and ingresso, against the west wall
+// 100 x 30 x 330 cm   user; shelf heights and lengths, books and objects estimate (from the photo)
+// leaf names carry no digits so the whole bookcase moves as one piece
+{ const x0 = 2, x1 = x0 + 100, yc = (YI1 + YS0) / 2, y0 = yc - 15, y1 = yc + 15, BL = [34, 33, 32, 255], b = 2;
+  const L = i => String.fromCharCode(97 + Math.floor(i / 26)) + String.fromCharCode(97 + i % 26);   // aa, ab, ... (no digits)
+  const WOOD = [[150, 108, 70, 255], [176, 132, 88, 255], [120, 84, 52, 255]];
+  const BOOK = [[176, 52, 44, 255], [40, 64, 96, 255], [220, 210, 186, 255], [70, 96, 72, 255], [196, 150, 60, 255], [60, 58, 60, 255], [232, 228, 220, 255], [140, 80, 60, 255]];
+  defGroup('libreria', 'Libreria in ferro nero (100 x 30 x 330)', 'Arredi');
+  group('libreria', () => {
+    let k = 0;
+    for (const [n, xf] of [['Ovest', x0], ['Centro', (x0 + x1) / 2 - b / 2], ['Est', x1 - b]]) {   // frames: 2 posts + top and bottom bar
+      box(`/Libreria/Libreria_Telaio_${n}_PostoA`, BL, xf, y0, 0, xf + b, y0 + b, H);
+      box(`/Libreria/Libreria_Telaio_${n}_PostoB`, BL, xf, y1 - b, 0, xf + b, y1, H);
+      box(`/Libreria/Libreria_Telaio_${n}_Base`, BL, xf, y0, 0, xf + b, y1, b);
+      box(`/Libreria/Libreria_Telaio_${n}_Testa`, BL, xf, y0, H - b, xf + b, y1, H);
+    }
+    const SH = [[18, x0, x1], [55, x0, x0 + 52], [120, x0 + 48, x1], [175, x0, x1], [230, x0, x0 + 55], [280, x0 + 45, x1]];   // [z, from, to]
+    SH.forEach(([z, a, e], i) => box(`/Libreria/Libreria_Ripiano_${L(i)}`, BL, a, y0 + 1, z, e, y1 - 1, z + 1.5));
+    const book = (bx, w, h, d, c, lay) => {   // upright (lay false) or lying flat
+      const z = book.z, yb = y0 + (30 - d) / 2;
+      if (lay) box(`/Libreria/Libreria_Libro_${L(k++)}`, c, bx, yb, z, bx + h, yb + d, z + w);
+      else box(`/Libreria/Libreria_Libro_${L(k++)}`, c, bx, yb, z, bx + w, yb + d, z + h);
+    };
+    const row = (z, from, list) => { book.z = z; let x = from; for (const [w, h, d] of list) { book(x, w, h, d, BOOK[k % BOOK.length], false); x += w + 0.2; } };
+    const stack = (z, x, list) => { let zz = z; for (const [w, h, d] of list) { book.z = zz; book(x, w, h, d, BOOK[(k + 3) % BOOK.length], true); zz += w + 0.1; } };
+    const z = i => SH[i][0] + 1.5;
+    row(z(0), x0 + 6, [[3, 28, 21], [4, 30, 22], [2.5, 26, 19], [3.5, 31, 23], [3, 29, 21], [5, 32, 24], [2.5, 27, 20]]);
+    stack(z(0), x0 + 62, [[4, 30, 23], [3, 28, 21], [3.5, 26, 20]]);
+    row(z(1), x0 + 4, [[3, 24, 17], [2.5, 22, 16], [4, 25, 18], [3, 23, 17]]);
+    stack(z(2), x0 + 52, [[3, 24, 18], [2.5, 22, 16]]);
+    row(z(3), x0 + 4, [[3, 25, 18], [3.5, 27, 19], [2.5, 24, 17], [4, 28, 20], [3, 26, 18]]);
+    row(z(3), x0 + 70, [[3, 23, 16], [3.5, 25, 17], [2.5, 22, 16]]);
+    stack(z(4), x0 + 8, [[3, 26, 19], [2.5, 24, 18], [3, 22, 16], [2, 20, 15]]);
+    row(z(5), x0 + 62, [[2.5, 22, 16], [3, 24, 17], [3.5, 25, 18], [2.5, 21, 15], [3, 23, 16]]);
+    // wooden objects
+    const yc2 = (y0 + y1) / 2;
+    rbox('/Libreria/Libreria_Legno_Scatola', WOOD[0], [x0 + 33, yc2 - 7, z(1), x0 + 49, yc2 + 7, z(1) + 9], 1, 0.6);
+    tube('/Libreria/Libreria_Legno_Vaso', WOOD[1], [[x0 + 82, yc2, z(2)], [x0 + 82, yc2, z(2) + 6], [x0 + 82, yc2, z(2) + 16], [x0 + 82, yc2, z(2) + 22]], [4, 6, 4.5, 3], 18);
+    tube('/Libreria/Libreria_Legno_Ciotola', WOOD[2], [[x0 + 66, yc2, z(2)], [x0 + 66, yc2, z(2) + 2], [x0 + 66, yc2, z(2) + 6]], [4, 8, 10], 20);
+    const bz = z(3) + 5; const p = [], rr = [];
+    for (let i = 0; i <= 8; i++) { const a = Math.PI * i / 8; p.push([x0 + 58, yc2, bz - 5 * Math.cos(a)]); rr.push(Math.max(0.2, 5 * Math.sin(a))); }
+    tube('/Libreria/Libreria_Legno_Sfera', WOOD[0], p, rr, 18);
+    rbox('/Libreria/Libreria_Legno_Fermalibri', WOOD[2], [x0 + 30, yc2 - 6, z(4), x0 + 33, yc2 + 6, z(4) + 15], 0.5, 0.5);
+    tube('/Libreria/Libreria_Legno_Candeliere', WOOD[1], [[x0 + 92, yc2, z(5)], [x0 + 92, yc2, z(5) + 1.5], [x0 + 92, yc2, z(5) + 18]], [3.5, 1.6, 1.4], 14);
+  });
+  kit.items.filter(i => /Libreria_Legno_(Vaso|Ciotola|Sfera|Candeliere)/.test(i.n)).forEach(i => { i.ne = 1; });
 }
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
