@@ -40,6 +40,7 @@ const KP = { w: 50, d: 35 };                       // pier left of the old cucin
 const XK1 = -KP.w, XK0 = XK1 - ROOMS.cucina.w;     // cucina -149..-50 (the 99 cm run ends at the pier)
 const YK0 = YS1 - ROOMS.cucina.d;                  // cucina south face (920)
 
+const WHITE = [250, 250, 248, 255];   // interior wall paint   user
 const C = { wall: [236, 233, 228, 255], floor: [196, 186, 172, 255], balcony: [170, 168, 164, 255],
             rail: [70, 72, 76, 255], glass: [170, 205, 225, 80] };
 const pf = (cx) => ({ from: cx - PF.w / 2, to: cx + PF.w / 2, head: PF.h });
@@ -81,7 +82,7 @@ slab('/Casa/Pavimento_Cucina', C.floor, ccw([[XK0 - TK, YS1 + TE], KA_out, KB_ou
 // ---------- partitions ----------
 wall('/Casa/Tramezzo_Ingresso_Camera', C.wall, [XC0, YC1, XR, YI0], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
 // the cucina / soggiorno partition is removed on request: open plan (no wall, no door); only the pier at the cortile wall stays
-box('/Casa/Pilastro_Cucina', C.wall, XK1, YS1 - KP.d, 0, 0, YS1, H);
+box('/Casa/Pilastro_Cucina', WHITE, XK1, YS1 - KP.d, 0, 0, YS1, H);
 wall('/Casa/Tramezzo_Soggiorno_Bagno', C.wall, [ROOMS.soggiorno.w, YS0, XB0, YS1], H);
 wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [XB0, YI1, XR, YS0], H, [{ from: XB0 + 30, to: XB0 + 30 + 70, head: DOOR_H }]);
 
@@ -96,8 +97,8 @@ group('porte', () => {
 
 // ---------- cream paint on the walls of camera and soggiorno (bagno, cucina, ingresso stay white) ----------
 // thin skins on the room faces, in a default-on group so the Plan sheet keeps measuring the bare walls   colour estimate from photos
-{ const P = [240, 230, 208, 255], s = 0.3;
-  defGroup('pittura', 'Pareti color panna', 'Finiture', null, { fixed: true });
+{ const P = WHITE, s = 0.3;   // inner faces white (user); outer faces keep the raw wall colour
+  defGroup('pittura', 'Pareti bianche (interni)', 'Finiture', null, { fixed: true });
   group('pittura', () => {
     wall('/Pittura/Camera_Sud', P, [XC0, 0, XR, s], H, [CAM_PF]);
     wall('/Pittura/Camera_Nord', P, [XC0, YC1 - s, XR, YC1], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
@@ -111,6 +112,15 @@ group('porte', () => {
     wall('/Pittura/Soggiorno_Nord', P, [0, YS1 - s, ROOMS.soggiorno.w, YS1], H, [SOG_PF]);
     wall('/Pittura/Soggiorno_Ovest', P, [0, YS0, s, YK0 - TK], H);
     wall('/Pittura/Soggiorno_Est', P, [ROOMS.soggiorno.w - s, YS0, ROOMS.soggiorno.w, YS1], H);
+    wall('/Pittura/Bagno_Ovest', P, [XB0, YS0, XB0 + s, YS1], H);
+    wall('/Pittura/Bagno_Est', P, [XR - s, YS0, XR, YS1], H);
+    wall('/Pittura/Bagno_Nord', P, [XB0, YS1 - s, XR, YS1], H, [BAGNO_WIN]);
+    wall('/Pittura/Bagno_Sud', P, [XB0, YS0, XR, YS0 + s], H, [{ from: XB0 + 30, to: XB0 + 100, head: DOOR_H }]);
+    wall('/Pittura/Cucina_Ovest', P, [XK0, KA[1], XK0 + s, YS1], H);
+    wall('/Pittura/Cucina_Nord', P, [XK0, YS1 - s, XK1, YS1], H);
+    wall('/Pittura/Cucina_Sud', P, [KB[0], YK0, -TS, YK0 + s], H);
+    { const n = [KB[1] - KA[1], -(KB[0] - KA[0])], l = Math.hypot(...n), o = [n[0] / l * s, n[1] / l * s];   // oblique wall: a thin slab on its inner face
+      slab('/Pittura/Cucina_Obliqua', P, ccw([KA, KB, [KB[0] - o[0], KB[1] - o[1]], [KA[0] - o[0], KA[1] - o[1]]]), 0, H); }
   });
 }
 
