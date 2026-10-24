@@ -1,0 +1,28 @@
+{
+  "title": "Casa Poggi_Versione gabbia cucina",
+  "description": "Milano, primo piano: pareti di base dalla planimetria",
+  "generator": "house.js",
+  "rooms": [
+    {
+      "name": "Soggiorno + Cucina + Ingresso",
+      "at": [
+        180,
+        900
+      ]
+    },
+    {
+      "name": "Bagno",
+      "at": [
+        435,
+        900
+      ]
+    },
+    {
+      "name": "Camera",
+      "at": [
+        320,
+        240
+      ]
+    }
+  ]
+}
