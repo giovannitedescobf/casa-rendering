@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -222,6 +222,31 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   kit.items.filter(i => i.n.startsWith('/Lampada/Lampada_Vetro')).forEach(i => { i.em = 1; i.ne = 1; });   // glowing glass, no outlines between the elements
   kit.items.filter(i => /Lampada_(Base|Attacco)/.test(i.n)).forEach(i => { i.c = [232, 234, 238, 255]; i.mt = [1, 0.04]; i.ne = 1; });   // mirror-polished silver
   light({ p: [cx, cy, 120], a: 85, pen: 1, c: [255, 236, 210], i: 60, r: 600, g: 'lampada-terra' });
+}
+
+// black cat, ~7 kg (big, roundish but not fat): standing, facing +x, in the soggiorno   sizes estimate (body ~48 cm, shoulder ~28 cm)
+// leaf names carry no digits so the whole cat moves as one piece
+{ const x = 180, y = 850, BK = [24, 24, 26, 255], EY = [196, 170, 40, 255], NO = [60, 44, 44, 255];
+  const ball = (n, c, cx, cy, cz, r) => { const p = [], rr = [];
+    for (let k = 0; k <= 10; k++) { const a = Math.PI * k / 10; p.push([cx, cy, cz - r * Math.cos(a)]); rr.push(Math.max(0.2, r * Math.sin(a))); }
+    tube(n, c, p, rr, 20); };
+  defGroup('gatto', 'Gatto nero (7 kg)', 'Animali');
+  group('gatto', () => {
+    const bz = 24, bp = [0, 3, 8, 16, 26, 36, 43, 47].map(d => [x + d, y, bz + (d > 30 ? (d - 30) * 0.12 : 0)]);
+    tube('/Gatto/Gatto_Corpo', BK, bp, [4, 9, 12, 13, 13, 12, 9, 4], 22);
+    for (const [n, dx, dy] of [['Ant_Sx', 40, 5], ['Ant_Dx', 40, -5], ['Post_Sx', 8, 5.5], ['Post_Dx', 8, -5.5]])
+      tube(`/Gatto/Gatto_Zampa_${n}`, BK, [[x + dx, y + dy, 0], [x + dx, y + dy, 1.5], [x + dx, y + dy, bz]], [2.6, 2.4, 3.2], 12);
+    const hx = x + 52, hz = bz + 12;
+    ball('/Gatto/Gatto_Testa', BK, hx, y, hz, 7.5);
+    ball('/Gatto/Gatto_Muso', BK, hx + 5.5, y, hz - 2.5, 3.6);
+    tube('/Gatto/Gatto_Orecchio_Sx', BK, [[hx - 1, y + 4, hz + 5], [hx - 0.5, y + 5, hz + 10.5]], [2.8, 0.3], 10);
+    tube('/Gatto/Gatto_Orecchio_Dx', BK, [[hx - 1, y - 4, hz + 5], [hx - 0.5, y - 5, hz + 10.5]], [2.8, 0.3], 10);
+    ball('/Gatto/Gatto_Occhio_Sx', EY, hx + 6.2, y + 2.8, hz + 1.2, 1.1);
+    ball('/Gatto/Gatto_Occhio_Dx', EY, hx + 6.2, y - 2.8, hz + 1.2, 1.1);
+    ball('/Gatto/Gatto_Naso', NO, hx + 9, y, hz - 1.5, 0.7);
+    tube('/Gatto/Gatto_Coda', BK, [[x + 1, y, bz + 3], [x - 7, y, bz + 6], [x - 11, y, bz + 16], [x - 10, y + 2, bz + 28], [x - 6, y + 3, bz + 34]], [3, 2.6, 2.4, 2.2, 1.2], 12);
+  });
+  kit.items.filter(i => i.n.startsWith('/Gatto/')).forEach(i => { i.ne = 1; });   // fur: no outlines
 }
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
