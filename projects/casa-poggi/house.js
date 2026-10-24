@@ -3,8 +3,8 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore'] });
-const { box, wall, slab, tube, rbox, group, defGroup } = kit;
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra'] });
+const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
 const H = 330;                     // ceiling height                                   measured
@@ -194,6 +194,28 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     tube('/Condizionatore/Motore_Mozzo', WH, [[cx, y0 - 0.5, cz], [cx, y0 - 1, cz]], [3, 3], 16);
     tube('/Condizionatore/Motore_Tubo', BK, [[x1 - 8, y1, cz], [x1 - 8, -TE + 1, cz], [x1 - 8, -TE + 1, cz + 25]], [1.5, 1.5, 1.5], 12);   // black pipe behind, into the facade
   });
+}
+
+// Mogg Costantina Opal floor lamp (Nava + Arosio): totem of mouth-blown opal glass spheres on a thin polished chrome frame,
+// round chrome base   overall Ø 40, H 178 (retailer datasheets); sphere sizes and order estimate (from photos)
+// placed in the soggiorno corner on the left when entering (west wall / ingresso side); the user moves it
+{ const cx = 25, cy = YS0 + 25, OP = [246, 244, 238, 255], CR = [205, 208, 212, 255];
+  defGroup('lampada-terra', 'Lampada da terra Costantina Opal (Mogg)', 'Luci');
+  group('lampada-terra', () => {
+    tube('/Lampada/Lampada_Base', CR, [[cx, cy, 0], [cx, cy, 1.5]], [15, 15], 28);
+    const sph = [[40, 0, 0], [28, 6, -4], [34, -4, 5], [24, 3, 2], [30, -2, -3]];   // [diameter, dx, dy]
+    let z = 1.5 + (178 - 1.5 - sph.reduce((a, s) => a + s[0], 0));   // the stack ends at 178
+    const rod = [[cx, cy, 1.5], [cx, cy, z]];
+    sph.forEach(([d, dx, dy], i) => {
+      const r = d / 2, x = cx + dx, y = cy + dy, p = [], rr = [];
+      for (let k = 0; k <= 10; k++) { const a = Math.PI * k / 10; p.push([x, y, z + r - r * Math.cos(a)]); rr.push(Math.max(0.3, r * Math.sin(a))); }
+      tube(`/Lampada/Lampada_Sfera_${i + 1}`, OP, p, rr, 24);
+      z += d;
+    });
+    tube('/Lampada/Lampada_Stelo', CR, rod, [0.8, 0.8], 10);
+  });
+  kit.items.filter(i => i.n.startsWith('/Lampada/Lampada_Sfera')).forEach(i => { i.em = 1; });
+  light({ p: [cx, cy, 120], a: 85, pen: 1, c: [255, 236, 210], i: 60, r: 600, g: 'lampada-terra' });
 }
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
