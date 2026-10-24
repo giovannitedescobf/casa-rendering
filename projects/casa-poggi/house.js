@@ -8,9 +8,11 @@ const { box, wall, slab, tube, rbox, group, defGroup } = kit;
 
 // ---------- dimensions (cm) ----------
 const H = 330;                     // ceiling height                                   measured
-const TE = 30;                     // exterior / bearing walls                         estimate
-const TI = 10;                     // partitions                                       estimate
-const TB = 11;                     // partition soggiorno / bagno (360 + TB + 129 = ingresso 500)   estimate
+const TE = 35;                     // bearing walls: cortile and via Poggi facades, east wall   measured on the drawing (scale 3.53 cm/pt)
+const TW = 20;                     // camera west wall, cucina outer walls                    measured on the drawing
+const TS = 15;                     // wall towards the common stair (soggiorno, ingresso)     measured on the drawing
+const TI = 10;                     // partitions                                       user
+const TB = 10;                     // partition soggiorno / bagno                     user
 const ROOMS = {                    // clear interior sizes
   soggiorno: { w: 360, d: 440 },   // measured
   bagno:     { w: 129, d: 440 },   // measured
@@ -25,7 +27,7 @@ const WB = { w: 40, h: 150, sill: 110 };   // bathroom window; sill             
 const DOOR_H = 210, DOOR_W = 80;   // interior doors                                   estimate
 const ENTRY_W = 90;                // front door                                       estimate
 const K_SLANT = { west: 134, south: 63 };   // cucina oblique corner: straight west side 134 of 185, straight south side from the slant to the partition 99 - 63 = 36   estimate (read off the drawing)
-const TK = 15;                     // cucina outer walls (thin on the drawing)         estimate
+const TK = TW;                     // cucina outer walls
 
 // ---------- layout (derived) ----------
 const XR = ROOMS.ingresso.w;                       // inner face of the east wall (500)
@@ -42,11 +44,11 @@ const C = { wall: [236, 233, 228, 255], floor: [196, 186, 172, 255], balcony: [1
 const pf = (cx) => ({ from: cx - PF.w / 2, to: cx + PF.w / 2, head: PF.h });
 
 // ---------- floor ----------
-box('/Casa/Pavimento_Ingresso', C.floor, -TE, YI0 - TI, -4, XR + TE, YS0, 0);
+box('/Casa/Pavimento_Ingresso', C.floor, -TS, YI0 - TI, -4, XR + TE, YS0, 0);
 box('/Casa/Pavimento_Bagno', C.floor, ROOMS.soggiorno.w, YS0, -4, XR + TE, YS1 + TE, 0);
 box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + TE, 0);
 // camera: herringbone parquet (honey oak, 7 x 42 cm boards at 45 degrees, from the user's photo) + darker border band   pattern measured on photo, sizes estimate
-slab('/Casa/Camera/Parquet', [150, 95, 50, 255], [[XC0 - TE, -TE], [XR + TE, -TE], [XR + TE, YI0 - TI], [XC0 - TE, YI0 - TI]], -4, 0);
+slab('/Casa/Camera/Parquet', [150, 95, 50, 255], [[XC0 - TW, -TE], [XR + TE, -TE], [XR + TE, YI0 - TI], [XC0 - TW, YI0 - TI]], -4, 0);
 kit.items[kit.items.length - 1].tex = { url: 'textures/parquet-spina.png', tile: kit.inch(PARQUET.tile) };
 { const o = PARQUET.bandOff, w = PARQUET.bandW, x0 = XC0, x1 = XR, y0 = 0, y1 = YC1, z = 0.3;
   box('/Casa/Camera/Fascia_Sud', PARQUET.band, x0 + o, y0 + o, 0, x1 - o, y0 + o + w, z);
@@ -59,10 +61,10 @@ const ENTRY = { from: YI0 + 35, to: YI0 + 35 + ENTRY_W, head: DOOR_H };
 const SOG_PF = pf(140), CAM_PF = pf(XC0 + 145), BAGNO_WIN = { from: XB0 + 30, to: XB0 + 30 + WB.w, sill: WB.sill, head: WB.sill + WB.h };
 wall('/Casa/Muro_Nord', C.wall, [XK0 - TK, YS1, XR + TE, YS1 + TE], H, [SOG_PF, BAGNO_WIN]);
 wall('/Casa/Muro_Est', C.wall, [XR, -TE, XR + TE, YS1], H);
-wall('/Casa/Muro_Sud', C.wall, [XC0 - TE, -TE, XR, 0], H, [CAM_PF]);
-wall('/Casa/Muro_Ovest_Camera', C.wall, [XC0 - TE, 0, XC0, YC1], H);
-wall('/Casa/Muro_Ovest_Ingresso', C.wall, [-TE, YC1, 0, YK0 - TK], H, [ENTRY]);   // front door from the common stair
-wall('/Casa/Muro_Ingresso_Camera_Ovest', C.wall, [-TE, YC1, XC0, YI0], H);
+wall('/Casa/Muro_Sud', C.wall, [XC0 - TW, -TE, XR, 0], H, [CAM_PF]);
+wall('/Casa/Muro_Ovest_Camera', C.wall, [XC0 - TW, 0, XC0, YC1], H);
+wall('/Casa/Muro_Ovest_Ingresso', C.wall, [-TS, YC1, 0, YK0 - TK], H, [ENTRY]);   // front door from the common stair
+wall('/Casa/Muro_Ingresso_Camera_Ovest', C.wall, [-TS, YC1, XC0, YI0], H);
 
 // ---------- cucina: west wall, oblique wall, south wall in one polygon (inner path, then the outer path offset by TK) ----------
 const KA = [XK0, YS1 - K_SLANT.west], KB = [XK0 + K_SLANT.south, YK0];       // ends of the slant (inner face)
@@ -85,7 +87,7 @@ wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [XB0, YI1, XR, YS0], H, [{ from: X
 const DOOR_C = [112, 72, 44, 255], DOOR_T = 5;
 defGroup('porte', 'Porta di ingresso', 'Porte', null, { fixed: true });
 group('porte', () => {
-  const XO = -TE;                                                       // outer face of the wall
+  const XO = -TS;                                                       // outer face of the wall
   box('/Casa/Porta_Ingresso/Anta', DOOR_C, XO - (ENTRY_W - 4), ENTRY.to - DOOR_T, 0, XO, ENTRY.to, DOOR_H - 2);
   tube('/Casa/Porta_Ingresso/Maniglia', [200, 200, 200, 255], [[XO - (ENTRY_W - 14), ENTRY.to - DOOR_T - 1, 105], [XO - (ENTRY_W - 14), ENTRY.to - DOOR_T - 7, 105], [XO - (ENTRY_W - 26), ENTRY.to - DOOR_T - 7, 105]], [1.2, 1.2, 1.2]);
 });
@@ -103,7 +105,7 @@ group('porte', () => {
     wall('/Pittura/Ingresso_Nord', P, [XB0, YI1 - s, XR, YI1], H, [{ from: XB0 + 30, to: XB0 + 100, head: DOOR_H }]);
     wall('/Pittura/Ingresso_Ovest', P, [0, YI0, s, YI1], H, [ENTRY]);
     wall('/Pittura/Ingresso_Est', P, [XR - s, YI0, XR, YI1], H);
-    wall('/Pittura/Facciata_Camera', [224, 186, 124, 255], [XC0 - TE, -TE - s, XR + TE, -TE], H, [CAM_PF]);   // outside face of the camera wall, yellow like the balcony
+    wall('/Pittura/Facciata_Camera', [224, 186, 124, 255], [XC0 - TW, -TE - s, XR + TE, -TE], H, [CAM_PF]);   // outside face of the camera wall, yellow like the balcony
     wall('/Pittura/Soggiorno_Nord', P, [0, YS1 - s, ROOMS.soggiorno.w, YS1], H, [SOG_PF]);
     wall('/Pittura/Soggiorno_Ovest', P, [0, YS0, s, YK0 - TK], H);
     wall('/Pittura/Soggiorno_Est', P, [ROOMS.soggiorno.w - s, YS0, ROOMS.soggiorno.w, YS1], H);
