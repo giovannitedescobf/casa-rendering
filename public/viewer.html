@@ -143,6 +143,7 @@
 import * as THREE from 'three';
 import { t, applyI18n, locale } from '../i18n.mjs';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 applyI18n(); document.title = t('v.title');                       // fills the data-i18n texts / titles in the current language (public/i18n.mjs)
 document.getElementById('morebtn').textContent = t('v.more') + ' ▾';
 
@@ -216,6 +217,8 @@ function texturedSlabMaterials(item) {                   // item.tex = {url, til
   return [new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.0 }), materialFor(item.c)];   // ExtrudeGeometry groups: 0 = caps, 1 = sides
 }
 
+let metalEnvTex = null;                                  // shared reflection map for "mt" items (built once)
+const metalEnv = () => metalEnvTex || (metalEnvTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture);
 const emissiveMats = [];                                 // items with "em": glow in night mode
 function materialFor(c) {
   const [r, g, b, a = 255] = c || [200, 200, 200, 255];
@@ -483,11 +486,13 @@ function build(data) {
     if (gs.length && !gs.some(id => enabledGroups.has(id))) continue;   // group switched off
     const geo = geometryFor(item);
     const mesh = new THREE.Mesh(geo, item.tex && item.box ? texturedBoxMaterials(item) : item.tex && item.slab ? texturedSlabMaterials(item) : materialFor(item.c));
+    if (item.mt) for (const m of [].concat(mesh.material)) { m.metalness = item.mt[0]; m.roughness = item.mt[1]; m.envMap = metalEnv(); }   // "mt": [metalness, roughness], mirror-like metal
     if (item.em) for (const m of [].concat(mesh.material)) { m.emissive = m.color.clone(); emissiveMats.push(m); }
     mesh.name = item.n;
     mesh.castShadow = mesh.receiveShadow = true;
     model.add(mesh);
     addCollider(item);
+    if (item.ne) { const mk = moveKey(item), off = mk && moved.get(mk); mesh.userData.mv = mk; if (off) mesh.position.set(off[0], off[1], 0); continue; }   // "ne": no outline (smooth glass)
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20),
       new THREE.LineBasicMaterial({ color: mvKey && mvKey === moveKey(item) ? 0xb5532a : 0x2a2d33 }));
     model.add(edges);

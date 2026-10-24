@@ -56,6 +56,8 @@ copyDir(path.join(THREE, 'examples/jsm/controls'), path.join(OUT, 'three/example
 copyDir(path.join(THREE, 'examples/jsm/postprocessing'), path.join(OUT, 'three/examples/jsm/postprocessing'), f => /\.js$/.test(f));   // path tracer (Pass.js) + ambient occlusion (EffectComposer, GTAOPass)
 copyDir(path.join(THREE, 'examples/jsm/shaders'), path.join(OUT, 'three/examples/jsm/shaders'), f => /(Copy|Output|GTAO|PoissonDenoise)Shader\.js$/.test(f));
 fs.mkdirSync(path.join(OUT, 'three/examples/jsm/math'), { recursive: true });
+fs.mkdirSync(path.join(OUT, 'three/examples/jsm/environments'), { recursive: true });
+fs.copyFileSync(path.join(THREE, 'examples/jsm/environments/RoomEnvironment.js'), path.join(OUT, 'three/examples/jsm/environments/RoomEnvironment.js'));   // reflections of "mt" (metal) items
 fs.copyFileSync(path.join(THREE, 'examples/jsm/math/SimplexNoise.js'), path.join(OUT, 'three/examples/jsm/math/SimplexNoise.js'));
 // path tracers (Render button): ES sources of the libraries (the WebGPU one has no bundle), the OIDN denoiser with only the weights in use
 for (const pkg of ['three-gpu-pathtracer', 'three-mesh-bvh']) copyDir(path.join(ROOT, 'node_modules', pkg, 'src'), path.join(OUT, 'vendor', pkg, 'src'), f => /\.js$/.test(f));

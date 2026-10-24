@@ -219,7 +219,8 @@ const balcony = (n, x0, x1, y0, y1, side) => {
       tube(`/Lampada/Lampada_Vetro_${i + 1}`, OP, p, r, 28);
     });
   });
-  kit.items.filter(i => i.n.startsWith('/Lampada/Lampada_Vetro')).forEach(i => { i.em = 1; });
+  kit.items.filter(i => i.n.startsWith('/Lampada/Lampada_Vetro')).forEach(i => { i.em = 1; i.ne = 1; });   // glowing glass, no outlines between the elements
+  kit.items.filter(i => /Lampada_(Base|Attacco)/.test(i.n)).forEach(i => { i.c = [232, 234, 238, 255]; i.mt = [1, 0.04]; i.ne = 1; });   // mirror-polished silver
   light({ p: [cx, cy, 120], a: 85, pen: 1, c: [255, 236, 210], i: 60, r: 600, g: 'lampada-terra' });
 }
 
