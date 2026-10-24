@@ -30,6 +30,9 @@
   #camBtn { display: inline-flex; align-items: center; padding: 3px 7px; }
   #camBtn svg { width: 18px; height: 18px; display: block; }
   #bar.cam #camBtn { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #mvctl { display: inline-flex; gap: 4px; }
+  #mvctl svg { width: 16px; height: 16px; display: block; }
+  #mvctl button:disabled { opacity: .35; cursor: default; }
   #actions { display: flex; gap: 4px; align-items: center; }                 /* Render | PNG | Night | First person | Plan, close together */
   #setctl { position: relative; display: inline-block; margin-left: -4px; }                 /* right next to the camera button */
   #setBtn { display: inline-flex; align-items: center; padding: 3px 7px; }
@@ -90,6 +93,7 @@
     #home { order: 0; }
     #dot { order: 0; margin: 0 2px; }
     #nightctl { order: 1; }
+    #mvctl { order: 1; }
     #actions, #setctl, #setmenu { display: contents; }
     #setctl { margin: 0; padding: 0; border: 0; }
     #setBtn { display: none; }                                  /* on phones Dims / unit / Click to measure are rows of the Views menu */
@@ -123,7 +127,7 @@
   <button id="snap" data-i18n-title="v.png.title" title="Save the image on screen as a PNG, without buttons or labels (P)">PNG</button>
   <span id="nightctl"><button id="nightbtn" data-i18n="v.night" data-i18n-title="v.night.title" title="Night mode: turns the lights on (N)">Night</button></span>
   <span id="fpctl"><button id="fpbtn" data-i18n="v.fp" data-i18n-title="v.fp.title" title="First person: walk through the model (F)">First person</button></span>
-  <button id="mvundo" hidden data-i18n="v.mvundo" data-i18n-title="v.mvundo.title" title="Undo the last move (Ctrl+Z)">Undo</button>
+  <span id="mvctl"><button id="mvundo" disabled data-i18n-title="v.mvundo.title" data-i18n-aria="v.mvundo.title" title="Undo the last move" aria-label="Undo the last move"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M232,144a64.07,64.07,0,0,1-64,64H80a8,8,0,0,1,0-16h88a48,48,0,0,0,0-96H51.31l34.35,34.34a8,8,0,0,1-11.32,11.32l-48-48a8,8,0,0,1,0-11.32l48-48A8,8,0,0,1,85.66,45.66L51.31,80H168A64.07,64.07,0,0,1,232,144Z"/></svg></button><button id="mvredo" disabled data-i18n-title="v.mvredo.title" data-i18n-aria="v.mvredo.title" title="Redo the move" aria-label="Redo the move"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" style="transform:scaleX(-1)"><path d="M232,144a64.07,64.07,0,0,1-64,64H80a8,8,0,0,1,0-16h88a48,48,0,0,0,0-96H51.31l34.35,34.34a8,8,0,0,1-11.32,11.32l-48-48a8,8,0,0,1,0-11.32l48-48A8,8,0,0,1,85.66,45.66L51.31,80H168A64.07,64.07,0,0,1,232,144Z"/></svg></button></span>
   <button id="mvsave" hidden data-i18n="v.mvsave" data-i18n-title="v.mvsave.title" title="Publish the moved furniture on the site, for everyone (GitHub)">Save positions</button>
   <span id="planctl"><button id="planbtn" data-i18n="v.plan" data-i18n-title="v.plan.title" title="Plan: only the walls seen from above, with the interior measures of the rooms (print, SVG, PNG)">Plan</button></span>
   </span>
@@ -418,15 +422,16 @@ async function loadMoved() {
 }
 // undo history of the moves: [{k, prev}] (prev = the offset before the drag, null = never moved), kept with the draft
 const MV_UNDO = 'mvundo:' + location.pathname;
-let mvUndo = [];
+let mvUndo = [], mvRedo = [];
 try { mvUndo = JSON.parse(localStorage.getItem(MV_UNDO)) || []; } catch (e) {}
 function saveMoved() {
   try { localStorage.setItem(MV_STORE, JSON.stringify([...moved])); localStorage.setItem(MV_UNDO, JSON.stringify(mvUndo.slice(-50))); } catch (e) {}
   showSave();
 }
-function undoMove() {
-  const u = mvUndo.pop();
+function undoMove(back = true) {
+  const u = (back ? mvUndo : mvRedo).pop();
   if (!u) return;
+  (back ? mvRedo : mvUndo).push({ k: u.k, prev: moved.has(u.k) ? [...moved.get(u.k)] : null });
   if (u.prev) moved.set(u.k, u.prev); else moved.delete(u.k);
   const off = u.prev || [0, 0];
   for (const o of model.children) if (o.userData.mv === u.k) o.position.set(off[0], off[1], 0);
@@ -438,7 +443,9 @@ function showSave() {
   const b = document.getElementById('mvsave');
   if (b) b.hidden = !SAVE_REPO || savedMoved === null || mvJSON(moved) === savedMoved;
   const u = document.getElementById('mvundo');
-  if (u) u.hidden = !mvUndo.length;
+  if (u) u.disabled = !mvUndo.length;
+  const r = document.getElementById('mvredo');
+  if (r) r.disabled = !mvRedo.length;
 }
 async function publishMoved() {
   const [owner, repo] = SAVE_REPO, id = location.pathname.split('/').filter(Boolean).pop();
@@ -1176,14 +1183,14 @@ function hitsWall(b, off) {
 }
 const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) {
   const now = moved.get(drag.k) || [0, 0], was = drag.prev || [0, 0];
-  if (Math.hypot(now[0] - was[0], now[1] - was[1]) > 0.01) mvUndo.push({ k: drag.k, prev: drag.prev });
+  if (Math.hypot(now[0] - was[0], now[1] - was[1]) > 0.01) { mvUndo.push({ k: drag.k, prev: drag.prev }); mvRedo = []; }
   drag = null; controls.enabled = !fp; saveMoved(); } };
 renderer.domElement.addEventListener('pointerup', endDrag);
 renderer.domElement.addEventListener('pointercancel', endDrag);
 addEventListener('keydown', e => { if (e.key === 'Escape' && mvKey) setMv(null); });
 document.getElementById('mvsave').onclick = publishMoved;
-document.getElementById('mvundo').onclick = undoMove;
-addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && mvUndo.length && !drag) { e.preventDefault(); undoMove(); } });
+document.getElementById('mvundo').onclick = () => undoMove(true);
+document.getElementById('mvredo').onclick = () => undoMove(false);
 window.mvState = name => {                                         // for headless tests: selection, offsets, screen point of an item
   const o = name && model.children.find(m => m.isMesh && m.name === name), r = renderer.domElement.getBoundingClientRect();
   const v = o && new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).project(camera);
