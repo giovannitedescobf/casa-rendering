@@ -77,7 +77,7 @@ slab('/Casa/Pavimento_Cucina', C.floor, ccw([[XK0 - TK, YS1 + TE], KA_out, KB_ou
 
 // ---------- partitions ----------
 wall('/Casa/Tramezzo_Ingresso_Camera', C.wall, [XC0, YC1, XR, YI0], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
-wall('/Casa/Tramezzo_Cucina_Soggiorno', C.wall, [XK1, YK0 - TK, 0, YS1], H, [{ from: YS1 - 25 - 70, to: YS1 - 25, head: DOOR_H }]);
+// the cucina / soggiorno partition is removed on request: open plan (no wall, no door)
 wall('/Casa/Tramezzo_Soggiorno_Bagno', C.wall, [ROOMS.soggiorno.w, YS0, XB0, YS1], H);
 wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [XB0, YI1, XR, YS0], H, [{ from: XB0 + 30, to: XB0 + 30 + 70, head: DOOR_H }]);
 
@@ -92,7 +92,7 @@ group('porte', () => {
 
 // ---------- cream paint on the walls of camera and soggiorno (bagno, cucina, ingresso stay white) ----------
 // thin skins on the room faces, in a default-on group so the Plan sheet keeps measuring the bare walls   colour estimate from photos
-{ const P = [240, 230, 208, 255], s = 0.3, KD = { from: YS1 - 25 - 70, to: YS1 - 25, head: DOOR_H };
+{ const P = [240, 230, 208, 255], s = 0.3;
   defGroup('pittura', 'Pareti color panna', 'Finiture', null, { fixed: true });
   group('pittura', () => {
     wall('/Pittura/Camera_Sud', P, [XC0, 0, XR, s], H, [CAM_PF]);
@@ -105,7 +105,7 @@ group('porte', () => {
     wall('/Pittura/Ingresso_Est', P, [XR - s, YI0, XR, YI1], H);
     wall('/Pittura/Facciata_Camera', [224, 186, 124, 255], [XC0 - TE, -TE - s, XR + TE, -TE], H, [CAM_PF]);   // outside face of the camera wall, yellow like the balcony
     wall('/Pittura/Soggiorno_Nord', P, [0, YS1 - s, ROOMS.soggiorno.w, YS1], H, [SOG_PF]);
-    wall('/Pittura/Soggiorno_Ovest', P, [0, YS0, s, YS1], H, [KD]);
+    wall('/Pittura/Soggiorno_Ovest', P, [0, YS0, s, YK0 - TK], H);
     wall('/Pittura/Soggiorno_Est', P, [ROOMS.soggiorno.w - s, YS0, ROOMS.soggiorno.w, YS1], H);
   });
 }
