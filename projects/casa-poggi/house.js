@@ -339,6 +339,9 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   kit.items.filter(i => i.n.endsWith('_Vetro')).forEach(i => { i.ne = 1; });
 }
 
+// ALTERNATIVE-VERSION OBJECT (casa-poggi-gabbia-cucina): kept here hidden (its group is off by default), as the rule asks
+require('./gabbia-cucina')(kit, { H, Y0: YK0 - TK, Y1: YS1, WHITE });
+
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
 // built-in wardrobe on the east end wall of the ingresso (from the user's photos): full corridor width, 10 cm side frames,
 // 2 upper doors (1 panel, lock on the right one) + 2 tall lower doors (4 panels)   width/top gap measured, recessed: only 5 cm (frame + doors) stand out of the wall, split heights estimate

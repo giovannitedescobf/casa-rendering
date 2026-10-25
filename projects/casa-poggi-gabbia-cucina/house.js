@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria', 'gabbia-cucina'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -307,6 +307,9 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   });
   kit.items.filter(i => /Libreria_Legno_(Vaso|Ciotola|Sfera|Candeliere)/.test(i.n)).forEach(i => { i.ne = 1; });
 }
+
+// VERSION: glass-and-steel kitchen cage (module shared with the base, where it is hidden)
+require('../casa-poggi/gabbia-cucina')(kit, { H, Y0: YK0 - TK, Y1: YS1, WHITE });
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
 // built-in wardrobe on the east end wall of the ingresso (from the user's photos): full corridor width, 10 cm side frames,
