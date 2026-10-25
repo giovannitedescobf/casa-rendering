@@ -75,7 +75,7 @@ const dS = [KB[0] - KA[0], KB[1] - KA[1]], lS = Math.hypot(...dS), nS = [dS[1] /
 const oS = [KA[0] + nS[0] * TK, KA[1] + nS[1] * TK];
 const KA_out = meet(oS, dS, [XK0 - TK, 0], [0, 1]), KB_out = meet(oS, dS, [0, YK0 - TK], [1, 0]);
 const ccw = (poly) => poly.reduce((a, p, i) => { const q = poly[(i + 1) % poly.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0) > 0 ? poly : poly.slice().reverse();
-const kWall = ccw([[XK0, YS1], KA, KB, [-TS, YK0], [-TS, YK0 - TK], KB_out, KA_out, [XK0 - TK, YS1]]);
+const kWall = ccw([[XK0, YS1], KA, KB, [0, YK0], [0, YK0 - TK], KB_out, KA_out, [XK0 - TK, YS1]]);   // south wall runs to the soggiorno face: closed corner with the stair wall
 slab('/Casa/Muro_Cucina_Obliquo', C.wall, kWall, 0, H);
 slab('/Casa/Pavimento_Cucina', C.floor, ccw([[XK0 - TK, YS1 + TE], KA_out, KB_out, [-TS, YK0 - TK], [0, YK0 - TK], [0, YS1 + TE]]), -4, 0);
 
@@ -84,7 +84,8 @@ wall('/Casa/Tramezzo_Ingresso_Camera', C.wall, [XC0, YC1, XR, YI0], H, [{ from: 
 // the cucina / soggiorno partition is removed on request: open plan (no wall, no door); only the pier at the cortile wall stays
 box('/Casa/Pilastro_Cucina', WHITE, XK1, YS1 - KP.d, 0, 0, YS1, H);
 wall('/Casa/Tramezzo_Soggiorno_Bagno', C.wall, [ROOMS.soggiorno.w, YS0, XB0, YS1], H);
-wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [XB0, YI1, XR, YS0], H, [{ from: XB0 + 30, to: XB0 + 30 + 70, head: DOOR_H }]);
+wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [ROOMS.soggiorno.w, YI1, XR, YS0], H,   // starts under the soggiorno/bagno partition: closed corner
+   [{ from: XB0 + 30, to: XB0 + 30 + 70, head: DOOR_H }]);
 
 // ---------- front door: brown leaf, open 90 degrees outward onto the common stair landing, hinged on the north jamb ----------
 const DOOR_C = [112, 72, 44, 255], DOOR_T = 5;

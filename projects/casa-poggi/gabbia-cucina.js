@@ -7,7 +7,7 @@
 // projection, band height, passage width user; bar sizes and grid spacing estimate (from the photos)
 module.exports = function ({ box, group, defGroup, items }, { H, Y0, Y1, WHITE }) {
   const X1 = 50, ZB = H - 80, DH = 210, PW = 80, t = 8, b = 4, BK = [30, 30, 32, 255], GL = [205, 218, 222, 50];
-  const yp0 = Y0 + t, yp1 = yp0 + PW;                       // passage along the long side
+  const yp0 = (Y0 + Y1) / 2 - PW / 2, yp1 = yp0 + PW;       // passage in the middle of the long side (user)
   const ZS = [ZB / 3, 2 * ZB / 3, ZB - b];                  // horizontal bars under the band
   defGroup('gabbia-cucina', 'Gabbia cucina in vetro e ferro', 'Porte');
   group('gabbia-cucina', () => {
@@ -16,14 +16,15 @@ module.exports = function ({ box, group, defGroup, items }, { H, Y0, Y1, WHITE }
     // long side, outer face 50 cm from the wall
     const xa = X1 - t, xc = X1 - t / 2 - b / 2;
     box('/Gabbia_Cucina/Gabbia_Fascia_Lunga', WHITE, xa, Y0, ZB, X1, Y1, H);
-    box('/Gabbia_Cucina/Gabbia_Vetro_Lungo', GL, xc + 1, yp1, 0, xc + 3, Y1, ZB);
     box('/Gabbia_Cucina/Gabbia_Vetro_Sopraluce', GL, xc + 1, yp0, DH, xc + 3, yp1, ZB);
-    const vy = [yp1];
-    for (let y = yp1 + 42; y < Y1 - 20; y += 42) vy.push(y);
-    vy.push(Y1 - b);
-    for (const y of vy) box(`/Gabbia_Cucina/Gabbia_Montante_${id()}`, BK, xc, y, 0, xc + b, y + b, ZB);
-    box(`/Gabbia_Cucina/Gabbia_Traverso_${id()}`, BK, xc, yp1, 0, xc + b, Y1, b);                  // bottom bar
-    for (const z of ZS) box(`/Gabbia_Cucina/Gabbia_Traverso_${id()}`, BK, xc, yp1, z, xc + b, Y1, z + b);
+    for (const [ya, yb] of [[Y0 + t / 2, yp0], [yp1, Y1]]) {   // glass panels either side of the passage
+      box(`/Gabbia_Cucina/Gabbia_Vetro_Lungo_${id()}`, GL, xc + 1, ya, 0, xc + 3, yb, ZB);
+      const n = Math.max(1, Math.round((yb - ya) / 42)), vy = [];
+      for (let i = 0; i <= n; i++) vy.push(Math.min(ya + i * (yb - ya) / n, yb - b));
+      for (const y of vy) box(`/Gabbia_Cucina/Gabbia_Montante_${id()}`, BK, xc, y, 0, xc + b, y + b, ZB);
+      box(`/Gabbia_Cucina/Gabbia_Traverso_${id()}`, BK, xc, ya, 0, xc + b, yb, b);                  // bottom bar
+      for (const z of ZS) box(`/Gabbia_Cucina/Gabbia_Traverso_${id()}`, BK, xc, ya, z, xc + b, yb, z + b);
+    }
     box(`/Gabbia_Cucina/Gabbia_Traverso_${id()}`, BK, xc, yp0, DH, xc + b, yp1, DH + b);            // passage head
     box(`/Gabbia_Cucina/Gabbia_Traverso_${id()}`, BK, xc, yp0, ZB - b, xc + b, yp1, ZB);
     // short return, from the wall face (x = 0) to the corner
