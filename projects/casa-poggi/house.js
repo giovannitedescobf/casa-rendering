@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria', 'poltrona'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -338,6 +338,39 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     leaf('Nord_b', [xo + s2, y1 - c], [xo, y1 - 2 * c]);
   });
   kit.items.filter(i => i.n.endsWith('_Vetro')).forEach(i => { i.ne = 1; });
+}
+
+// armchair + footstool, IKEA EKENAESET (oak-effect legs and arm caps, Kilanda light beige fabric), in the camera,
+// back against the west wall, facing east. Armchair 64 w x 78 d x 76 h, seat 56 x 50 at 45, arms 63, free space under 22   web search (IKEA ES / CN pages)
+// footstool 56 x 40 x 42   estimate (only the 61 x 45 x 17 cm package is published)
+// leaf names start with "Ekenaset" and carry no digits: armchair and footstool move as one piece
+{ const OAK = [196, 158, 108, 255], FAB = [222, 212, 192, 255], xb = XC0 + 3, xf = xb + 78, y0 = 30, y1 = y0 + 64, ZL = 22;
+  const bar = (n, p, r = 1.6) => tube(`/Ekenaset/Ekenaset_${n}`, OAK, p, p.map(() => r), 10);
+  defGroup('poltrona', 'Poltrona e poggiapiedi EKENÄSET (IKEA)', 'Arredi');
+  group('poltrona', () => {
+    // open oak side frames (from the product photo): front leg straight up to the arm, rear leg slanting back, side rail, flat arm cap
+    for (const [s, y] of [['Sx', y1 - 2], ['Dx', y0 + 2]]) {
+      bar(`Gamba_Ant_${s}`, [[xf - 10, y, 0], [xf - 9, y, 60]], 1.8);
+      bar(`Gamba_Post_${s}`, [[xb + 4, y, 0], [xb + 12, y, 32], [xb + 18, y, 60]], 1.8);
+      bar(`Traverso_${s}`, [[xb + 10, y, 28], [xf - 10, y, 28]], 1.5);
+      rbox(`/Ekenaset/Ekenaset_Bracciolo_${s}`, OAK, [xb + 14, y - 2.5, 60, xf, y + 2.5, 62.5], 1.2, 0.8);
+    }
+    box('/Ekenaset/Ekenaset_Traverso_Fronte', OAK, xf - 12, y0 + 2, 24, xf - 9, y1 - 2, 32);
+    box('/Ekenaset/Ekenaset_Traverso_Retro', OAK, xb + 10, y0 + 2, 26, xb + 13, y1 - 2, 32);
+    rbox('/Ekenaset/Ekenaset_Seduta', FAB, [xf - 58, y0 + 4.5, 32, xf - 6, y1 - 4.5, 45], 2, 3);
+    // reclined back cushion: stacked slices stepping back (the viewer has no rotation)
+    for (const [k, z0, z1, dx] of [['a', 40, 50, 0], ['b', 50, 59, 3], ['c', 59, 68, 6], ['d', 68, 76, 9]])
+      rbox(`/Ekenaset/Ekenaset_Schienale_${k}`, FAB, [xb + 22 - dx, y0 + 5, z0, xb + 34 - dx, y1 - 5, z1], 2, k === 'd' ? 3 : 0);
+    kit.items.filter(i => i.n.startsWith('/Ekenaset/Ekenaset_Schienale')).forEach(i => { i.ne = 1; });
+    // footstool in front of the armchair: four splayed oak legs, two side rails, thick fabric cushion
+    const px0 = xf + 15, px1 = px0 + 40, py0 = (y0 + y1) / 2 - 28, py1 = py0 + 56;
+    for (const [s, y, dy] of [['Sx', py1 - 5, 2], ['Dx', py0 + 5, -2]]) {
+      bar(`Pouf_Gamba_Ant_${s}`, [[px1 - 1, y + dy, 0], [px1 - 6, y, 27]], 1.6);
+      bar(`Pouf_Gamba_Post_${s}`, [[px0 + 1, y + dy, 0], [px0 + 6, y, 27]], 1.6);
+      bar(`Pouf_Traverso_${s}`, [[px0 + 4, y, 14], [px1 - 4, y, 14]], 1.3);
+    }
+    rbox('/Ekenaset/Ekenaset_Pouf_Cuscino', FAB, [px0, py0, 27, px1, py1, 42], 2, 3);
+  });
 }
 
 // ALTERNATIVE-VERSION OBJECT (casa-poggi-gabbia-cucina): kept here hidden (its group is off by default), as the rule asks
