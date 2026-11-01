@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria', 'pavimento-terrazzo'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -49,6 +49,19 @@ const pf = (cx) => ({ from: cx - PF.w / 2, to: cx + PF.w / 2, head: PF.h });
 box('/Casa/Pavimento_Ingresso', C.floor, -TS, YI0 - TI, -4, XR + TE, YS0, 0);
 box('/Casa/Pavimento_Bagno', C.floor, ROOMS.soggiorno.w, YS0, -4, XR + TE, YS1 + TE, 0);
 box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + TE, 0);
+// terrazzo floor (Hus Milano "Rainbow Gleam", from the user's photo): 40 x 40 cm tiles, straight lay, no joints,
+// soggiorno + ingresso only, flush with the wall faces (not under the door thresholds). Thin skin over the base floor,
+// in its own switchable group   tile size user
+{ const TZ = { tile: 40, z: 0.3 };
+  defGroup('pavimento-terrazzo', 'Pavimento terrazzo Rainbow Gleam (40 x 40)', 'Finiture', null, { fixed: true });
+  group('pavimento-terrazzo', () => {
+    for (const [n, poly] of [['Soggiorno', [[0, YS0], [ROOMS.soggiorno.w, YS0], [ROOMS.soggiorno.w, YS1], [0, YS1]]],
+                             ['Ingresso', [[0, YI0], [XR, YI0], [XR, YI1], [0, YI1]]]]) {
+      slab(`/Pavimento_Terrazzo/Terrazzo_${n}`, [120, 112, 104, 255], poly, 0, TZ.z);
+      kit.items[kit.items.length - 1].tex = { url: 'textures/terrazzo-rainbow-gleam.png', tile: kit.inch(TZ.tile) };
+    }
+  }); }
+
 // camera: herringbone parquet (honey oak, 7 x 42 cm boards at 45 degrees, from the user's photo) + darker border band   pattern measured on photo, sizes estimate
 slab('/Casa/Camera/Parquet', [150, 95, 50, 255], [[XC0 - TW, -TE], [XR + TE, -TE], [XR + TE, YI0 - TI], [XC0 - TW, YI0 - TI]], -4, 0);
 kit.items[kit.items.length - 1].tex = { url: 'textures/parquet-spina.png', tile: kit.inch(PARQUET.tile) };
