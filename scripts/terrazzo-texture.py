@@ -26,7 +26,8 @@ for i, sl in enumerate(nd.find_objects(lab), 1):
 cov = chip.mean()
 rng = np.random.default_rng(7)
 T, N = 400, 5            # px per tile, tiles per side
-S = T / src.shape[0]     # photo = one 40 cm tile
+CHIP = 0.5               # chip size relative to the photo (user: half)
+S = T / src.shape[0] * CHIP   # photo = one 40 cm tile
 small = [s for s in sprites if s.width * s.height < 900]
 out = Image.new('RGB', (T * N, T * N))
 for ty in range(N):
