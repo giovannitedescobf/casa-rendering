@@ -53,7 +53,7 @@ Tell the user in one short line when you add something ("Added to CLAUDE.md: ...
   package.json, node_modules/
   server.log, dist/, CLAUDE.local.md   git-ignored: background server log, static build, local deployment notes
 ```
-Projects in the repo: `projects/casa-poggi/` (title "Casa Poggi_Versione Base": the base version of a real flat, Italian data, written by `house.js`), plus its alternative versions `projects/casa-poggi-porta-scorrevole/` and `projects/casa-poggi-gabbia-cucina/` (copies of the base, each with its own `house.js`; changes common to every version go in all of them).
+Projects in the repo: `projects/casa-poggi/` (title "Casa Poggi_Versione Base": the base version of a real flat, Italian data, written by `house.js`); the former alternative versions were deleted on request and live on as hidden groups in the base (user: keep options as switchable, off groups; the user picks which one is on).
 
 ### Run / stop
 ```bash

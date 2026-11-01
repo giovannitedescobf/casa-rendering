@@ -373,7 +373,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   kit.items.filter(i => /Libreria_Legno_(Vaso|Ciotola|Sfera|Candeliere)/.test(i.n)).forEach(i => { i.ne = 1; });
 }
 
-// ALTERNATIVE-VERSION OBJECT (casa-poggi-porta-scorrevole): kept here hidden (its group is off by default), as the rule asks
+// OPTION (former version casa-poggi-porta-scorrevole): kept hidden, the user switches it on in the Groups panel
 // bifold glass door between soggiorno and cucina (from the user's photo), flush with the soggiorno west wall face (x = 0),
 // from the end of that wall to the pier; 250 cm high under an 80 cm wall up to the ceiling. Door + wall above are one
 // movable piece (every leaf name starts with "Porta", no digits). Two halves, each = 2 leaves hinged at its jamb,
@@ -404,7 +404,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   kit.items.filter(i => i.n.endsWith('_Vetro')).forEach(i => { i.ne = 1; });
 }
 
-// ALTERNATIVE-VERSION OBJECT (casa-poggi-gabbia-cucina): kept here hidden (its group is off by default), as the rule asks
+// OPTION (former version casa-poggi-gabbia-cucina): kept hidden, the user switches it on in the Groups panel
 require('./gabbia-cucina')(kit, { H, Y0: YK0 - TK, Y1: YS1, WHITE });
 
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
