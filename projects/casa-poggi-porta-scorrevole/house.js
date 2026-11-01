@@ -93,7 +93,7 @@ slab('/Casa/Muro_Cucina_Obliquo', C.wall, kWall, 0, H);
 slab('/Casa/Pavimento_Cucina', C.floor, ccw([[XK0 - TK, YS1 + TE], KA_out, KB_out, [-TS, YK0 - TK], [0, YK0 - TK], [0, YS1 + TE]]), -4, 0);
 
 // ---------- partitions ----------
-const CAM_DOOR = { from: 200, to: 340, head: DOOR_H };   // double door 2 x 70 cm   user
+const CAM_DOOR = { from: 220, to: 320, head: DOOR_H };   // double door 2 x 50 cm   user
 wall('/Casa/Tramezzo_Ingresso_Camera', C.wall, [XC0, YC1, XR, YI0], H, [CAM_DOOR]);
 // the cucina / soggiorno partition is removed on request: open plan (no wall, no door); only the pier at the cortile wall stays
 box('/Casa/Pilastro_Cucina', WHITE, XK1, YS1 - KP.d, 0, 0, YS1, H);
@@ -161,11 +161,11 @@ box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.s
   });
 }
 
-// ---------- double door ingresso / camera (from the user's photo): 2 white leaves of 70 x 210, glass above, a recessed
+// ---------- double door ingresso / camera (from the user's photo): 2 white leaves of 50 x 210 (rails and panel scaled from the photo), glass above, a recessed
 // panel below, brass handle on the right leaf; hinged on the jambs, opening into the camera, drawn partly open so the
 // passage stays free. One movable piece (every leaf name starts with "Porta", no digits)   sizes user, open angle estimate
-{ const CD = { w: 70, h: DOOR_H, t: 4, ang: 75, st: 15, top: 20, bot: 50, pTop: 15, pBot: 25, c: [246, 245, 240, 255], glass: [225, 222, 212, 150] };
-  defGroup('porta-camera', 'Porta doppia camera (vetro, 140 x 210)', 'Porte');
+{ const CD = { w: 50, h: DOOR_H, t: 4, ang: 75, st: 8, top: 9, bot: 60, pTop: 9, pBot: 15, c: [246, 245, 240, 255], glass: [225, 222, 212, 150] };
+  defGroup('porta-camera', 'Porta doppia camera (vetro, 100 x 210)', 'Porte');
   group('porta-camera', () => {
     const a = CD.ang * Math.PI / 180;
     const leaf = (n, hx, sgn) => {                     // sgn +1: hinge on the west jamb, -1: on the east jamb
@@ -185,9 +185,9 @@ box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.s
       kit.items[kit.items.length - 1].ne = 1;
       return P;
     };
-    leaf('Sx', 200, 1);
-    const P = leaf('Dx', 340, -1);
-    const g = [176, 128, 52, 255], hu = CD.w - 7;    // brass lever on both faces of the right leaf
+    leaf('Sx', 220, 1);
+    const P = leaf('Dx', 320, -1);
+    const g = [176, 128, 52, 255], hu = CD.w - 5;    // brass lever on both faces of the right leaf
     for (const [m, s] of [['Camera', -1], ['Ingresso', 1]]) {
       const v0 = s < 0 ? 0 : CD.t, v1 = v0 + s * 0.8, v2 = v0 + s * 6;
       slab(`/Porta_Camera/Porta_Placca_${m}`, g, ccw([P(hu - 2, v0), P(hu + 2, v0), P(hu + 2, v1), P(hu - 2, v1)]), 92, 118);
