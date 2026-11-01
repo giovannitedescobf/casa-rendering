@@ -55,8 +55,8 @@ box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + T
 { const TZ = { tile: 40, n: 5, z: 0.3 };   // the texture holds n x n different tiles (scripts/terrazzo-texture.py)
   defGroup('pavimento-terrazzo', 'Pavimento terrazzo Rainbow Gleam (40 x 40)', 'Finiture', null, { fixed: true });
   group('pavimento-terrazzo', () => {
-    for (const [n, poly] of [['Soggiorno', [[0, YS0], [ROOMS.soggiorno.w, YS0], [ROOMS.soggiorno.w, YS1], [0, YS1]]],
-                             ['Ingresso', [[0, YI0], [XR, YI0], [XR, YI1], [0, YI1]]]]) {
+    // one piece for soggiorno + ingresso, also across the opening between them (user: no strip there)
+    for (const [n, poly] of [['Soggiorno', [[0, YI0], [XR, YI0], [XR, YI1], [ROOMS.soggiorno.w, YI1], [ROOMS.soggiorno.w, YS1], [0, YS1]]]]) {
       slab(`/Pavimento_Terrazzo/Terrazzo_${n}`, [120, 112, 104, 255], poly, 0, TZ.z);
       kit.items[kit.items.length - 1].tex = { url: 'textures/terrazzo-rainbow-gleam.png', tile: kit.inch(TZ.tile * TZ.n) };
     }
