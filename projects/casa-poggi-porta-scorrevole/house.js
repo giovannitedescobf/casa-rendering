@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria', 'porta-camera', 'pavimento-terrazzo', 'porta-cucina'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'porta-camera', 'pavimento-terrazzo', 'porta-cucina'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -254,6 +254,20 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     tube('/Condizionatore/Motore_Ventola', [60, 62, 64, 255], [[cx, y0 + 0.2, cz], [cx, y0 - 0.5, cz]], [11, 11], 24);   // fan grille on the front
     tube('/Condizionatore/Motore_Mozzo', WH, [[cx, y0 - 0.5, cz], [cx, y0 - 1, cz]], [3, 3], 16);
     tube('/Condizionatore/Motore_Tubo', BK, [[x1 - 8, y1, cz], [x1 - 8, -TE + 1, cz], [x1 - 8, -TE + 1, cz + 25]], [1.5, 1.5, 1.5], 12);   // black pipe behind, into the facade
+  });
+}
+
+// air-conditioner indoor unit (split) in the camera: high on the south wall, east of the porte-finestre (left seen from
+// inside), 20 cm from the opening. One movable piece (leaf names start with "Split", no digits)   size: typical 9000 BTU unit, estimate
+{ const SP = { l: 80, h: 29, d: 22, gap: 20, top: 315 }, x0 = CAM_PF.to + SP.gap, x1 = x0 + SP.l, y0 = 0.3, y1 = y0 + SP.d, z0 = SP.top - SP.h;
+  defGroup('split-camera', 'Split aria condizionata camera (80 x 29)', 'Impianti');
+  group('split-camera', () => {
+    const WH = [246, 246, 243, 255];
+    rbox('/Split_Camera/Split_Corpo', WH, [x0, y0, z0 + 4, x1, y1, SP.top], 2, 3);
+    rbox('/Split_Camera/Split_Fondo', WH, [x0 + 0.5, y0, z0, x1 - 0.5, y1 - 4, z0 + 4], 2, 0, 2);
+    box('/Split_Camera/Split_Bocchetta', [70, 72, 76, 255], x0 + 4, y1 - 9, z0 - 0.2, x1 - 4, y1 - 4, z0 + 0.5);   // air outlet underneath
+    box('/Split_Camera/Split_Aletta', [232, 232, 228, 255], x0 + 4, y1 - 4, z0 - 0.6, x1 - 4, y1 - 0.5, z0 + 0.4);   // flap
+    box('/Split_Camera/Split_Display', [40, 40, 44, 255], x1 - 14, y1 - 0.1, z0 + 6, x1 - 6, y1 + 0.1, z0 + 8);
   });
 }
 
