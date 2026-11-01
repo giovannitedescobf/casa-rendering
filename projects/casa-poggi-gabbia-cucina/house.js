@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria', 'gabbia-cucina'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'lampada-terra', 'gatto', 'libreria', 'porta-camera', 'gabbia-cucina'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -93,7 +93,8 @@ slab('/Casa/Muro_Cucina_Obliquo', C.wall, kWall, 0, H);
 slab('/Casa/Pavimento_Cucina', C.floor, ccw([[XK0 - TK, YS1 + TE], KA_out, KB_out, [-TS, YK0 - TK], [0, YK0 - TK], [0, YS1 + TE]]), -4, 0);
 
 // ---------- partitions ----------
-wall('/Casa/Tramezzo_Ingresso_Camera', C.wall, [XC0, YC1, XR, YI0], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
+const CAM_DOOR = { from: 200, to: 340, head: DOOR_H };   // double door 2 x 70 cm   user
+wall('/Casa/Tramezzo_Ingresso_Camera', C.wall, [XC0, YC1, XR, YI0], H, [CAM_DOOR]);
 // the cucina / soggiorno partition is removed on request: open plan (no wall, no door); only the pier at the cortile wall stays
 box('/Casa/Pilastro_Cucina', WHITE, XK1, YS1 - KP.d, 0, 0, YS1, H);
 wall('/Casa/Tramezzo_Soggiorno_Bagno', C.wall, [ROOMS.soggiorno.w, YS0, XB0, YS1], H);
@@ -115,10 +116,10 @@ group('porte', () => {
   defGroup('pittura', 'Pareti bianche (interni)', 'Finiture', null, { fixed: true });
   group('pittura', () => {
     wall('/Pittura/Camera_Sud', P, [XC0, 0, XR, s], H, [CAM_PF]);
-    wall('/Pittura/Camera_Nord', P, [XC0, YC1 - s, XR, YC1], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
+    wall('/Pittura/Camera_Nord', P, [XC0, YC1 - s, XR, YC1], H, [CAM_DOOR]);
     wall('/Pittura/Camera_Ovest', P, [XC0, 0, XC0 + s, YC1], H);
     wall('/Pittura/Camera_Est', P, [XR - s, 0, XR, YC1], H);
-    wall('/Pittura/Ingresso_Sud', P, [0, YI0, XR, YI0 + s], H, [{ from: 230, to: 230 + DOOR_W, head: DOOR_H }]);
+    wall('/Pittura/Ingresso_Sud', P, [0, YI0, XR, YI0 + s], H, [CAM_DOOR]);
     wall('/Pittura/Ingresso_Nord', P, [XB0, YI1 - s, XR, YI1], H, [{ from: XB0 + 30, to: XB0 + 100, head: DOOR_H }]);
     wall('/Pittura/Ingresso_Ovest', P, [0, YI0, s, YI1], H, [ENTRY]);
     wall('/Pittura/Ingresso_Est', P, [XR - s, YI0, XR, YI1], H);
@@ -157,6 +158,42 @@ box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.s
     const g = [205, 170, 80, 255], hu = w - 6, pa = P(hu, -0.6), pb = P(hu, -6), pc = P(hu - 11, -6);
     slab('/Casa/Porta_Bagno/Placca', g, quad(hu - 2, hu + 2, -1, -0.6), 90, 120);
     tube('/Casa/Porta_Bagno/Maniglia', g, [[...pa, 105], [...pb, 105], [...pc, 105]], [1, 1, 1]);
+  });
+}
+
+// ---------- double door ingresso / camera (from the user's photo): 2 white leaves of 70 x 210, glass above, a recessed
+// panel below, brass handle on the right leaf; hinged on the jambs, opening into the camera, drawn partly open so the
+// passage stays free. One movable piece (every leaf name starts with "Porta", no digits)   sizes user, open angle estimate
+{ const CD = { w: 70, h: DOOR_H, t: 4, ang: 75, st: 15, top: 20, bot: 50, pTop: 15, pBot: 25, c: [246, 245, 240, 255], glass: [225, 222, 212, 150] };
+  defGroup('porta-camera', 'Porta doppia camera (vetro, 140 x 210)', 'Porte');
+  group('porta-camera', () => {
+    const a = CD.ang * Math.PI / 180;
+    const leaf = (n, hx, sgn) => {                     // sgn +1: hinge on the west jamb, -1: on the east jamb
+      const u = [sgn * Math.cos(a), -Math.sin(a)], v = [Math.sin(a), sgn * Math.cos(a)];
+      const hy = YC1 - 0.5;
+      const P = (pu, pv) => [hx + u[0] * pu + v[0] * pv, hy + u[1] * pu + v[1] * pv];
+      const q = (u0, u1, v0, v1) => ccw([P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)]);
+      const part = (m, c, u0, u1, v0, v1, z0, z1) => slab(`/Porta_Camera/Porta_${n}_${m}`, c, q(u0, u1, v0, v1), z0, z1);
+      const { w, h, t, st } = CD, pz0 = CD.pBot, pz1 = CD.bot - CD.pTop;
+      part('Montante_Cerniera', CD.c, 0, st, 0, t, 0, h);
+      part('Montante_Battuta', CD.c, w - st, w, 0, t, 0, h);
+      part('Traverso_Alto', CD.c, st, w - st, 0, t, h - CD.top, h);
+      part('Traverso_Basso', CD.c, st, w - st, 0, t, 0, pz0);
+      part('Traverso_Medio', CD.c, st, w - st, 0, t, pz1, CD.bot);
+      part('Pannello', [236, 235, 229, 255], st, w - st, 1, t - 1, pz0, pz1);   // recessed 1 cm on both faces
+      part('Vetro', CD.glass, st, w - st, t / 2 - 0.4, t / 2 + 0.4, CD.bot, h - CD.top);
+      kit.items[kit.items.length - 1].ne = 1;
+      return P;
+    };
+    leaf('Sx', 200, 1);
+    const P = leaf('Dx', 340, -1);
+    const g = [176, 128, 52, 255], hu = CD.w - 7;    // brass lever on both faces of the right leaf
+    for (const [m, s] of [['Camera', -1], ['Ingresso', 1]]) {
+      const v0 = s < 0 ? 0 : CD.t, v1 = v0 + s * 0.8, v2 = v0 + s * 6;
+      slab(`/Porta_Camera/Porta_Placca_${m}`, g, ccw([P(hu - 2, v0), P(hu + 2, v0), P(hu + 2, v1), P(hu - 2, v1)]), 92, 118);
+      tube(`/Porta_Camera/Porta_Maniglia_${m}`, g, [[...P(hu, v1), 108], [...P(hu, v2), 108], [...P(hu - 12, v2), 108]], [1, 1, 1]);
+      kit.items[kit.items.length - 1].mt = [1, 0.3];
+    }
   });
 }
 
