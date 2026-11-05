@@ -324,6 +324,10 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     for (const [Ya, Yb] of [[58 + 51, 58 + 69], [322 + 51, 322 + 69]]) B('Gamba', BK, 1796, 1814, Ya, Yb, 0, 235);   // two thin black legs (the glass box carries the other end)
   });
   kit.items.filter(i => i.n.includes('Credenza_Teca_Vetro')).forEach(i => { i.ne = 1; });
+  // walnut grain (procedural, scripts/walnut-texture.py: the 3D file has none): vertical on the fronts, along the length on the top
+  const WT = { url: 'textures/noce-venato.jpg', tile: kit.inch(60) };
+  kit.items.filter(i => /Credenza_Mobile_(Anta|Montante|Corpo)/.test(i.n)).forEach(i => { i.tex = { ...WT, face: '-x' }; });
+  kit.items.filter(i => /Credenza_Mobile_Top/.test(i.n)).forEach(i => { i.tex = { ...WT, face: '+z' }; });
 }
 
 // Mogg Costantina Opal floor lamp (Nava + Arosio): a totem of 7 opal glass elements (cylinders, cones, double cones)
