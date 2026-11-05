@@ -53,13 +53,24 @@ box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + T
 // soggiorno + ingresso only, flush with the wall faces (not under the door thresholds). Thin skin over the base floor,
 // in its own switchable group   tile size user
 { const TZ = { tile: 40, n: 5, z: 0.3 };   // the texture holds n x n different tiles (scripts/terrazzo-texture.py)
-  defGroup('pavimento-terrazzo', 'Pavimento terrazzo Rainbow Gleam (40 x 40)', 'Finiture', null, { fixed: true });
+  defGroup('pavimento-terrazzo', 'Pavimento terrazzo Rainbow Gleam (40 x 40)', 'Finiture', 'pavimento', { fixed: true });
   group('pavimento-terrazzo', () => {
     // one piece for soggiorno + ingresso, also across the opening between them (user: no strip there)
     for (const [n, poly] of [['Soggiorno', [[0, YI0], [XR, YI0], [XR, YI1], [ROOMS.soggiorno.w, YI1], [ROOMS.soggiorno.w, YS1], [0, YS1]]]]) {
       slab(`/Pavimento_Terrazzo/Terrazzo_${n}`, [120, 112, 104, 255], poly, 0, TZ.z);
       kit.items[kit.items.length - 1].tex = { url: 'textures/terrazzo-rainbow-gleam.png', tile: kit.inch(TZ.tile * TZ.n) };
     }
+  }); }
+
+// alternative floor (off by default, the user picks it): Marazzi Frammento Macro Verde Naturale, rectified porcelain
+// stoneware 60 x 120 cm, 9 mm (product sheet). Same area as the terrazzo; same variant, so only one floor is on at a time.
+// Texture = 120 x 120 cm: 2 rows of one tile, long side along x, straight lay, 2 mm rectified joints; image from the shop
+// page (one photo square = 60 x 60 cm, mirrored copies)   lay direction and image scale estimate
+{ const MZ = { tile: 120, z: 0.3 };
+  defGroup('pavimento-marazzi', 'Piastrella Marazzi Frammento Macro Verde Naturale (60 x 120)', 'Finiture', 'pavimento', { fixed: true });
+  group('pavimento-marazzi', () => {
+    slab('/Pavimento_Marazzi/Marazzi_Soggiorno', [228, 230, 224, 255], [[0, YI0], [XR, YI0], [XR, YI1], [ROOMS.soggiorno.w, YI1], [ROOMS.soggiorno.w, YS1], [0, YS1]], 0, MZ.z);
+    kit.items[kit.items.length - 1].tex = { url: 'textures/marazzi-frammento-macro-verde.jpg', tile: kit.inch(MZ.tile) };
   }); }
 
 // camera: herringbone parquet (honey oak, 7 x 42 cm boards at 45 degrees, from the user's photo) + darker border band   pattern measured on photo, sizes estimate
