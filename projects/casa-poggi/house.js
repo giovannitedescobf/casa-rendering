@@ -73,6 +73,17 @@ box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + T
     kit.items[kit.items.length - 1].tex = { url: 'textures/marazzi-frammento-macro-verde.jpg', tile: kit.inch(MZ.tile) };
   }); }
 
+// alternative floor (off by default, the user picks it): Marazzi Crogiolo D_Segni Colore Tappeto 8, cement-look tiles
+// 20 x 20 cm, 10 mm, matt, R9 (product sheet). Same area and same variant as the other floors (one on at a time).
+// Texture = one tile from the shop photo (white quarter diamonds in the corners make the pattern of the room photo),
+// straight lay, thin joints   joint width estimate
+{ const CG = { tile: 20, z: 0.3 };
+  defGroup('pavimento-crogiolo', 'Marazzi Crogiolo Disegni (20 x 20)', 'Finiture', 'pavimento', { fixed: true });
+  group('pavimento-crogiolo', () => {
+    slab('/Pavimento_Crogiolo/Crogiolo_Soggiorno', [214, 196, 176, 255], [[0, YI0], [XR, YI0], [XR, YI1], [ROOMS.soggiorno.w, YI1], [ROOMS.soggiorno.w, YS1], [0, YS1]], 0, CG.z);
+    kit.items[kit.items.length - 1].tex = { url: 'textures/marazzi-crogiolo-d-segni-tappeto8.jpg', tile: kit.inch(CG.tile) };
+  }); }
+
 // camera: herringbone parquet (honey oak, 7 x 42 cm boards at 45 degrees, from the user's photo) + darker border band   pattern measured on photo, sizes estimate
 slab('/Casa/Camera/Parquet', [150, 95, 50, 255], [[XC0 - TW, -TE], [XR + TE, -TE], [XR + TE, YI0 - TI], [XC0 - TW, YI0 - TI]], -4, 0);
 kit.items[kit.items.length - 1].tex = { url: 'textures/parquet-spina.png', tile: kit.inch(PARQUET.tile) };
