@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'porta-camera', 'pavimento-terrazzo'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'credenza-zoom', 'porta-camera', 'pavimento-terrazzo'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -291,6 +291,39 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     box('/Split_Camera/Split_Aletta', [232, 232, 228, 255], x0 + 4, y1 - 4, z0 - 0.6, x1 - 4, y1 - 0.5, z0 + 0.4);   // flap
     box('/Split_Camera/Split_Display', [40, 40, 44, 255], x1 - 14, y1 - 0.1, z0 + 6, x1 - 6, y1 + 0.1, z0 + 8);
   });
+}
+
+// Mogg Zoom sideboard (credenza), 212 x 50 x 79 cm, from the maker's 3D file (.3ds, mm) and the user's photo: a black
+// steel-bar glass box (90 cm, two glass shelves) at one end, a walnut 3-door cabinet on legs running through it.
+// In the soggiorno against the wall towards the bagno, perpendicular to the bookcase, glass box towards the north end
+// (on the left seen from the room, as in the photo). One movable piece (every leaf name starts with "Credenza", no digits)
+// sizes from the 3D file; position along the wall estimate (10 cm past the bookcase)
+{ const XW = ROOMS.soggiorno.w, Y1 = 715 + 212;      // wall face, north end of the piece
+  // file frame (mm): X along the length -150..1962 (glass box at -150), Y depth 0 = front .. 500 = back, Z up
+  const P = (X, Y) => [XW - (500 - Y) / 10, Y1 - (X + 150) / 10];
+  const B = (n, c, X0, X1, Ya, Yb, Z0, Z1) => { const a = P(X0, Ya), b = P(X1, Yb);
+    box(`/Credenza_Zoom/Credenza_${n}`, c, Math.min(a[0], b[0]), Math.min(a[1], b[1]), Z0 / 10, Math.max(a[0], b[0]), Math.max(a[1], b[1]), Z1 / 10); };
+  const BK = [28, 28, 30, 255], WD = [118, 70, 40, 255], WD2 = [104, 60, 34, 255], GL = [210, 225, 225, 70], t = 18;
+  defGroup('credenza-zoom', 'Credenza Zoom (Mogg) 212 x 50 x 79', 'Arredi');
+  group('credenza-zoom', () => {
+    // glass box: 12 steel bars of 18 mm, x -150..750, depth 0..500, height 0..790
+    for (const [Xa, Xb] of [[-150, -150 + t], [750 - t, 750]]) for (const [Ya, Yb] of [[0, t], [500 - t, 500]]) B('Teca_Montante', BK, Xa, Xb, Ya, Yb, 0, 790);
+    for (const [Za, Zb] of [[0, t], [790 - t, 790]]) {
+      for (const [Ya, Yb] of [[0, t], [500 - t, 500]]) B('Teca_Traverso', BK, -150, 750, Ya, Yb, Za, Zb);
+      for (const [Xa, Xb] of [[-150, -150 + t], [750 - t, 750]]) B('Teca_Traverso', BK, Xa, Xb, 0, 500, Za, Zb);
+    }
+    for (const [Za, Zb] of [[212, 218], [784, 790]]) B('Teca_Vetro', GL, -130.5, 730.5, 19.5, 480.5, Za, Zb);
+    // walnut cabinet 366..1962 on legs, body z 235..755, doors on the front face
+    B('Mobile_Corpo', WD, 366, 1962, 52, 465, 254, 736);
+    B('Mobile_Top', WD, 364, 1964, 37, 463, 736, 755);
+    B('Mobile_Fondo', WD, 364, 1964, 37, 463, 235, 254);
+    B('Mobile_Anta_Sinistra', WD2, 366, 714, 33, 52, 237, 753);
+    B('Mobile_Montante', WD, 716, 766, 33, 52, 237, 753);
+    B('Mobile_Anta_Centrale', WD2, 768, 1364, 33, 52, 237, 753);
+    B('Mobile_Anta_Destra', WD2, 1366, 1962, 33, 52, 237, 753);
+    for (const [Ya, Yb] of [[58 + 51, 58 + 69], [322 + 51, 322 + 69]]) B('Gamba', BK, 1796, 1814, Ya, Yb, 0, 235);   // two thin black legs (the glass box carries the other end)
+  });
+  kit.items.filter(i => i.n.includes('Credenza_Teca_Vetro')).forEach(i => { i.ne = 1; });
 }
 
 // Mogg Costantina Opal floor lamp (Nava + Arosio): a totem of 7 opal glass elements (cylinders, cones, double cones)
