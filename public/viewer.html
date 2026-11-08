@@ -70,6 +70,15 @@
   #groups h4.cat .cnt { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--accent); }
   #groups label { display: flex; gap: 6px; align-items: flex-start; padding: 2px 0; cursor: pointer; line-height: 1.3; }   /* long labels wrap under the text, not under the checkbox */
   #groups label input { flex: none; margin: 2px 0 0; }
+  #groups .grow { display: flex; align-items: flex-start; gap: 6px; }
+  #groups .grow label, #groups .grow .tname { flex: 1; min-width: 0; }
+  #groups .grow .tname { padding: 2px 0; line-height: 1.3; color: var(--muted); }
+  #groups button.gico { flex: none; width: 22px; height: 22px; padding: 0; margin-top: 1px; border: none; border-radius: 6px; display: inline-grid; place-items: center; color: #fff; background: #d92d20; }   /* trash buttons: red with a white bin, green round restore (user's request) */
+  #groups button.gico:hover { background: #b42318; }
+  #groups button.gico.restore { border-radius: 50%; background: #16a34a; }
+  #groups button.gico.restore:hover { background: #15803d; }
+  #groups button.gico svg { width: 14px; height: 14px; fill: currentColor; }
+  #groups h4.trash { color: #b42318; }
   #groups .acts { display: flex; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-soft); }
   #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
   .dim { position: absolute; transform: translate(-50%, -50%); background: #fff; color: var(--accent-ink); font: 600 12px var(--mono); font-variant-numeric: tabular-nums; border: 1px solid var(--accent);
@@ -222,6 +231,15 @@ function texturedSlabMaterials(item) {                   // item.tex = {url, til
   return [new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.0 }), materialFor(item.c)];   // ExtrudeGeometry groups: 0 = caps, 1 = sides
 }
 
+function texturedRboxMaterial(item) {                    // item.tex = {url, tile} on an rbox: the whole surface (fabric), stripes of the image run up the sides
+  const tex = textureLoader.load(item.tex.url);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
+  tex.repeat.set(1 / item.tex.tile, 1 / item.tex.tile);
+  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0.0, side: THREE.DoubleSide });
+}
+
 let metalEnvTex = null;                                  // shared reflection map for "mt" items (built once)
 const metalEnv = () => metalEnvTex || (metalEnvTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture);
 const emissiveMats = [];                                 // items with "em": glow in night mode
@@ -314,7 +332,9 @@ function trayGeometry({ o, z }) {                        // open-top tray: smoot
   return g;
 }
 
-function rboxGeometry({ b, r, top, bot = 0 }) {          // rounded box: filleted top edge, optional filleted bottom edge (retro appliance look)
+function rboxGeometry({ b, r, top, bot = 0 }, uv = false) {   // rounded box: filleted top edge, optional filleted bottom edge (retro appliance look)
+  // uv (item "tex"): sides get u = distance around the outer outline, v = z (so stripes run vertically and wrap the corners
+  // without a jump; each ring gets a duplicated seam vertex), the caps u = y, v = x
   const [x0, y0, z0, x1, y1, z1] = b;
   const rings = [];
   if (bot > 0) {
@@ -330,22 +350,33 @@ function rboxGeometry({ b, r, top, bot = 0 }) {          // rounded box: fillete
     rings.push([top * (1 - Math.cos(t)), z1 - top + top * Math.sin(t)]);
   }
   const pts = rings.map(([ins, zz]) => roundedRectPts(x0 + ins, y0 + ins, x1 - ins, y1 - ins, Math.max(r - ins, 0.05)).map(p => [p[0], p[1], zz]));
-  const m = pts[0].length, pos = [], idx = [];
-  pts.forEach(ring => ring.forEach(p => pos.push(...p)));
-  for (let i = 0; i < pts.length - 1; i++) for (let j = 0; j < m; j++) {
-    const j2 = (j + 1) % m, b0 = i * m + j, b1 = i * m + j2, t0 = (i + 1) * m + j, t1 = (i + 1) * m + j2;
+  const m = pts[0].length, pos = [], idx = [], uvs = [];
+  const side = uv ? pts.map(ring => [...ring, ring[0]]) : pts, ms = side[0].length;   // with uv: closed rings with a seam vertex
+  const ref = side[rings.findIndex(q => q[0] === 0)], dRef = [0];   // u = distance around the outer outline at the same vertex index:
+  for (let j = 1; j < ms; j++) dRef.push(dRef[j - 1] + Math.hypot(ref[j][0] - ref[j - 1][0], ref[j][1] - ref[j - 1][1]));   // the fillet rings line up with it (no zigzag)
+  side.forEach(ring => ring.forEach((p, j) => { pos.push(...p); uvs.push(dRef[j], p[2]); }));
+  for (let i = 0; i < side.length - 1; i++) for (let j = 0; j < (uv ? ms - 1 : m); j++) {
+    const m = ms, j2 = uv ? j + 1 : (j + 1) % m, b0 = i * m + j, b1 = i * m + j2, t0 = (i + 1) * m + j, t1 = (i + 1) * m + j2;
     idx.push(b0, b1, t1, b0, t1, t0);
   }
   const cap = (ring, flip) => {                          // flat caps get their own vertices -> crisp edge
     const base = pos.length / 3;
-    ring.forEach(p => pos.push(...p));
+    ring.forEach(p => { pos.push(...p); uvs.push(p[1], p[0]); });
     for (let i = 1; i < m - 1; i++) flip ? idx.push(base, base + i + 1, base + i) : idx.push(base, base + i, base + i + 1);
   };
   cap(pts[0], true); cap(pts[pts.length - 1], false);
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  if (uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
+  if (uv) {                                              // the two copies of each seam vertex share one normal (no shading crease)
+    const nr = g.attributes.normal;
+    for (let i = 0; i < side.length; i++) {
+      const a = i * ms, e = a + ms - 1, v = new THREE.Vector3().fromBufferAttribute(nr, a).add(new THREE.Vector3().fromBufferAttribute(nr, e)).normalize();
+      nr.setXYZ(a, v.x, v.y, v.z); nr.setXYZ(e, v.x, v.y, v.z);
+    }
+  }
   return g;
 }
 
@@ -353,7 +384,7 @@ function geometryFor(item) {
   if (item.tube) return tubeGeometry(item.tube);
   if (item.slab) return slabGeometry(item.slab);
   if (item.tray) return trayGeometry(item.tray);
-  if (item.rbox) return rboxGeometry(item.rbox);
+  if (item.rbox) return rboxGeometry(item.rbox, !!item.tex);
   if (item.box) {
     const [x0, y0, z0, x1, y1, z1] = item.box;
     const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0);
@@ -410,13 +441,29 @@ const MV_STORE = 'moved:' + location.pathname;
 const moved = new Map();                                           // moveKey -> [dx, dy] inches
 let savedMoved = null;                                             // the published moved.json, as a JSON string of sorted entries
 let fileGroups = null, savedGroups = null;                         // moved.json "_groups": the groups saved with 'Save positions' (they replace the scene's defaults); savedGroups = their sorted JSON
-const liveGroups = () => JSON.stringify([...enabledGroups].sort());
+const liveGroups = () => JSON.stringify([...enabledGroups].filter(id => !gone(id)).sort());
+// Trash (Cestino): a group moved to the trash is switched off and listed under "Trash" with two buttons, put back and
+// delete for good; deleted groups vanish from the panel. Both lists are a browser draft until 'Save positions' writes
+// them to moved.json ("_trash", "_deleted").
+const TR_STORE = 'trash:' + location.pathname;
+let trash = new Set(), deleted = new Set(), savedTrash = null;
+const trashWasOn = new Set();                                      // groups that were on when trashed: put back on
+const liveTrash = () => JSON.stringify({ t: [...trash].sort(), d: [...deleted].sort() });
+const gone = id => trash.has(id) || deleted.has(id);
+function saveTrash() {
+  try { liveTrash() === savedTrash ? localStorage.removeItem(TR_STORE) : localStorage.setItem(TR_STORE, liveTrash()); } catch (e) {}
+}
 const mvJSON = m => JSON.stringify(Object.fromEntries([...m].map(([k, v]) => [k, v.map(x => Math.round(x * 100) / 100)]).sort((a, b) => a[0] < b[0] ? -1 : 1)), null, 1);
 async function loadMoved() {
   let file = {};
   try { const r = await fetch('moved.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) file = await r.json(); } catch (e) {}
   if (Array.isArray(file._groups)) fileGroups = file._groups;
   delete file._groups;
+  trash = new Set(Array.isArray(file._trash) ? file._trash : []); deleted = new Set(Array.isArray(file._deleted) ? file._deleted : []);
+  delete file._trash; delete file._deleted;
+  savedTrash = liveTrash();
+  try { const d = JSON.parse(localStorage.getItem(TR_STORE)); if (d && Array.isArray(d.t) && Array.isArray(d.d)) { trash = new Set(d.t); deleted = new Set(d.d); } } catch (e) {}
+  saveTrash();                                                     // drops a draft that equals the published state
   savedMoved = mvJSON(new Map(Object.entries(file)));
   let draft = null;
   try { draft = JSON.parse(localStorage.getItem(MV_STORE)); } catch (e) {}
@@ -445,7 +492,7 @@ function undoMove(back = true) {
 const SAVE_REPO = location.hostname.endsWith('.github.io') && [location.hostname.split('.')[0], location.pathname.split('/')[1]];   // owner, repo of a GitHub Pages site
 function showSave() {
   const b = document.getElementById('mvsave');
-  if (b) b.hidden = !SAVE_REPO || savedMoved === null || (mvJSON(moved) === savedMoved && (savedGroups === null || liveGroups() === savedGroups));
+  if (b) b.hidden = !SAVE_REPO || savedMoved === null || (mvJSON(moved) === savedMoved && (savedGroups === null || liveGroups() === savedGroups) && liveTrash() === savedTrash);
   const u = document.getElementById('mvundo');
   if (u) u.disabled = !mvUndo.length;
   const r = document.getElementById('mvredo');
@@ -459,8 +506,11 @@ async function publishMoved() {
   if (!tok) return;
   const api = `https://api.github.com/repos/${owner}/${repo}/contents/projects/${id}/moved.json`;
   const h = { Authorization: 'Bearer ' + tok.trim(), Accept: 'application/vnd.github+json' };
-  const btn = document.getElementById('mvsave'), groupsNow = [...enabledGroups].sort();
-  const body = JSON.stringify(Object.assign(JSON.parse(mvJSON(moved)), { _groups: groupsNow }), null, 1) + '\n';   // positions + the groups switched on now
+  const btn = document.getElementById('mvsave'), groupsNow = [...enabledGroups].filter(id => !gone(id)).sort();
+  const extra = { _groups: groupsNow };                                                             // positions + the groups switched on now + the trash
+  if (trash.size) extra._trash = [...trash].sort();
+  if (deleted.size) extra._deleted = [...deleted].sort();
+  const body = JSON.stringify(Object.assign(JSON.parse(mvJSON(moved)), extra), null, 1) + '\n', trashNow = liveTrash();
   btn.disabled = true;
   try {
     const cur = await fetch(api + '?ref=main&t=' + Date.now(), { headers: h, cache: 'no-store' });   // never a cached sha: a second save within a minute was refused (409) with a cached one
@@ -470,7 +520,7 @@ async function publishMoved() {
       content: btoa(String.fromCharCode(...new TextEncoder().encode(body))) }) });
     if (!r.ok) throw new Error(String(r.status));
     try { localStorage.setItem('ghToken', tok.trim()); } catch (e) {}
-    savedMoved = mvJSON(moved); savedGroups = JSON.stringify(groupsNow);
+    savedMoved = mvJSON(moved); savedGroups = JSON.stringify(groupsNow); savedTrash = trashNow; saveTrash();
     showSave();
     alert(t('v.mvsave.ok'));
   } catch (e) {
@@ -531,9 +581,9 @@ function build(data) {
   emissiveMats.length = 0;
   for (const item of data.items) {
     const gs = [].concat(item.g || []);
-    if (gs.length && !gs.some(id => enabledGroups.has(id))) continue;   // group switched off
+    if (gs.length && !gs.some(id => enabledGroups.has(id) && !gone(id))) continue;   // group switched off (or in the trash)
     const geo = geometryFor(item);
-    const mesh = new THREE.Mesh(geo, item.tex && item.box ? texturedBoxMaterials(item) : item.tex && item.slab ? texturedSlabMaterials(item) : materialFor(item.c));
+    const mesh = new THREE.Mesh(geo, item.tex && item.box ? texturedBoxMaterials(item) : item.tex && item.slab ? texturedSlabMaterials(item) : item.tex && item.rbox ? texturedRboxMaterial(item) : materialFor(item.c));
     if (item.mt) for (const m of [].concat(mesh.material)) { m.metalness = item.mt[0]; m.roughness = item.mt[1]; m.envMap = metalEnv(); }   // "mt": [metalness, roughness], mirror-like metal
     if (item.em) for (const m of [].concat(mesh.material)) { m.emissive = m.color.clone(); emissiveMats.push(m); }
     mesh.name = item.n;
@@ -582,7 +632,7 @@ async function load() {
       groupsInit = true;
       const start = fileGroups || (data.groups || []).filter(g => g.on).map(g => g.id);
       if (!new URLSearchParams(location.search).has('g')) for (const id of start) enabledGroups.add(id);
-      savedGroups = JSON.stringify([...start].sort()); showSave();
+      savedGroups = JSON.stringify([...start].filter(id => !gone(id)).sort()); showSave();
     }   // default-on groups ("on": true in scene.json) only when the URL has no ?g
     current = data;
     build(data);
@@ -1041,6 +1091,7 @@ function computeGroupDefs(data) {
   return [...defs.values()];
 }
 function setGroup(id, on) {
+  if (on && gone(id)) return;                                // a group in the trash can't be switched on (e.g. key L)
   const def = groupDefs.find(d => d.id === id);
   if (on && def?.variant) for (const d of groupDefs) if (d.variant === def.variant && d.id !== id) enabledGroups.delete(d.id);
   on ? enabledGroups.add(id) : enabledGroups.delete(id);
@@ -1050,12 +1101,12 @@ function setAllGroups(on) {
   enabledGroups.clear();
   if (on) {
     const seen = new Set();                                  // "all on" picks the first group of every variant set
-    for (const d of groupDefs) { if (d.skipAll) continue; if (d.variant) { if (seen.has(d.variant)) continue; seen.add(d.variant); } enabledGroups.add(d.id); }
+    for (const d of groupDefs) { if (d.skipAll || gone(d.id)) continue; if (d.variant) { if (seen.has(d.variant)) continue; seen.add(d.variant); } enabledGroups.add(d.id); }
   }
   groupsChanged();
 }
 function groupsChanged() {
-  const live = groupDefs.map(d => d.id).filter(id => enabledGroups.has(id));
+  const live = groupDefs.map(d => d.id).filter(id => enabledGroups.has(id) && !gone(id));
   const hasDefaults = ((current && current.groups) || []).some(g => g.on);                      // ?g= (empty) keeps "everything off" instead of re-applying the defaults
   setParams({ g: live.length ? live.join(',') : (hasDefaults ? '' : null) });
   selected = null;
@@ -1063,20 +1114,41 @@ function groupsChanged() {
   renderGroups(current);
   showSave();
 }
+const ICON_TRASH = '<svg viewBox="0 0 256 256" aria-hidden="true"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/></svg>';
+const ICON_RESTORE = '<svg viewBox="0 0 256 256" aria-hidden="true"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z"/></svg>';
+function gicon(cls, svg, label, fn) {                       // a small icon button of the Groups panel (trash / put back / delete for good)
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'gico' + (cls ? ' ' + cls : '');
+  b.innerHTML = svg; b.title = label; b.setAttribute('aria-label', label); b.onclick = e => { e.preventDefault(); fn(); };
+  return b;
+}
+function trashGroup(id) {
+  if (enabledGroups.has(id)) trashWasOn.add(id);
+  enabledGroups.delete(id); trash.add(id); saveTrash(); groupsChanged();
+}
+function restoreGroup(id) {
+  trash.delete(id); saveTrash();
+  if (trashWasOn.delete(id)) setGroup(id, true); else groupsChanged();
+}
+function deleteGroup(id) {
+  const d = groupDefs.find(x => x.id === id);
+  if (!confirm(t('g.trash.confirm', { name: d ? d.label : id }))) return;
+  trash.delete(id); deleted.add(id); trashWasOn.delete(id); saveTrash(); groupsChanged();
+}
 let collapsedCats = new Set();                            // categories folded in the Groups panel (remembered per browser)
 try { collapsedCats = new Set(JSON.parse(localStorage.getItem('collapsedCats') || '[]')); } catch (e) {}
 function saveCollapsed() { try { localStorage.setItem('collapsedCats', JSON.stringify([...collapsedCats])); } catch (e) {} }
 function renderGroups(data) {
   if (!data) return;
   groupDefs = computeGroupDefs(data);
-  const n = groupDefs.filter(d => enabledGroups.has(d.id)).length;
+  const n = groupDefs.filter(d => enabledGroups.has(d.id) && !gone(d.id)).length;
   gbtn.classList.toggle('has', groupDefs.length > 0);
   gbtn.classList.toggle('on', n > 0);
   gbtn.textContent = n ? t('v.groups.count', { n }) : t('v.groups');
   groupsEl.innerHTML = '';
-  const cats = [...new Set(groupDefs.map(d => d.cat))];
+  const shown = groupDefs.filter(d => !gone(d.id));
+  const cats = [...new Set(shown.map(d => d.cat))];
   for (const cat of cats) {
-    const inCat = groupDefs.filter(x => x.cat === cat), isOpen = !collapsedCats.has(cat);
+    const inCat = shown.filter(x => x.cat === cat), isOpen = !collapsedCats.has(cat);
     const h = document.createElement('h4'); h.className = 'cat' + (isOpen ? ' open' : '');   // clickable title: > folded, v open
     h.tabIndex = 0; h.setAttribute('role', 'button'); h.setAttribute('aria-expanded', String(isOpen)); h.dataset.cat = cat;
     const chev = document.createElement('span'); chev.className = 'chev'; chev.textContent = '›';
@@ -1092,7 +1164,20 @@ function renderGroups(data) {
       cb.type = 'checkbox'; cb.checked = enabledGroups.has(d.id); cb.dataset.gid = d.id;
       cb.onchange = () => { setGroup(d.id, cb.checked); for (const x of groupsEl.querySelectorAll('input[data-gid]')) if (x.dataset.gid === d.id) x.focus(); };   // the panel is rebuilt: keep the focus on this checkbox
       l.append(cb, d.label + (d.variant ? '  ·  ' + t('g.variant') : ''));
-      groupsEl.appendChild(l);
+      const row = document.createElement('div'); row.className = 'grow';
+      row.append(l, gicon('', ICON_TRASH, t('g.trash.move', { name: d.label }), () => trashGroup(d.id)));
+      groupsEl.appendChild(row);
+    }
+  }
+  const inTrash = groupDefs.filter(d => trash.has(d.id));
+  if (inTrash.length) {
+    const h = document.createElement('h4'); h.className = 'trash'; h.textContent = t('g.trash'); groupsEl.appendChild(h);
+    for (const d of inTrash) {
+      const row = document.createElement('div'); row.className = 'grow';
+      const nm = document.createElement('span'); nm.className = 'tname'; nm.textContent = d.label;
+      row.append(nm, gicon('restore', ICON_RESTORE, t('g.trash.restore', { name: d.label }), () => restoreGroup(d.id)),
+        gicon('', ICON_TRASH, t('g.trash.delete', { name: d.label }), () => deleteGroup(d.id)));
+      groupsEl.appendChild(row);
     }
   }
   const acts = document.createElement('div'); acts.className = 'acts';

@@ -284,6 +284,19 @@ function freePort() {
           await p.locator('#groups label input').first().focus(); await p.keyboard.press('Space');
           ok('groups: Space on a checkbox toggles the group and keeps the focus on it', (await p.evaluate(() => document.activeElement && document.activeElement.type)) === 'checkbox');
         }
+        if (await p.locator('#groups .grow button.gico').count()) {   // trash: move a group to the trash, put it back, delete it for good (browser draft only)
+          const row = p.locator('#groups .grow').first(), name = (await row.locator('label').textContent()).split('  ·  ')[0];
+          await row.locator('button.gico').click(); await p.waitForTimeout(300);
+          const inTrash = (await p.locator('#groups h4.trash').count()) === 1 && (await p.locator('#groups .grow .tname', { hasText: name }).count()) === 1;
+          await p.locator('#groups .grow', { hasText: name }).locator('button.restore').click(); await p.waitForTimeout(300);
+          const back = (await p.locator('#groups h4.trash').count()) === 0 && (await p.locator('#groups .grow label', { hasText: name }).count()) >= 1;
+          await p.locator('#groups .grow label', { hasText: name }).first().locator('xpath=..').locator('button.gico').click(); await p.waitForTimeout(300);
+          p.once('dialog', d => d.accept());
+          await p.locator('#groups .grow', { hasText: name }).locator('button.gico:not(.restore)').click(); await p.waitForTimeout(300);
+          const draft = await p.evaluate(() => { const k = Object.keys(localStorage).find(k => k.startsWith('trash:')); return k && JSON.parse(localStorage.getItem(k)); });
+          ok('groups: trash moves a group to "Trash", puts it back, and deletes it for good (draft kept)', inTrash && back && (await p.locator('#groups .grow', { hasText: name }).count()) === 0 && draft?.d?.length === 1, JSON.stringify({ inTrash, back, draft }));
+          await p.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.startsWith('trash:')) localStorage.removeItem(k); });
+        }
         const head = p.locator('#groups h4.cat').first(); await head.focus(); await p.keyboard.press('Enter');
         ok('groups: a category header folds from the keyboard (aria-expanded)', (await p.locator('#groups h4.cat').first().getAttribute('aria-expanded')) === 'false');
         await p.close();

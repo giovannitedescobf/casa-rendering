@@ -393,6 +393,12 @@ const balcony = (n, x0, x1, y0, y1, side) => {
       R('/Divano_Redoute/Divano_Guanciale_Sx', WH, 26, W / 2 - 3, 18, 56, 42, 54, 8, 6);
       R('/Divano_Redoute/Divano_Guanciale_Dx', WH, W / 2 + 3, W - 26, 18, 56, 42, 54, 8, 6);
     });
+    // corduroy velvet (user: ribbed, not plain; no black lines): the fabric pieces get the ribbed texture
+    // (scripts/corduroy-texture.py, colour of the user's fabric photo, 5 mm ribs), no outlines on any piece
+    kit.items.filter(i => i.n.startsWith('/Divano_Redoute/')).forEach(i => {
+      i.ne = 1;
+      if (i.rbox && (i.c === C || i.c === C2)) i.tex = { url: 'textures/velluto-coste-ruggine.jpg', tile: kit.inch(14) };   // 28 ribs per tile = 5 mm
+    });
   }
 }
 
@@ -481,26 +487,27 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // Riflessi "Techwall" bookcase, from the maker's 3D files (.3ds, cm): floor-to-ceiling walnut posts 3 x 6.2 cm with bronze
 // end caps and discs, bronze tray shelves L84 x 35 (1 cm base, 4.3 cm turned-up ends, smoked inner panel, hooks onto the
 // posts), walnut container L84 x 35 x 40 with a drop-down (flap) door. Configured by the user: only the 2 central posts
-// (one L84 bay), 4 shelves + the container, posts up to the ceiling. Same place as the former bookcase: on the open
-// line between soggiorno and ingresso, against the west wall   shelf and container heights estimate
+// (one L84 bay), posts 315 cm high, a shelf at 40 cm, the container at 80-120 cm, 3 shelves evenly spaced between
+// 140 and 315 cm (4 equal gaps). Same place as the former bookcase: on the open
+// line between soggiorno and ingresso, against the west wall   heights: user
 // leaf names carry no digits so the whole bookcase moves as one piece
 { const yc = (YI1 + YS0) / 2, xc = 52, PW = 3, PD = 6.2, GAP = 0.25, HK = 1.78, SL = 84, SD = 35;
   const xi0 = xc - SL / 2 - HK - GAP, xi1 = xc + SL / 2 + HK + GAP;                 // inner faces of the two posts
   const BRZ = [150, 122, 84, 255], NOCE = [92, 58, 38, 255], FUME = [70, 62, 54, 255], WOOD = { url: 'textures/noce-venato.jpg', tile: kit.inch(60) };
   const L = i => 'abcdefghij'[i];
-  const SH = [18, 60, 185, 235], CZ = 100;                                           // shelf bottoms, container bottom
-  defGroup('libreria', 'Libreria Riflessi Techwall (2 montanti, 4 mensole L84 + contenitore a ribalta)', 'Arredi');
+  const HT = 315, SH = [40, ...[1, 2, 3].map(k => 140 + k * (HT - 140) / 4)], CZ = 80;   // post height, shelf bottoms, container bottom
+  defGroup('libreria', 'Libreria Riflessi Techwall (2 montanti h 315, 4 mensole L84 + contenitore a ribalta)', 'Arredi');
   group('libreria', () => {
     for (const [n, x0] of [['Sx', xi0 - PW], ['Dx', xi1]]) {                          // posts
       const cx = x0 + PW / 2, y0 = yc - PD / 2, y1 = yc + PD / 2;
       tube(`/Libreria/Libreria_Montante_${n}_Disco_Terra`, BRZ, [[cx, yc, 0], [cx, yc, 1.27]], [3.65, 3.65], 24);
       tube(`/Libreria/Libreria_Montante_${n}_Perno_Terra`, BRZ, [[cx, yc, 1.27], [cx, yc, 4.5]], [0.8, 0.8], 12);
       box(`/Libreria/Libreria_Montante_${n}_Piede`, BRZ, x0, y0, 4.5, x0 + PW, y1, 8.45);
-      box(`/Libreria/Libreria_Montante_${n}_Fusto`, NOCE, x0, y0, 8.45, x0 + PW, y1, H - 8.45);
+      box(`/Libreria/Libreria_Montante_${n}_Fusto`, NOCE, x0, y0, 8.45, x0 + PW, y1, HT - 8.45);
       kit.items[kit.items.length - 1].tex = { ...WOOD, face: n === 'Sx' ? '-x' : '+x' };
-      box(`/Libreria/Libreria_Montante_${n}_Testa`, BRZ, x0, y0, H - 8.45, x0 + PW, y1, H - 4.5);
-      tube(`/Libreria/Libreria_Montante_${n}_Perno_Soffitto`, BRZ, [[cx, yc, H - 4.5], [cx, yc, H - 1.27]], [0.8, 0.8], 12);
-      tube(`/Libreria/Libreria_Montante_${n}_Disco_Soffitto`, BRZ, [[cx, yc, H - 1.27], [cx, yc, H]], [3.65, 3.65], 24);
+      box(`/Libreria/Libreria_Montante_${n}_Testa`, BRZ, x0, y0, HT - 8.45, x0 + PW, y1, HT - 4.5);
+      tube(`/Libreria/Libreria_Montante_${n}_Perno_Soffitto`, BRZ, [[cx, yc, HT - 4.5], [cx, yc, HT - 1.27]], [0.8, 0.8], 12);
+      tube(`/Libreria/Libreria_Montante_${n}_Disco_Soffitto`, BRZ, [[cx, yc, HT - 1.27], [cx, yc, HT]], [3.65, 3.65], 24);
     }
     const hooks = (n, z0, z1) => {                                                    // brackets onto the posts
       box(`/Libreria/Libreria_${n}_Gancio_Sx`, BRZ, xi0, yc - 2.35, z0, xc - SL / 2, yc + 2.35, z1);
