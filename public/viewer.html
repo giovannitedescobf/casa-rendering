@@ -463,7 +463,7 @@ async function publishMoved() {
   const body = JSON.stringify(Object.assign(JSON.parse(mvJSON(moved)), { _groups: groupsNow }), null, 1) + '\n';   // positions + the groups switched on now
   btn.disabled = true;
   try {
-    const cur = await fetch(api + '?ref=main', { headers: h });
+    const cur = await fetch(api + '?ref=main&t=' + Date.now(), { headers: h, cache: 'no-store' });   // never a cached sha: a second save within a minute was refused (409) with a cached one
     if (cur.status === 401) throw new Error('401');
     const sha = cur.ok ? (await cur.json()).sha : undefined;
     const r = await fetch(api, { method: 'PUT', headers: h, body: JSON.stringify({ message: `${id}: furniture positions`, branch: 'main', sha,

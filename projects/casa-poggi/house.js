@@ -358,13 +358,15 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     });
   }
 
-  // La Redoute sofa bed, cinnamon corduroy, 168 x 100 x 82 cm, seat 49 (product drawing); open = a 168 x 200 bed.
+  // La Redoute sofa bed, mustard-yellow corduroy (as in the shop photos; the shop calls the colour "cannella"), 168 x 100 x 82 cm,
+  // seat 49 (product drawing). Open (shop photo): arms and back stay, a white mattress on a grey steel frame folds out, 168 x 200 in all.
   // Two groups, closed and open, with "alt" pointing at each other: select the sofa and press L to switch. Both use the
-  // same path and first word ("Divano"), so they share the moved offset   open-bed construction estimate (no photo available here)
-  { const W = 168, { B, R } = sofa(YC - W / 2), C = [166, 96, 56, 255], C2 = [150, 84, 48, 255], FT = [30, 28, 26, 255];
+  // same path and first word ("Divano"), so they share the moved offset   mattress thickness and frame estimate
+  { const W = 168, { B, R, T } = sofa(YC - W / 2), C = [204, 156, 52, 255], C2 = [182, 136, 42, 255], FT = [30, 28, 26, 255];
+    const MT = [238, 238, 234, 255], GR = [90, 92, 96, 255], WH = [246, 246, 244, 255];
     const feet = (n, d) => { for (const [u, v] of [[8, 8], [W - 8, 8], [8, d - 8], [W - 8, d - 8]]) B(`/Divano_Redoute/Divano_${n}_Piede_${u < W / 2 ? 'Sx' : 'Dx'}${v < 50 ? 'Retro' : 'Fronte'}`, FT, u - 2.5, u + 2.5, v - 2.5, v + 2.5, 0, 5); };
-    defGroup('divano-redoute', 'Divano letto La Redoute 168 (cannella) – chiuso', 'Arredi', 'divano', { alt: 'divano-redoute-aperto' });
-    defGroup('divano-redoute-aperto', 'Divano letto La Redoute 168 (cannella) – aperto', 'Arredi', 'divano', { alt: 'divano-redoute' });
+    defGroup('divano-redoute', 'Divano letto La Redoute 168 (giallo senape) – chiuso', 'Arredi', 'divano', { alt: 'divano-redoute-aperto' });
+    defGroup('divano-redoute-aperto', 'Divano letto La Redoute 168 (giallo senape) – aperto', 'Arredi', 'divano', { alt: 'divano-redoute' });
     group('divano-redoute', () => {                 // proportions from the La Redoute front photo: low base, thick seat cushions overhanging the front, armrests ~58 cm
       feet('Chiuso', 100);
       R('/Divano_Redoute/Divano_Base', C2, 18, W - 18, 0, 95, 5, 27, 5, 4);
@@ -377,11 +379,18 @@ const balcony = (n, x0, x1, y0, y1, side) => {
       R('/Divano_Redoute/Divano_Cuscino_Dx', C, W / 2 + 1, W - 20, 4, 30, 44, 80, 8, 11);
     });
     group('divano-redoute-aperto', () => {
-      feet('Aperto', 200);
-      R('/Divano_Redoute/Divano_Telaio_Letto', C2, 0, W, 0, 200, 5, 30, 4, 3);
-      R('/Divano_Redoute/Divano_Materasso', C, 1, W - 1, 1, 199, 30, 45, 6, 6);
-      R('/Divano_Redoute/Divano_Guanciale_Sx', [236, 228, 214, 255], 10, W / 2 - 4, 6, 46, 45, 55, 6, 5);
-      R('/Divano_Redoute/Divano_Guanciale_Dx', [236, 228, 214, 255], W / 2 + 4, W - 10, 6, 46, 45, 55, 6, 5);
+      for (const [u, v] of [[8, 8], [W - 8, 8], [8, 92], [W - 8, 92]]) B(`/Divano_Redoute/Divano_Aperto_Piede_${u < W / 2 ? 'Sx' : 'Dx'}${v < 50 ? 'Retro' : 'Fronte'}`, FT, u - 2.5, u + 2.5, v - 2.5, v + 2.5, 0, 5);
+      R('/Divano_Redoute/Divano_Aperto_Bracciolo_Sx', C, 0, 19, 0, 100, 5, 58, 7, 9, 4);
+      R('/Divano_Redoute/Divano_Aperto_Bracciolo_Dx', C, W - 19, W, 0, 100, 5, 58, 7, 9, 4);
+      R('/Divano_Redoute/Divano_Aperto_Schienale', C2, 19, W - 19, 0, 16, 5, 56, 4, 6);
+      R('/Divano_Redoute/Divano_Aperto_Cuscini', C2, 19, W - 19, 16, 100, 5, 16, 4, 3);     // the folded seat cushions under the frame
+      B('/Divano_Redoute/Divano_Telaio_Sx', GR, 20, 22, 16, 200, 26, 30);                  // grey steel frame
+      B('/Divano_Redoute/Divano_Telaio_Dx', GR, W - 22, W - 20, 16, 200, 26, 30);
+      T('/Divano_Redoute/Divano_Telaio_Gambe', GR, [[24, 196, 30], [24, 196, 1], [W - 24, 196, 1], [W - 24, 196, 30]], [1, 1, 1, 1]);
+      T('/Divano_Redoute/Divano_Telaio_Gambe_Medie', GR, [[24, 140, 26], [24, 140, 1], [W - 24, 140, 1], [W - 24, 140, 26]], [1, 1, 1, 1]);
+      R('/Divano_Redoute/Divano_Materasso', MT, 20, W - 20, 16, 200, 30, 42, 3, 3);
+      R('/Divano_Redoute/Divano_Guanciale_Sx', WH, 26, W / 2 - 3, 18, 56, 42, 54, 8, 6);
+      R('/Divano_Redoute/Divano_Guanciale_Dx', WH, W / 2 + 3, W - 26, 18, 56, 42, 54, 8, 6);
     });
   }
 }
