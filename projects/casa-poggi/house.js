@@ -365,16 +365,16 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     const feet = (n, d) => { for (const [u, v] of [[8, 8], [W - 8, 8], [8, d - 8], [W - 8, d - 8]]) B(`/Divano_Redoute/Divano_${n}_Piede_${u < W / 2 ? 'Sx' : 'Dx'}${v < 50 ? 'Retro' : 'Fronte'}`, FT, u - 2.5, u + 2.5, v - 2.5, v + 2.5, 0, 5); };
     defGroup('divano-redoute', 'Divano letto La Redoute 168 (cannella) – chiuso', 'Arredi', 'divano', { alt: 'divano-redoute-aperto' });
     defGroup('divano-redoute-aperto', 'Divano letto La Redoute 168 (cannella) – aperto', 'Arredi', 'divano', { alt: 'divano-redoute' });
-    group('divano-redoute', () => {
+    group('divano-redoute', () => {                 // proportions from the La Redoute front photo: low base, thick seat cushions overhanging the front, armrests ~58 cm
       feet('Chiuso', 100);
-      R('/Divano_Redoute/Divano_Base', C2, 18, W - 18, 0, 98, 5, 38, 5, 4);
-      R('/Divano_Redoute/Divano_Bracciolo_Sx', C, 0, 20, 0, 100, 5, 62, 8, 9, 4);
-      R('/Divano_Redoute/Divano_Bracciolo_Dx', C, W - 20, W, 0, 100, 5, 62, 8, 9, 4);
-      R('/Divano_Redoute/Divano_Schienale', C2, 18, W - 18, 0, 18, 5, 60, 4, 6);
-      R('/Divano_Redoute/Divano_Seduta_Sx', C, 20, W / 2, 16, 100, 36, 49, 6, 6);
-      R('/Divano_Redoute/Divano_Seduta_Dx', C, W / 2, W - 20, 16, 100, 36, 49, 6, 6);
-      R('/Divano_Redoute/Divano_Cuscino_Sx', C, 21, W / 2 - 1, 6, 32, 46, 82, 8, 9);
-      R('/Divano_Redoute/Divano_Cuscino_Dx', C, W / 2 + 1, W - 21, 6, 32, 46, 82, 8, 9);
+      R('/Divano_Redoute/Divano_Base', C2, 18, W - 18, 0, 95, 5, 27, 5, 4);
+      R('/Divano_Redoute/Divano_Bracciolo_Sx', C, 0, 19, 0, 100, 5, 58, 7, 9, 4);
+      R('/Divano_Redoute/Divano_Bracciolo_Dx', C, W - 19, W, 0, 100, 5, 58, 7, 9, 4);
+      R('/Divano_Redoute/Divano_Schienale', C2, 18, W - 18, 0, 16, 5, 56, 4, 6);
+      R('/Divano_Redoute/Divano_Seduta_Sx', C, 19, W / 2, 14, 100, 27, 49, 9, 10, 6);
+      R('/Divano_Redoute/Divano_Seduta_Dx', C, W / 2, W - 19, 14, 100, 27, 49, 9, 10, 6);
+      R('/Divano_Redoute/Divano_Cuscino_Sx', C, 20, W / 2 - 1, 4, 30, 44, 80, 8, 11);
+      R('/Divano_Redoute/Divano_Cuscino_Dx', C, W / 2 + 1, W - 20, 4, 30, 44, 80, 8, 11);
     });
     group('divano-redoute-aperto', () => {
       feet('Aperto', 200);
