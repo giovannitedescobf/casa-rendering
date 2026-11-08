@@ -7,9 +7,13 @@
   0.49,
   9.76
  ],
+ "/Divano_Redoute/Divano#": [
+  -0.5,
+  -5.64
+ ],
  "/Gatto/Gatto#": [
-  4.82,
-  -11.14
+  -62.28,
+  16.65
  ],
  "/Lampada/Lampada#": [
   122.38,
@@ -31,11 +35,11 @@
   "armadio",
   "condizionatore",
   "credenza-zoom",
-  "divano-soderhamn",
+  "divano-redoute",
   "gatto",
   "lampada-terra",
   "libreria",
-  "pavimento-terrazzo",
+  "pavimento-crogiolo",
   "pittura",
   "porta-bagno",
   "porta-camera",
