@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'divano-soderhamn', 'credenza-zoom', 'porta-camera', 'pavimento-terrazzo'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'consolle-50', 'divano-soderhamn', 'credenza-zoom', 'porta-camera', 'pavimento-terrazzo'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -384,6 +384,34 @@ const balcony = (n, x0, x1, y0, y1, side) => {
       R('/Divano_Redoute/Divano_Guanciale_Dx', [236, 228, 214, 255], W / 2 + 4, W - 10, 6, 46, 45, 55, 6, 5);
     });
   }
+}
+
+// Diotti "Marshall" extending console, from the maker's page and photos: closed 90 x 50 x 75 cm, laminate top 2 cm in the
+// textured wood finish, bronze legs and apron, fluted wood on the outside of the legs that pull out. It extends to
+// 100 / 150 / 200 / 250 / 300 cm with leaves of 50 cm: one group per length, chained with "alt" (select it and press L
+// to go to the next length, after 300 it closes). All lengths share path and first word, so they move together.
+// In the camera against the west wall (on the right entering from the ingresso), near the north corner, extending east.
+// leg and apron sizes estimate (from the photos)
+{ const X0 = XC0, Y0 = YC1 - 5 - 90, W = 90, BR = [96, 80, 58, 255], WD = [96, 62, 40, 255], TOP = [120, 80, 52, 255];
+  const B = (n, c, u0, u1, v0, v1, z0, z1) => box(`/Consolle_Marshall/Consolle_${n}`, c, X0 + v0, Y0 + u0, z0, X0 + v1, Y0 + u1, z1);
+  const LENS = [50, 100, 150, 200, 250, 300], id = L => `consolle-${L}`;
+  LENS.forEach((L, i) => defGroup(id(L), L === 50 ? 'Consolle Marshall – chiusa (90 x 50)' : `Consolle Marshall – allungata a ${L} cm`, 'Arredi', 'consolle', { alt: id(LENS[(i + 1) % LENS.length]) }));
+  for (const L of LENS) group(id(L), () => {
+    for (let k = 0; k * 50 < L; k++) {                       // top: one 50 cm panel per leaf, the seams show as lines
+      B(`Piano_${'abcdef'[k]}`, TOP, 0, W, k * 50, Math.min(L, k * 50 + 50), 73, 75);
+      kit.items[kit.items.length - 1].tex = { url: 'textures/legno-marshall.jpg', tile: kit.inch(60), face: '+z' };
+    }
+    B('Fascia_Muro', BR, 2, W - 2, 0, 3, 65, 73);            // bronze apron
+    B('Fascia_Fronte', BR, 2, W - 2, L - 3, L, 65, 73);
+    B('Fascia_Sx', BR, 0, 3, 0, L, 65, 73);
+    B('Fascia_Dx', BR, W - 3, W, 0, L, 65, 73);
+    for (const [s, u0, u1] of [['Sx', 0, 4], ['Dx', W - 4, W]]) {
+      B(`Gamba_Muro_${s}`, BR, u0, u1, 0, 10, 0, 73);        // fixed legs at the wall end
+      B(`Gamba_Fronte_${s}`, BR, u0, u1, L - 10, L, 0, 73);  // legs that pull out with the top
+      const uo = s === 'Sx' ? u0 - 0.8 : u1;                 // fluted wood on their outer face
+      for (let f = 0; f < 6; f++) B(`Gamba_Fronte_${s}_Doga_${'abcdef'[f]}`, WD, uo, uo + 0.8, L - 9.5 + f * 1.6, L - 8.4 + f * 1.6, 0, 73);
+    }
+  });
 }
 
 // Mogg Costantina Opal floor lamp (Nava + Arosio): a totem of 7 opal glass elements (cylinders, cones, double cones)

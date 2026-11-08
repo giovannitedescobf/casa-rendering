@@ -438,7 +438,7 @@ function undoMove(back = true) {
   (back ? mvRedo : mvUndo).push({ k: u.k, prev: moved.has(u.k) ? [...moved.get(u.k)] : null });
   if (u.prev) moved.set(u.k, u.prev); else moved.delete(u.k);
   const off = u.prev || [0, 0];
-  for (const o of model.children) if (o.userData.mv === u.k) o.position.set(off[0], off[1], 0);
+  for (const o of model.children) if (o.userData.mv === u.k) placeMv(o);
   if (selected) refreshDims();
   saveMoved();
 }
@@ -480,6 +480,26 @@ async function publishMoved() {
 }
 let walls = [];                                                    // fixed shell (items without a group) for the move collisions: {b: [x0,y0,z0,x1,y1,z1], o?: polygon}
 let mvKey = null;                                                  // the piece selected for moving
+// moved.json value per piece: [dx, dy] or [dx, dy, degrees]: a rotation about the vertical axis through the centre of
+// the piece's plan (pivots), then the shift. Key R turns the selected piece by 45 degrees.
+const pivots = new Map();
+function placeMv(o) {
+  const k = o.userData.mv, off = moved.get(k) || [0, 0], b = pivots.get(k);
+  if (!b) return;
+  const a = (off[2] || 0) * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a), cx = (b.min.x + b.max.x) / 2, cy = (b.min.y + b.max.y) / 2;
+  o.rotation.set(0, 0, a);
+  o.position.set(cx + off[0] - (c * cx - sn * cy), cy + off[1] - (sn * cx + c * cy), 0);
+}
+function rotateMv() {
+  if (!mvKey) return;
+  const prev = moved.has(mvKey) ? [...moved.get(mvKey)] : null, off = prev ? [...prev] : [0, 0];
+  const deg = (((off[2] || 0) + 45) % 360 + 360) % 360;
+  moved.set(mvKey, deg ? [off[0], off[1], deg] : [off[0], off[1]]);
+  for (const o of model.children) if (o.userData.mv === mvKey) placeMv(o);
+  mvUndo.push({ k: mvKey, prev }); mvRedo = [];
+  if (selected) refreshDims();
+  saveMoved();
+}
 let colliders = [];                                               // first-person walls/furniture, rebuilt with the meshes
 function addCollider(item) {                                      // only what can block a standing person: z between ~8" and ~62"
   const Z0 = 8, Z1 = 62;
@@ -520,14 +540,15 @@ function build(data) {
     mesh.castShadow = mesh.receiveShadow = true;
     model.add(mesh);
     addCollider(item);
-    if (item.ne) { const mk = moveKey(item), off = mk && moved.get(mk); mesh.userData.mv = mk; if (off) mesh.position.set(off[0], off[1], 0); continue; }   // "ne": no outline (smooth glass)
+    if (item.ne) { mesh.userData.mv = moveKey(item); continue; }   // "ne": no outline (smooth glass)
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20),
       new THREE.LineBasicMaterial({ color: mvKey && mvKey === moveKey(item) ? 0xb5532a : 0x2a2d33 }));
     model.add(edges);
-    const mk = moveKey(item), off = mk && moved.get(mk);
-    mesh.userData.mv = edges.userData.mv = mk;
-    if (off) { mesh.position.set(off[0], off[1], 0); edges.position.copy(mesh.position); }
+    mesh.userData.mv = edges.userData.mv = moveKey(item);
   }
+  pivots.clear();                                         // each movable piece turns around the centre of its plan, as drawn in scene.json
+  for (const o of model.children) if (o.userData.mv) { o.geometry.computeBoundingBox(); const b = pivots.get(o.userData.mv); b ? b.union(o.geometry.boundingBox) : pivots.set(o.userData.mv, o.geometry.boundingBox.clone()); }
+  for (const o of model.children) if (o.userData.mv) placeMv(o);
   if (ceilingMesh) { scene.remove(ceilingMesh); ceilingMesh.geometry.dispose(); ceilingMesh = null; }
   if (data.ceiling) {
     ceilingMesh = new THREE.Mesh(slabGeometry({ o: data.ceiling.o, h: [], z: data.ceiling.z }), materialFor([250, 250, 248, 255]));
@@ -1171,8 +1192,9 @@ renderer.domElement.addEventListener('pointermove', ev => {
     const t1 = [off[0] + (want[0] - cur[0]) / n, off[1] + (want[1] - cur[1]) / n];
     off = [t1, [t1[0], off[1]], [off[0], t1[1]]].find(o => drag.free || !hitsWall(drag.base, o)) || off;   // slide along a wall
   }
-  moved.set(mvKey, off);
-  for (const o of model.children) if (o.userData.mv === mvKey) o.position.set(off[0], off[1], 0);
+  const rot = cur[2];                                              // keep the piece's rotation
+  moved.set(mvKey, rot ? [off[0], off[1], rot] : [off[0], off[1]]);
+  for (const o of model.children) if (o.userData.mv === mvKey) placeMv(o);
   if (selected) refreshDims();
 });
 // Does the piece's footprint (its box shifted by off, shrunk 0.5" so touching is allowed) cross a wall?
@@ -1206,8 +1228,11 @@ function toggleAlt() {
   if (!current) return;
   const names = new Set(selected ? [selected] : []);
   if (mvKey) for (const o of model.children) if (o.isMesh && o.userData.mv === mvKey) names.add(o.name);
-  const it = current.items.find(i => i.g && names.has(i.n));
-  const def = it && [].concat(it.g).map(id => groupDefs.find(d => d.id === id)).find(d => d && d.alt && enabledGroups.has(d.id));
+  let it = null, def = null;                                 // the states of a piece share item names: take the one that is on
+  for (const i of current.items) if (i.g && names.has(i.n)) {
+    def = [].concat(i.g).map(id => groupDefs.find(d => d.id === id)).find(d => d && d.alt && enabledGroups.has(d.id));
+    if (def) { it = i; break; }
+  }
   if (!def) return;
   enabledGroups.delete(def.id);
   setGroup(def.alt, true);
@@ -1379,6 +1404,7 @@ addEventListener('keydown', e => {
   if (e.key === 'u' || e.key === 'U') return document.getElementById('unit').click();
   if (e.key === 'g' || e.key === 'G') return gbtn.click();
   if (e.key === 'l' || e.key === 'L') return toggleAlt();
+  if (e.key === 'r' || e.key === 'R') return rotateMv();
   const i = Number(e.key) - 1;
   if (i >= 0 && i < PRESETS.length && !e.metaKey && !e.ctrlKey) runPreset(i);
 });
