@@ -168,6 +168,7 @@ Then `Read` the PNG. Write scripts and images to the session scratchpad director
 - **Rounded door pair**: upper door `top` fillet, lower door `bot` fillet (`rbox` with `bot`), both with the same plan radius; the cabinet behind is a plain `rbox` with a small radius; leave the doors overlapping the cabinet by ~0.4" so no seam shows from the side.
 - **Lights belonging to a furniture module** (a pendant over a counter): pass `light` from the generator into the module and call `light({p:[x,y,z], i, sh, g:'<group id>'})` just below the lamp (z under the shade, never inside its closed mesh or the shade shadows it), then flag the shade `em = 1` in the generator next to the other glowing items. A lamp without a `light` entry only looks like one; it gives no light in Night / Render.
 
+- **Furniture from the maker's 3D files (.3ds)**: don't import the meshes (tens of thousands of triangles per hinge); read each object's bounding box with a small Python chunk parser (`0x4D4D` > `0x3D3D` > `0x4000` name > `0x4100` > `0x4110` vertex list, `0x4130` material) and rebuild the parts as `box` / `tube`. The files seen so far were in cm with Z up.
 - **Handmade tiles (terrazzo, cement tiles) must not repeat one identical tile (user)**: build a texture of N x N different tiles from the photo of one tile with `scripts/terrazzo-texture.py` (chips cut out by colour distance from the cement, rescattered at random) and set `tile` = tile size x N.
 
 ### Textures in scenes

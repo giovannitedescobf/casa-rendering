@@ -358,30 +358,31 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     });
   }
 
-  // La Redoute sofa bed, mustard-yellow corduroy (as in the shop photos; the shop calls the colour "cannella"), 168 x 100 x 82 cm,
+  // La Redoute sofa bed, rust-red corduroy (colour sampled from the user's fabric photo), 168 x 100 x 82 cm,
   // seat 49 (product drawing). Open (shop photo): arms and back stay, a white mattress on a grey steel frame folds out, 168 x 200 in all.
   // Two groups, closed and open, with "alt" pointing at each other: select the sofa and press L to switch. Both use the
   // same path and first word ("Divano"), so they share the moved offset   mattress thickness and frame estimate
-  { const W = 168, { B, R, T } = sofa(YC - W / 2), C = [204, 156, 52, 255], C2 = [182, 136, 42, 255], FT = [30, 28, 26, 255];
+  { const W = 168, { B, R, T } = sofa(YC - W / 2), C = [120, 54, 38, 255], C2 = [104, 46, 32, 255], FT = [26, 25, 24, 255];
     const MT = [238, 238, 234, 255], GR = [90, 92, 96, 255], WH = [246, 246, 244, 255];
-    const feet = (n, d) => { for (const [u, v] of [[8, 8], [W - 8, 8], [8, d - 8], [W - 8, d - 8]]) B(`/Divano_Redoute/Divano_${n}_Piede_${u < W / 2 ? 'Sx' : 'Dx'}${v < 50 ? 'Retro' : 'Fronte'}`, FT, u - 2.5, u + 2.5, v - 2.5, v + 2.5, 0, 5); };
-    defGroup('divano-redoute', 'Divano letto La Redoute 168 (giallo senape) – chiuso', 'Arredi', 'divano', { alt: 'divano-redoute-aperto' });
-    defGroup('divano-redoute-aperto', 'Divano letto La Redoute 168 (giallo senape) – aperto', 'Arredi', 'divano', { alt: 'divano-redoute' });
+    const feet = (n) => { for (const [u, v] of [[10, 10], [W - 10, 10], [10, 90], [W - 10, 90]])   // round black feet under the arms, slightly tapered (photo)
+      T(`/Divano_Redoute/Divano_${n}_Piede_${u < W / 2 ? 'Sx' : 'Dx'}${v < 50 ? 'Retro' : 'Fronte'}`, FT, [[u, v, 0], [u, v, 5.5]], [2.1, 2.5]); };
+    defGroup('divano-redoute', 'Divano letto La Redoute 168 (velluto a coste ruggine) – chiuso', 'Arredi', 'divano', { alt: 'divano-redoute-aperto' });
+    defGroup('divano-redoute-aperto', 'Divano letto La Redoute 168 (velluto a coste ruggine) – aperto', 'Arredi', 'divano', { alt: 'divano-redoute' });
     group('divano-redoute', () => {                 // proportions from the La Redoute front photo: low base, thick seat cushions overhanging the front, armrests ~58 cm
-      feet('Chiuso', 100);
-      R('/Divano_Redoute/Divano_Base', C2, 18, W - 18, 0, 95, 5, 27, 5, 4);
-      R('/Divano_Redoute/Divano_Bracciolo_Sx', C, 0, 19, 0, 100, 5, 58, 7, 9, 4);
-      R('/Divano_Redoute/Divano_Bracciolo_Dx', C, W - 19, W, 0, 100, 5, 58, 7, 9, 4);
+      feet('Chiuso');
+      R('/Divano_Redoute/Divano_Base', C2, 18, W - 18, 0, 95, 5, 27, 6, 5, 3);
+      R('/Divano_Redoute/Divano_Bracciolo_Sx', C, 0, 19, 0, 100, 5, 58, 9.2, 9.2, 6);
+      R('/Divano_Redoute/Divano_Bracciolo_Dx', C, W - 19, W, 0, 100, 5, 58, 9.2, 9.2, 6);
       R('/Divano_Redoute/Divano_Schienale', C2, 18, W - 18, 0, 16, 5, 56, 4, 6);
-      R('/Divano_Redoute/Divano_Seduta_Sx', C, 19, W / 2, 14, 100, 27, 49, 9, 10, 6);
-      R('/Divano_Redoute/Divano_Seduta_Dx', C, W / 2, W - 19, 14, 100, 27, 49, 9, 10, 6);
-      R('/Divano_Redoute/Divano_Cuscino_Sx', C, 20, W / 2 - 1, 4, 30, 44, 80, 8, 11);
-      R('/Divano_Redoute/Divano_Cuscino_Dx', C, W / 2 + 1, W - 20, 4, 30, 44, 80, 8, 11);
+      R('/Divano_Redoute/Divano_Seduta_Sx', C, 19, W / 2, 14, 100, 27, 49, 10, 10, 7);
+      R('/Divano_Redoute/Divano_Seduta_Dx', C, W / 2, W - 19, 14, 100, 27, 49, 10, 10, 7);
+      R('/Divano_Redoute/Divano_Cuscino_Sx', C, 20, W / 2 - 1, 4, 30, 44, 80, 10, 12, 4);
+      R('/Divano_Redoute/Divano_Cuscino_Dx', C, W / 2 + 1, W - 20, 4, 30, 44, 80, 10, 12, 4);
     });
     group('divano-redoute-aperto', () => {
-      for (const [u, v] of [[8, 8], [W - 8, 8], [8, 92], [W - 8, 92]]) B(`/Divano_Redoute/Divano_Aperto_Piede_${u < W / 2 ? 'Sx' : 'Dx'}${v < 50 ? 'Retro' : 'Fronte'}`, FT, u - 2.5, u + 2.5, v - 2.5, v + 2.5, 0, 5);
-      R('/Divano_Redoute/Divano_Aperto_Bracciolo_Sx', C, 0, 19, 0, 100, 5, 58, 7, 9, 4);
-      R('/Divano_Redoute/Divano_Aperto_Bracciolo_Dx', C, W - 19, W, 0, 100, 5, 58, 7, 9, 4);
+      feet('Aperto');
+      R('/Divano_Redoute/Divano_Aperto_Bracciolo_Sx', C, 0, 19, 0, 100, 5, 58, 9.2, 9.2, 6);
+      R('/Divano_Redoute/Divano_Aperto_Bracciolo_Dx', C, W - 19, W, 0, 100, 5, 58, 9.2, 9.2, 6);
       R('/Divano_Redoute/Divano_Aperto_Schienale', C2, 19, W - 19, 0, 16, 5, 56, 4, 6);
       R('/Divano_Redoute/Divano_Aperto_Cuscini', C2, 19, W - 19, 16, 100, 5, 16, 4, 3);     // the folded seat cushions under the frame
       B('/Divano_Redoute/Divano_Telaio_Sx', GR, 20, 22, 16, 200, 26, 30);                  // grey steel frame
@@ -451,18 +452,19 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   light({ p: [cx, cy, 120], a: 85, pen: 1, c: [255, 236, 210], i: 60, r: 600, g: 'lampada-terra' });
 }
 
-// black cat, ~7 kg (big, roundish but not fat): standing, facing +x, in the soggiorno   sizes estimate (body ~48 cm, shoulder ~28 cm)
+// black cat, ~7 kg (big but slim, white fur under the rear belly): standing, facing +x, in the soggiorno   sizes estimate (body ~48 cm, shoulder ~28 cm)
 // leaf names carry no digits so the whole cat moves as one piece
-{ const x = 180, y = 850, BK = [24, 24, 26, 255], EY = [196, 170, 40, 255], NO = [60, 44, 44, 255];
+{ const x = 180, y = 850, BK = [24, 24, 26, 255], WF = [238, 236, 230, 255], EY = [196, 170, 40, 255], NO = [60, 44, 44, 255];
   const ball = (n, c, cx, cy, cz, r) => { const p = [], rr = [];
     for (let k = 0; k <= 10; k++) { const a = Math.PI * k / 10; p.push([cx, cy, cz - r * Math.cos(a)]); rr.push(Math.max(0.2, r * Math.sin(a))); }
     tube(n, c, p, rr, 20); };
   defGroup('gatto', 'Gatto nero (7 kg)', 'Animali');
   group('gatto', () => {
     const bz = 24, bp = [0, 3, 8, 16, 26, 36, 43, 47].map(d => [x + d, y, bz + (d > 30 ? (d - 30) * 0.12 : 0)]);
-    tube('/Gatto/Gatto_Corpo', BK, bp, [4, 9, 12, 13, 13, 12, 9, 4], 22);
+    tube('/Gatto/Gatto_Corpo', BK, bp, [3.5, 7.5, 9.8, 10.3, 10.3, 9.8, 7.5, 3.5], 22);   // slimmer body (user)
+    tube('/Gatto/Gatto_Pancia', WF, [7, 11, 17, 23, 29].map(d => [x + d, y, bz - 8.4]), [0.5, 4.4, 5.2, 4.2, 0.5], 18);   // white fur under the rear belly (user)
     for (const [n, dx, dy] of [['Ant_Sx', 40, 5], ['Ant_Dx', 40, -5], ['Post_Sx', 8, 5.5], ['Post_Dx', 8, -5.5]])
-      tube(`/Gatto/Gatto_Zampa_${n}`, BK, [[x + dx, y + dy, 0], [x + dx, y + dy, 1.5], [x + dx, y + dy, bz]], [2.6, 2.4, 3.2], 12);
+      tube(`/Gatto/Gatto_Zampa_${n}`, BK, [[x + dx, y + dy, 0], [x + dx, y + dy, 1.5], [x + dx, y + dy, bz]], [2.4, 2.2, 2.8], 12);
     const hx = x + 52, hz = bz + 12;
     ball('/Gatto/Gatto_Testa', BK, hx, y, hz, 7.5);
     ball('/Gatto/Gatto_Muso', BK, hx + 5.5, y, hz - 2.5, 3.6);
@@ -476,53 +478,58 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   kit.items.filter(i => i.n.startsWith('/Gatto/')).forEach(i => { i.ne = 1; });   // fur: no outlines
 }
 
-// open steel bookcase (from the user's photo): 3 floor-to-ceiling black flat-bar frames, staggered black steel shelves,
-// books upright and in stacks, a few wooden objects; on the open line between soggiorno and ingresso, against the west wall
-// 100 x 30 x 330 cm   user; shelf heights and lengths, books and objects estimate (from the photo)
+// Riflessi "Techwall" bookcase, from the maker's 3D files (.3ds, cm): floor-to-ceiling walnut posts 3 x 6.2 cm with bronze
+// end caps and discs, bronze tray shelves L84 x 35 (1 cm base, 4.3 cm turned-up ends, smoked inner panel, hooks onto the
+// posts), walnut container L84 x 35 x 40 with a drop-down (flap) door. Configured by the user: only the 2 central posts
+// (one L84 bay), 4 shelves + the container, posts up to the ceiling. Same place as the former bookcase: on the open
+// line between soggiorno and ingresso, against the west wall   shelf and container heights estimate
 // leaf names carry no digits so the whole bookcase moves as one piece
-{ const x0 = 2, x1 = x0 + 100, yc = (YI1 + YS0) / 2, y0 = yc - 15, y1 = yc + 15, BL = [34, 33, 32, 255], b = 2;
-  const L = i => String.fromCharCode(97 + Math.floor(i / 26)) + String.fromCharCode(97 + i % 26);   // aa, ab, ... (no digits)
-  const WOOD = [[150, 108, 70, 255], [176, 132, 88, 255], [120, 84, 52, 255]];
-  const BOOK = [[176, 52, 44, 255], [40, 64, 96, 255], [220, 210, 186, 255], [70, 96, 72, 255], [196, 150, 60, 255], [60, 58, 60, 255], [232, 228, 220, 255], [140, 80, 60, 255]];
-  defGroup('libreria', 'Libreria in ferro nero (100 x 30 x 330)', 'Arredi');
+{ const yc = (YI1 + YS0) / 2, xc = 52, PW = 3, PD = 6.2, GAP = 0.25, HK = 1.78, SL = 84, SD = 35;
+  const xi0 = xc - SL / 2 - HK - GAP, xi1 = xc + SL / 2 + HK + GAP;                 // inner faces of the two posts
+  const BRZ = [150, 122, 84, 255], NOCE = [92, 58, 38, 255], FUME = [70, 62, 54, 255], WOOD = { url: 'textures/noce-venato.jpg', tile: kit.inch(60) };
+  const L = i => 'abcdefghij'[i];
+  const SH = [18, 60, 185, 235], CZ = 100;                                           // shelf bottoms, container bottom
+  defGroup('libreria', 'Libreria Riflessi Techwall (2 montanti, 4 mensole L84 + contenitore a ribalta)', 'Arredi');
   group('libreria', () => {
-    let k = 0;
-    for (const [n, xf] of [['Ovest', x0], ['Centro', (x0 + x1) / 2 - b / 2], ['Est', x1 - b]]) {   // frames: 2 posts + top and bottom bar
-      box(`/Libreria/Libreria_Telaio_${n}_PostoA`, BL, xf, y0, 0, xf + b, y0 + b, H);
-      box(`/Libreria/Libreria_Telaio_${n}_PostoB`, BL, xf, y1 - b, 0, xf + b, y1, H);
-      box(`/Libreria/Libreria_Telaio_${n}_Base`, BL, xf, y0, 0, xf + b, y1, b);
-      box(`/Libreria/Libreria_Telaio_${n}_Testa`, BL, xf, y0, H - b, xf + b, y1, H);
+    for (const [n, x0] of [['Sx', xi0 - PW], ['Dx', xi1]]) {                          // posts
+      const cx = x0 + PW / 2, y0 = yc - PD / 2, y1 = yc + PD / 2;
+      tube(`/Libreria/Libreria_Montante_${n}_Disco_Terra`, BRZ, [[cx, yc, 0], [cx, yc, 1.27]], [3.65, 3.65], 24);
+      tube(`/Libreria/Libreria_Montante_${n}_Perno_Terra`, BRZ, [[cx, yc, 1.27], [cx, yc, 4.5]], [0.8, 0.8], 12);
+      box(`/Libreria/Libreria_Montante_${n}_Piede`, BRZ, x0, y0, 4.5, x0 + PW, y1, 8.45);
+      box(`/Libreria/Libreria_Montante_${n}_Fusto`, NOCE, x0, y0, 8.45, x0 + PW, y1, H - 8.45);
+      kit.items[kit.items.length - 1].tex = { ...WOOD, face: n === 'Sx' ? '-x' : '+x' };
+      box(`/Libreria/Libreria_Montante_${n}_Testa`, BRZ, x0, y0, H - 8.45, x0 + PW, y1, H - 4.5);
+      tube(`/Libreria/Libreria_Montante_${n}_Perno_Soffitto`, BRZ, [[cx, yc, H - 4.5], [cx, yc, H - 1.27]], [0.8, 0.8], 12);
+      tube(`/Libreria/Libreria_Montante_${n}_Disco_Soffitto`, BRZ, [[cx, yc, H - 1.27], [cx, yc, H]], [3.65, 3.65], 24);
     }
-    const SH = [[18, x0, x1], [55, x0, x0 + 52], [120, x0 + 48, x1], [175, x0, x1], [230, x0, x0 + 55], [280, x0 + 45, x1]];   // [z, from, to]
-    SH.forEach(([z, a, e], i) => box(`/Libreria/Libreria_Ripiano_${L(i)}`, BL, a, y0 + 1, z, e, y1 - 1, z + 1.5));
-    const book = (bx, w, h, d, c, lay) => {   // upright (lay false) or lying flat
-      const z = book.z, yb = y0 + (30 - d) / 2;
-      if (lay) box(`/Libreria/Libreria_Libro_${L(k++)}`, c, bx, yb, z, bx + h, yb + d, z + w);
-      else box(`/Libreria/Libreria_Libro_${L(k++)}`, c, bx, yb, z, bx + w, yb + d, z + h);
+    const hooks = (n, z0, z1) => {                                                    // brackets onto the posts
+      box(`/Libreria/Libreria_${n}_Gancio_Sx`, BRZ, xi0, yc - 2.35, z0, xc - SL / 2, yc + 2.35, z1);
+      box(`/Libreria/Libreria_${n}_Gancio_Dx`, BRZ, xc + SL / 2, yc - 2.35, z0, xi1, yc + 2.35, z1);
     };
-    const row = (z, from, list) => { book.z = z; let x = from; for (const [w, h, d] of list) { book(x, w, h, d, BOOK[k % BOOK.length], false); x += w + 0.2; } };
-    const stack = (z, x, list) => { let zz = z; for (const [w, h, d] of list) { book.z = zz; book(x, w, h, d, BOOK[(k + 3) % BOOK.length], true); zz += w + 0.1; } };
-    const z = i => SH[i][0] + 1.5;
-    row(z(0), x0 + 6, [[3, 28, 21], [4, 30, 22], [2.5, 26, 19], [3.5, 31, 23], [3, 29, 21], [5, 32, 24], [2.5, 27, 20]]);
-    stack(z(0), x0 + 62, [[4, 30, 23], [3, 28, 21], [3.5, 26, 20]]);
-    row(z(1), x0 + 4, [[3, 24, 17], [2.5, 22, 16], [4, 25, 18], [3, 23, 17]]);
-    stack(z(2), x0 + 52, [[3, 24, 18], [2.5, 22, 16]]);
-    row(z(3), x0 + 4, [[3, 25, 18], [3.5, 27, 19], [2.5, 24, 17], [4, 28, 20], [3, 26, 18]]);
-    row(z(3), x0 + 70, [[3, 23, 16], [3.5, 25, 17], [2.5, 22, 16]]);
-    stack(z(4), x0 + 8, [[3, 26, 19], [2.5, 24, 18], [3, 22, 16], [2, 20, 15]]);
-    row(z(5), x0 + 62, [[2.5, 22, 16], [3, 24, 17], [3.5, 25, 18], [2.5, 21, 15], [3, 23, 16]]);
-    // wooden objects
-    const yc2 = (y0 + y1) / 2;
-    rbox('/Libreria/Libreria_Legno_Scatola', WOOD[0], [x0 + 33, yc2 - 7, z(1), x0 + 49, yc2 + 7, z(1) + 9], 1, 0.6);
-    tube('/Libreria/Libreria_Legno_Vaso', WOOD[1], [[x0 + 82, yc2, z(2)], [x0 + 82, yc2, z(2) + 6], [x0 + 82, yc2, z(2) + 16], [x0 + 82, yc2, z(2) + 22]], [4, 6, 4.5, 3], 18);
-    tube('/Libreria/Libreria_Legno_Ciotola', WOOD[2], [[x0 + 66, yc2, z(2)], [x0 + 66, yc2, z(2) + 2], [x0 + 66, yc2, z(2) + 6]], [4, 8, 10], 20);
-    const bz = z(3) + 5; const p = [], rr = [];
-    for (let i = 0; i <= 8; i++) { const a = Math.PI * i / 8; p.push([x0 + 58, yc2, bz - 5 * Math.cos(a)]); rr.push(Math.max(0.2, 5 * Math.sin(a))); }
-    tube('/Libreria/Libreria_Legno_Sfera', WOOD[0], p, rr, 18);
-    rbox('/Libreria/Libreria_Legno_Fermalibri', WOOD[2], [x0 + 30, yc2 - 6, z(4), x0 + 33, yc2 + 6, z(4) + 15], 0.5, 0.5);
-    tube('/Libreria/Libreria_Legno_Candeliere', WOOD[1], [[x0 + 92, yc2, z(5)], [x0 + 92, yc2, z(5) + 1.5], [x0 + 92, yc2, z(5) + 18]], [3.5, 1.6, 1.4], 14);
+    const ya = yc - SD / 2, yb = yc + SD / 2, xa = xc - SL / 2, xb = xc + SL / 2;
+    SH.forEach((z, i) => {                                                            // tray shelves
+      const n = `Mensola_${L(i)}`;
+      box(`/Libreria/Libreria_${n}_Fondo`, BRZ, xa, ya, z, xb, yb, z + 1);
+      box(`/Libreria/Libreria_${n}_Fume`, FUME, xa + 1, ya + 1, z + 1, xb - 1, yb - 1, z + 1.5);
+      box(`/Libreria/Libreria_${n}_Sponda_Sx`, BRZ, xa, ya, z + 1, xa + 0.5, yb, z + 5.3);
+      box(`/Libreria/Libreria_${n}_Sponda_Dx`, BRZ, xb - 0.5, ya, z + 1, xb, yb, z + 5.3);
+      hooks(n, z, z + 5.3);
+    });
+    // container: walnut carcass (sides 1.9, top and bottom 1.5, back 1.5), flap door in front, small bronze pull
+    const zc = CZ, zt = CZ + 40;
+    box('/Libreria/Libreria_Contenitore_Fianco_Sx', NOCE, xa, ya, zc, xa + 1.9, yb, zt);
+    box('/Libreria/Libreria_Contenitore_Fianco_Dx', NOCE, xb - 1.9, ya, zc, xb, yb, zt);
+    box('/Libreria/Libreria_Contenitore_Fondo', NOCE, xa + 1.9, ya, zc, xb - 1.9, yb, zc + 1.5);
+    box('/Libreria/Libreria_Contenitore_Cielo', NOCE, xa + 1.9, ya, zt - 1.5, xb - 1.9, yb, zt);
+    kit.items[kit.items.length - 1].tex = { ...WOOD, face: '+z' };
+    box('/Libreria/Libreria_Contenitore_Schiena', NOCE, xa + 1.9, yb - 1.5, zc + 1.5, xb - 1.9, yb, zt - 1.5);
+    box('/Libreria/Libreria_Contenitore_Anta', NOCE, xa, ya - 1.6, zc, xb, ya - 0.1, zt);
+    kit.items[kit.items.length - 1].tex = { ...WOOD, face: '-y' };
+    box('/Libreria/Libreria_Contenitore_Maniglia', BRZ, xc - 8, ya - 2.4, zt - 4, xc + 8, ya - 1.6, zt - 2.5);
+    hooks('Contenitore', zc + 5, zc + 10.3);
+    hooks('Contenitore_Alto', zc + 30, zc + 35.3);
   });
-  kit.items.filter(i => /Libreria_Legno_(Vaso|Ciotola|Sfera|Candeliere)/.test(i.n)).forEach(i => { i.ne = 1; });
+  kit.items.filter(i => /Libreria_Montante_.*_(Disco|Perno)/.test(i.n)).forEach(i => { i.mt = [0.8, 0.35]; });
 }
 
 // OPTION (former version casa-poggi-porta-scorrevole): kept hidden, the user switches it on in the Groups panel
