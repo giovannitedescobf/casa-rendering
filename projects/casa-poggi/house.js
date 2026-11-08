@@ -3,7 +3,7 @@
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'credenza-zoom', 'porta-camera', 'pavimento-terrazzo'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'divano-soderhamn', 'credenza-zoom', 'porta-camera', 'pavimento-terrazzo'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -328,6 +328,62 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   const WT = { url: 'textures/noce-venato.jpg', tile: kit.inch(60) };
   kit.items.filter(i => /Credenza_Mobile_(Anta|Montante|Corpo)/.test(i.n)).forEach(i => { i.tex = { ...WT, face: '-x' }; });
   kit.items.filter(i => /Credenza_Mobile_Top/.test(i.n)).forEach(i => { i.tex = { ...WT, face: '+z' }; });
+}
+
+// ---------- sofas on the soggiorno west wall (back against the wall, centred on the solid stretch of wall) ----------
+// local frame: u along the wall (world y = Y0 + u), v from the wall face (world x = v); variant 'divano' = one sofa at a time
+{ const WALL0 = YS0, WALL1 = YK0 - TK, YC = (WALL0 + WALL1) / 2;
+  const sofa = (Y0) => ({
+    B: (n, c, u0, u1, v0, v1, z0, z1) => box(n, c, v0, Y0 + u0, z0, v1, Y0 + u1, z1),
+    R: (n, c, u0, u1, v0, v1, z0, z1, r, top, bot = 0) => rbox(n, c, [v0, Y0 + u0, z0, v1, Y0 + u1, z1], r, top, bot),
+    T: (n, c, pts, rr) => tube(n, c, pts.map(([u, v, z]) => [v, Y0 + u, z]), rr, 12) });
+
+  // IKEA Söderhamn 3-seat, Alhamn orange-red velvet: 198 x 99 x 83 cm, seat 40, armrest 69, legs 14 (product drawing)
+  // thin armrest panels, 2 seat cushions, 2 back + 2 lumbar cushions, chrome legs   cushion sizes estimate (from the photo)
+  { const W = 198, { B, R, T } = sofa(YC - W / 2), C = [170, 60, 34, 255], C2 = [152, 50, 28, 255], CH = [205, 208, 212, 255];
+    defGroup('divano-soderhamn', 'Divano IKEA Söderhamn 3 posti (Alhamn arancione-rosso)', 'Arredi', 'divano');
+    group('divano-soderhamn', () => {
+      for (const [u, v, s] of [[12, 10, 'Sx'], [W - 12, 10, 'Dx'], [12, 89, 'Sx'], [W - 12, 89, 'Dx']])
+        T(`/Divano_Soderhamn/Divano_Gamba_${s}_${v < 50 ? 'Retro' : 'Fronte'}`, CH, [[u, v, 0], [u, v, 14]], [1.1, 1.1]);
+      R('/Divano_Soderhamn/Divano_Base', C2, 6, W - 6, 2, 97, 14, 30, 2, 2);
+      R('/Divano_Soderhamn/Divano_Bracciolo_Sx', C, 0, 7, 0, 99, 16, 69, 3, 3, 2);
+      R('/Divano_Soderhamn/Divano_Bracciolo_Dx', C, W - 7, W, 0, 99, 16, 69, 3, 3, 2);
+      R('/Divano_Soderhamn/Divano_Schienale', C2, 7, W - 7, 0, 12, 30, 62, 2, 3);
+      R('/Divano_Soderhamn/Divano_Seduta_Sx', C, 7, W / 2, 14, 99, 30, 40, 4, 4);
+      R('/Divano_Soderhamn/Divano_Seduta_Dx', C, W / 2, W - 7, 14, 99, 30, 40, 4, 4);
+      R('/Divano_Soderhamn/Divano_Cuscino_Sx', C, 12, W / 2 - 2, 10, 28, 40, 83, 6, 7);
+      R('/Divano_Soderhamn/Divano_Cuscino_Dx', C, W / 2 + 2, W - 12, 10, 28, 40, 83, 6, 7);
+      R('/Divano_Soderhamn/Divano_Lombare_Sx', C2, 27, 75, 28, 39, 42, 64, 4, 5);
+      R('/Divano_Soderhamn/Divano_Lombare_Dx', C2, W - 75, W - 27, 28, 39, 42, 64, 4, 5);
+    });
+  }
+
+  // La Redoute sofa bed, cinnamon corduroy, 168 x 100 x 82 cm, seat 49 (product drawing); open = a 168 x 200 bed.
+  // Two groups, closed and open, with "alt" pointing at each other: select the sofa and press L to switch. Both use the
+  // same path and first word ("Divano"), so they share the moved offset   open-bed construction estimate (no photo available here)
+  { const W = 168, { B, R } = sofa(YC - W / 2), C = [166, 96, 56, 255], C2 = [150, 84, 48, 255], FT = [30, 28, 26, 255];
+    const feet = (n, d) => { for (const [u, v] of [[8, 8], [W - 8, 8], [8, d - 8], [W - 8, d - 8]]) B(`/Divano_Redoute/Divano_${n}_Piede_${u < W / 2 ? 'Sx' : 'Dx'}${v < 50 ? 'Retro' : 'Fronte'}`, FT, u - 2.5, u + 2.5, v - 2.5, v + 2.5, 0, 5); };
+    defGroup('divano-redoute', 'Divano letto La Redoute 168 (cannella) – chiuso', 'Arredi', 'divano', { alt: 'divano-redoute-aperto' });
+    defGroup('divano-redoute-aperto', 'Divano letto La Redoute 168 (cannella) – aperto', 'Arredi', 'divano', { alt: 'divano-redoute' });
+    group('divano-redoute', () => {
+      feet('Chiuso', 100);
+      R('/Divano_Redoute/Divano_Base', C2, 18, W - 18, 0, 98, 5, 38, 5, 4);
+      R('/Divano_Redoute/Divano_Bracciolo_Sx', C, 0, 20, 0, 100, 5, 62, 8, 9, 4);
+      R('/Divano_Redoute/Divano_Bracciolo_Dx', C, W - 20, W, 0, 100, 5, 62, 8, 9, 4);
+      R('/Divano_Redoute/Divano_Schienale', C2, 18, W - 18, 0, 18, 5, 60, 4, 6);
+      R('/Divano_Redoute/Divano_Seduta_Sx', C, 20, W / 2, 16, 100, 36, 49, 6, 6);
+      R('/Divano_Redoute/Divano_Seduta_Dx', C, W / 2, W - 20, 16, 100, 36, 49, 6, 6);
+      R('/Divano_Redoute/Divano_Cuscino_Sx', C, 21, W / 2 - 1, 6, 32, 46, 82, 8, 9);
+      R('/Divano_Redoute/Divano_Cuscino_Dx', C, W / 2 + 1, W - 21, 6, 32, 46, 82, 8, 9);
+    });
+    group('divano-redoute-aperto', () => {
+      feet('Aperto', 200);
+      R('/Divano_Redoute/Divano_Telaio_Letto', C2, 0, W, 0, 200, 5, 30, 4, 3);
+      R('/Divano_Redoute/Divano_Materasso', C, 1, W - 1, 1, 199, 30, 45, 6, 6);
+      R('/Divano_Redoute/Divano_Guanciale_Sx', [236, 228, 214, 255], 10, W / 2 - 4, 6, 46, 45, 55, 6, 5);
+      R('/Divano_Redoute/Divano_Guanciale_Dx', [236, 228, 214, 255], W / 2 + 4, W - 10, 6, 46, 45, 55, 6, 5);
+    });
+  }
 }
 
 // Mogg Costantina Opal floor lamp (Nava + Arosio): a totem of 7 opal glass elements (cylinders, cones, double cones)

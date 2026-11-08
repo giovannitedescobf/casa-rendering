@@ -409,10 +409,14 @@ function moveKey(item) {
 const MV_STORE = 'moved:' + location.pathname;
 const moved = new Map();                                           // moveKey -> [dx, dy] inches
 let savedMoved = null;                                             // the published moved.json, as a JSON string of sorted entries
+let fileGroups = null, savedGroups = null;                         // moved.json "_groups": the groups saved with 'Save positions' (they replace the scene's defaults); savedGroups = their sorted JSON
+const liveGroups = () => JSON.stringify([...enabledGroups].sort());
 const mvJSON = m => JSON.stringify(Object.fromEntries([...m].map(([k, v]) => [k, v.map(x => Math.round(x * 100) / 100)]).sort((a, b) => a[0] < b[0] ? -1 : 1)), null, 1);
 async function loadMoved() {
   let file = {};
   try { const r = await fetch('moved.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) file = await r.json(); } catch (e) {}
+  if (Array.isArray(file._groups)) fileGroups = file._groups;
+  delete file._groups;
   savedMoved = mvJSON(new Map(Object.entries(file)));
   let draft = null;
   try { draft = JSON.parse(localStorage.getItem(MV_STORE)); } catch (e) {}
@@ -441,7 +445,7 @@ function undoMove(back = true) {
 const SAVE_REPO = location.hostname.endsWith('.github.io') && [location.hostname.split('.')[0], location.pathname.split('/')[1]];   // owner, repo of a GitHub Pages site
 function showSave() {
   const b = document.getElementById('mvsave');
-  if (b) b.hidden = !SAVE_REPO || savedMoved === null || mvJSON(moved) === savedMoved;
+  if (b) b.hidden = !SAVE_REPO || savedMoved === null || (mvJSON(moved) === savedMoved && (savedGroups === null || liveGroups() === savedGroups));
   const u = document.getElementById('mvundo');
   if (u) u.disabled = !mvUndo.length;
   const r = document.getElementById('mvredo');
@@ -455,7 +459,8 @@ async function publishMoved() {
   if (!tok) return;
   const api = `https://api.github.com/repos/${owner}/${repo}/contents/projects/${id}/moved.json`;
   const h = { Authorization: 'Bearer ' + tok.trim(), Accept: 'application/vnd.github+json' };
-  const btn = document.getElementById('mvsave'), body = mvJSON(moved) + '\n';
+  const btn = document.getElementById('mvsave'), groupsNow = [...enabledGroups].sort();
+  const body = JSON.stringify(Object.assign(JSON.parse(mvJSON(moved)), { _groups: groupsNow }), null, 1) + '\n';   // positions + the groups switched on now
   btn.disabled = true;
   try {
     const cur = await fetch(api + '?ref=main', { headers: h });
@@ -465,7 +470,7 @@ async function publishMoved() {
       content: btoa(String.fromCharCode(...new TextEncoder().encode(body))) }) });
     if (!r.ok) throw new Error(String(r.status));
     try { localStorage.setItem('ghToken', tok.trim()); } catch (e) {}
-    savedMoved = mvJSON(moved);
+    savedMoved = mvJSON(moved); savedGroups = JSON.stringify(groupsNow);
     showSave();
     alert(t('v.mvsave.ok'));
   } catch (e) {
@@ -552,7 +557,12 @@ async function load() {
     const res = await fetch('scene.json?t=' + Date.now(), { cache: 'no-store' });
     const data = await res.json();
     normalizeRemoved(data);
-    if (!groupsInit) { groupsInit = true; if (!new URLSearchParams(location.search).has('g')) for (const g of data.groups || []) if (g.on) enabledGroups.add(g.id); }   // default-on groups ("on": true in scene.json) only when the URL has no ?g
+    if (!groupsInit) {                                                 // first load: groups saved with 'Save positions' (moved.json "_groups"), else the scene's defaults ("on": true); a ?g in the URL wins
+      groupsInit = true;
+      const start = fileGroups || (data.groups || []).filter(g => g.on).map(g => g.id);
+      if (!new URLSearchParams(location.search).has('g')) for (const id of start) enabledGroups.add(id);
+      savedGroups = JSON.stringify([...start].sort()); showSave();
+    }   // default-on groups ("on": true in scene.json) only when the URL has no ?g
     current = data;
     build(data);
     if (firstLoad) { firstLoad = false; applyInitialView(data); if (new URLSearchParams(location.search).has('fp')) enterFP(); if (new URLSearchParams(location.search).has('rt')) rtOn(); if (new URLSearchParams(location.search).has('ao')) aoOn(); }   // later reloads keep your orbit
@@ -1004,7 +1014,7 @@ function refreshDims() {
 const groupsEl = document.getElementById('groups'), gbtn = document.getElementById('gbtn');
 function computeGroupDefs(data) {
   const defs = new Map();
-  for (const g of data.groups || []) defs.set(g.id, { id: g.id, label: g.label || g.id, cat: g.cat || t('g.other'), variant: g.variant || null, skipAll: !!g.skipAll });
+  for (const g of data.groups || []) defs.set(g.id, { id: g.id, label: g.label || g.id, cat: g.cat || t('g.other'), variant: g.variant || null, skipAll: !!g.skipAll, alt: g.alt || null });
   for (const it of data.items) for (const id of [].concat(it.g || [])) if (!defs.has(id)) defs.set(id, { id, label: id, cat: t('g.other'), variant: null });
   for (const L of data.lights || []) for (const id of [].concat(L.g || [])) if (!defs.has(id)) defs.set(id, { id, label: id, cat: t('g.other'), variant: null });   // a light's group needs a checkbox too
   return [...defs.values()];
@@ -1030,6 +1040,7 @@ function groupsChanged() {
   selected = null;
   if (current) { build(current); refreshDims(); }
   renderGroups(current);
+  showSave();
 }
 let collapsedCats = new Set();                            // categories folded in the Groups panel (remembered per browser)
 try { collapsedCats = new Set(JSON.parse(localStorage.getItem('collapsedCats') || '[]')); } catch (e) {}
@@ -1188,6 +1199,20 @@ const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) {
 renderer.domElement.addEventListener('pointerup', endDrag);
 renderer.domElement.addEventListener('pointercancel', endDrag);
 addEventListener('keydown', e => { if (e.key === 'Escape' && mvKey) setMv(null); });
+// Key L: the selected piece (double click / long press, or a click that dimensions it) switches to its alternative
+// state: a group with "alt": "<other group>" (e.g. a sofa bed closed <-> open). Both states share the item path and
+// first word, so they share the moved offset and stay selected.
+function toggleAlt() {
+  if (!current) return;
+  const names = new Set(selected ? [selected] : []);
+  if (mvKey) for (const o of model.children) if (o.isMesh && o.userData.mv === mvKey) names.add(o.name);
+  const it = current.items.find(i => i.g && names.has(i.n));
+  const def = it && [].concat(it.g).map(id => groupDefs.find(d => d.id === id)).find(d => d && d.alt && enabledGroups.has(d.id));
+  if (!def) return;
+  enabledGroups.delete(def.id);
+  setGroup(def.alt, true);
+  setMv(moveKey(it));
+}
 document.getElementById('mvsave').onclick = publishMoved;
 document.getElementById('mvundo').onclick = () => undoMove(true);
 document.getElementById('mvredo').onclick = () => undoMove(false);
@@ -1353,6 +1378,7 @@ addEventListener('keydown', e => {
   if (e.key === 'p' || e.key === 'P') return document.getElementById('snap').click();
   if (e.key === 'u' || e.key === 'U') return document.getElementById('unit').click();
   if (e.key === 'g' || e.key === 'G') return gbtn.click();
+  if (e.key === 'l' || e.key === 'L') return toggleAlt();
   const i = Number(e.key) - 1;
   if (i >= 0 && i < PRESETS.length && !e.metaKey && !e.ctrlKey) runPreset(i);
 });
