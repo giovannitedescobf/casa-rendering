@@ -8,8 +8,8 @@
   9.76
  ],
  "/Gatto/Gatto#": [
-  -14.04,
-  -21.77
+  4.82,
+  -11.14
  ],
  "/Lampada/Lampada#": [
   122.38,
@@ -26,5 +26,20 @@
  "/Split_Camera/Split#": [
   5.87,
   -0.41
+ ],
+ "_groups": [
+  "armadio",
+  "condizionatore",
+  "credenza-zoom",
+  "divano-soderhamn",
+  "gatto",
+  "lampada-terra",
+  "libreria",
+  "pavimento-terrazzo",
+  "pittura",
+  "porta-bagno",
+  "porta-camera",
+  "porte",
+  "split-camera"
  ]
 }
