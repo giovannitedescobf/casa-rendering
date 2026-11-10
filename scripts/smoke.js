@@ -87,6 +87,12 @@ function freePort() {
       ok('kit.wall: segments, sill and lintel pieces for a door and a window', k.items.map(i => i.n).join() === '/W_Seg1,/W_Lintel1,/W_Seg2,/W_Sill2,/W_Lintel2,/W_Seg3', k.items.map(i => i.n).join());
       let threw = false; try { k.wall('/X', [1, 2, 3], [0, 0, 400, 10], 260, [{ from: 100, to: 190 }, { from: 150, to: 200 }]); } catch { threw = true; }
       ok('kit.wall refuses overlapping openings', threw);
+      { const k2 = require('./scene-kit').createScene(), f = path.join(os.tmpdir(), `look-${process.pid}.json`);   // "look" is written only when asked for
+        k2.box('/A', [1, 2, 3, 255], 0, 0, 0, 1, 1, 1);
+        k2.write(f, { camera: k2.camera([0, 0, 0], [1, 1, 1]), look: 'real' }); const withLook = JSON.parse(fs.readFileSync(f, 'utf8')).look;
+        k2.write(f, { camera: k2.camera([0, 0, 0], [1, 1, 1]) }); const without = 'look' in JSON.parse(fs.readFileSync(f, 'utf8'));
+        fs.unlinkSync(f);
+        ok('kit.write: the realistic look is written only when asked for', withLook === 'real' && !without); }
       k.light({ p: [10, 10, 100], i: 100 }); k.light({ p: [10, 10, 100], g: 'lamps' });
       ok('kit.light adds no default group, only the one passed', k.lights[0].g === undefined && k.lights[1].g === 'lamps');
     }
