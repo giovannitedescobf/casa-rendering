@@ -152,6 +152,14 @@ function freePort() {
     ok('dist has index.html, projects.json, plan.mjs, i18n.mjs, licence texts, fonts, three, _headers', ['index.html', 'projects.json', 'plan.mjs', 'i18n.mjs', 'licenses/three.txt', 'licenses/oidn-weights.txt', 'fonts/geist.woff2', 'fonts/geist-mono.woff2', 'three/build/three.module.js', '_headers'].every(has));
     for (const id of ids) ok(`dist/${id}/ has index.html, scene.json, textures where used`, has(`${id}/index.html`) && has(`${id}/scene.json`) && (!fs.existsSync(path.join(PROJECTS, id, 'textures')) || has(`${id}/textures`)));
     if (has('projects.json')) ok('dist/projects.json lists every project', JSON.parse(fs.readFileSync(path.join(dist, 'projects.json'), 'utf8')).map(p => p.id).join() === ids.join());
+    { const size = f => fs.statSync(f).size, src = path.join(ROOT, 'node_modules/three/build/three.core.js'), out = path.join(dist, 'three/build/three.core.js');
+      let esbuild = true; try { require.resolve('esbuild'); } catch { esbuild = false; }
+      if (!esbuild) warn('esbuild not installed: three.js is published unminified');
+      else ok('three.js is minified in dist (same file names, still ES modules)', has('three/build/three.core.js') && size(out) < size(src) / 2 && /\bexport\s*\{/.test(fs.readFileSync(out, 'utf8')) && size(path.join(dist, 'three/build/three.module.js')) < size(path.join(ROOT, 'node_modules/three/build/three.module.js')), `${size(out)} of ${size(src)} bytes`); }
+    for (const id of ids) {
+      const urls = [...new Set(JSON.parse(fs.readFileSync(path.join(PROJECTS, id, 'scene.json'), 'utf8')).items.filter(i => i.tex).map(i => i.tex.url))];
+      ok(`${id}: every texture cited by the scene is in the project and in dist (${urls.length})`, urls.every(u => fs.existsSync(path.join(PROJECTS, id, u)) && has(`${id}/${u}`)), urls.filter(u => !fs.existsSync(path.join(PROJECTS, id, u))).join());
+    }
     ok('viewer in dist reaches shared files with ../ and is marked static', /\.\.\/three\//.test(fs.readFileSync(path.join(dist, ids[0], 'index.html'), 'utf8')) && /STATIC_BUILD = true/.test(fs.readFileSync(path.join(dist, ids[0], 'index.html'), 'utf8')));
 
     section('dev server');
@@ -219,6 +227,20 @@ function freePort() {
         const info = list.find(p => p.id === id), p = await open(`/${id}/`);
         await loaded(p);
         ok(`${id}: viewer loads ${info.items} objects without errors`, (await p.textContent('#status')).startsWith(info.items + ' objects') && !p.errors.length, p.errors.join('; '));
+        {   // drawing on demand, shared textures, the realistic look's inside mode
+          const stats = () => p.evaluate(() => window.viewerDebug.stats()), sc = JSON.parse(fs.readFileSync(path.join(PROJECTS, id, 'scene.json'), 'utf8'));
+          await p.waitForTimeout(2600); const f0 = (await stats()).frames; await p.waitForTimeout(3000); const s1 = await stats();
+          ok(`${id}: an idle viewer stops redrawing (heartbeat only)`, s1.frames - f0 <= 3, `${s1.frames - f0} frames in 3 s`);
+          await p.mouse.move(640, 420); await p.mouse.down(); await p.mouse.move(700, 430, { steps: 5 }); await p.mouse.up();
+          await p.waitForFunction(n => window.viewerDebug.stats().frames > n, s1.frames, { timeout: 20000 }).catch(() => {});
+          ok(`${id}: an orbit drag redraws`, (await stats()).frames > s1.frames);
+          const files = new Set(sc.items.filter(i => i.tex).map(i => i.tex.url)).size;
+          ok(`${id}: one GPU texture per image file, not one per item`, s1.textures <= files + 6, `${s1.textures} textures for ${files} files`);
+          if (sc.look === 'real') {
+            const under = sc.ceiling && sc.camera.eye[2] < sc.ceiling.z[0];
+            ok(`${id}: realistic look: ${under ? 'under the ceiling it is drawn and the shell casts no sun shadows' : 'from above the model is open and the shell casts shadows'}, no outlines`, s1.ceiling === !!under && s1.shellCast === !under && s1.outlines === 0, JSON.stringify(s1));
+          }
+        }
         // camera dropdown
         await p.click('#camBtn');
         ok(`${id}: camera dropdown opens (aria-expanded)`, (await p.getAttribute('#camBtn', 'aria-expanded')) === 'true' && await p.isVisible('#views'));
