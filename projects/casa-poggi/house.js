@@ -456,7 +456,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   });
   kit.items.filter(i => i.n.startsWith('/Lampada/Lampada_Vetro')).forEach(i => { i.em = 1; i.ne = 1; });   // glowing glass, no outlines between the elements
   kit.items.filter(i => /Lampada_(Base|Attacco)/.test(i.n)).forEach(i => { i.c = [232, 234, 238, 255]; i.mt = [1, 0.04]; i.ne = 1; });   // mirror-polished silver
-  light({ p: [cx, cy, 120], a: 85, pen: 1, c: [255, 236, 210], i: 60, r: 600, g: 'lampada-terra' });
+  light({ p: [cx, cy, 120], a: 85, pen: 1, c: [255, 236, 210], i: 60, r: 600, sh: 1, g: 'lampada-terra' });
 }
 
 // black cat, ~7 kg (big but slim, white fur under the rear belly): standing, facing +x, in the soggiorno   sizes estimate (body ~48 cm, shoulder ~28 cm)
@@ -628,11 +628,25 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
   ];
   for (const i of kit.items) { if (i.mt || i.c[3] < 255) continue; const f = FINISH.find(([re]) => re.test(i.n)); if (f) i.ro = f[1]; } }
 
+// ---------- surface relief for the realistic look: "bp" = bump strength; a textured item uses its own image as the height map
+// (grout lines, plank gaps, ribs, grain), a plain box / rbox a small procedural noise (plaster, fabric). First match wins; all values estimate
+{ const RELIEF = [
+    [/^\/Pavimento_Terrazzo\//, 0.5],                                    // polished terrazzo: chips barely felt
+    [/^\/Pavimento_(Marazzi|Crogiolo)\//, 1.2],                          // tile joints
+    [/^\/Casa\/Camera\/Parquet/, 1.5],                                    // plank gaps
+    [/Balcone_Cortile\/Piastrelle/, 1.2],
+    [/^\/Divano_Redoute\//, 2],                                          // corduroy ribs
+    [/^\/Divano_Soderhamn\//, 0.8],                                      // woven fabric
+    [/^\/(Credenza_Zoom|Consolle_Marshall|Libreria)\//, 0.8],            // walnut grain (textured faces only)
+    [/^\/Pittura\/|^\/Casa\/(Muro|Tramezzo|Pilastro)_/, 0.25],            // plaster
+  ];
+  for (const i of kit.items) { if (i.mt || i.c[3] < 255 || !(i.tex || i.box || i.rbox)) continue; const f = RELIEF.find(([re]) => re.test(i.n)); if (f) i.bp = f[1]; } }
+
 kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),
   look: 'real',
-  probes: [[180, 900, 130], [435, 900, 130], [320, 240, 130]],   // reflection probes: living area, bathroom, bedroom (estimate: room centres at 130 cm)
+  probes: [[180, 900, 131.37], [435, 900, 131.37], [320, 240, 131.37]],   // reflection probes: living area, bathroom, bedroom (estimate: room centres; the odd height keeps the camera off the exact plane of a shelf top, where the bump shader gives NaN edge-on)
   ceiling: kit.ceiling([[XC0, 0], [XR, 0], [XR, YS1], [XK0, YS1], KA, KB, [0, YK0], [0, YI0], [XC0, YI0]], H, H + 2),
 });
 console.log('wrote', path.relative(process.cwd(), out), '-', kit.items.length, 'items');

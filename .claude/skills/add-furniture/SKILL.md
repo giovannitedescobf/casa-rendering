@@ -11,6 +11,13 @@ Everything the user can switch on and off in the viewer's **Groups** panel is a 
 1. **Every object you add is movable as one piece**: put it in a group that is NOT `fixed`, and give all its leaf names the same first word with no digits (letters instead: `Part_a`, `Part_b`), so the viewer's move key is one per object. This includes things built like walls (a header wall above a door belongs to the door's group); verify with `mvState` after a double click that the whole object has one key.
 2. **An object added to an alternative version is also added to the base version** (`projects/casa-poggi/`), with the same code, but hidden there: its group is left out of the base's `defaultOn`, so it is off until ticked in Groups.
 
+## REALISTIC LOOK RULES (user, imperative, never skip; also required in every pull request)
+Every object you add must keep the project's realistic look (`look: 'real'`):
+1. **Materials from what it is really made of**: add its items to the generator's finish table (`ro`: polished stone 0.3, varnished wood 0.4-0.45, lacquer / painted joinery 0.45-0.5, matt tile 0.6, fabric / fur 1, glass via alpha < 255) and to the relief table (`bp`: grain / ribs / grout / plank gaps for a textured surface, small noise for plaster and fabric; polished or smooth things get none). Write the material in a comment; mark guesses `// estimate`.
+2. **Shapes**: group `box` / `rbox` / `tube` (cut edges apply automatically to opaque, untextured group boxes); keep the scene light (no meshes with thousands of triangles, no new image above ~1.5 MB, WebP textures).
+3. **Light stays real**: never add a lamp, bulb, ceiling light or night glow unless the user asks; at night the only light is the existing lamp; by day light enters only through the existing windows and doors. If a lamp is requested: `kit.light({ p, i, sh: 1, g })` just below the shade and `em: 1` on the shade.
+4. **Verify like the rest**: day and night screenshot of the new object, `npm test`, and the PR description lists these four points as done.
+
 ## 1. Understand what to add
 Ask only what is missing, one question at a time:
 - which project and which room (and where in it: against which wall, how far from a corner);
