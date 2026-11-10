@@ -632,6 +632,7 @@ kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),
   look: 'real',
+  probes: [[180, 900, 130], [435, 900, 130], [320, 240, 130]],   // reflection probes: living area, bathroom, bedroom (estimate: room centres at 130 cm)
   ceiling: kit.ceiling([[XC0, 0], [XR, 0], [XR, YS1], [XK0, YS1], KA, KB, [0, YK0], [0, YI0], [XC0, YI0]], H, H + 2),
 });
 console.log('wrote', path.relative(process.cwd(), out), '-', kit.items.length, 'items');
