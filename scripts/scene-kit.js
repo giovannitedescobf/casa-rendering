@@ -52,10 +52,11 @@ function createScene({ defaultOn = [] } = {}) {
   const ceiling = (poly, z0, z1) => ({ o: poly.map(pt), z: [inch(z0), inch(z1)] });
 
   // one item per line, so a diff of scene.json stays readable; keys that are absent are omitted
-  function write(out, { camera: cam, spawn: sp, ceiling: ce, look }) {
+  function write(out, { camera: cam, spawn: sp, ceiling: ce, look, probes }) {
     const head = ['"units":"inches"', '"camera":' + JSON.stringify(cam)];
     if (sp) head.push('"spawn":' + JSON.stringify(sp));
     if (ce) head.push('"ceiling":' + JSON.stringify(ce));
+    if (probes && probes.length) head.push('"probes":' + JSON.stringify(probes.map(p => p.map(inch))));   // reflection probes, one point per room (cm in, inches out): see CLAUDE.md
     if (look) head.push('"look":' + JSON.stringify(look));   // 'real' = the viewer's photo-like look (see CLAUDE.md)
     if (lights.length) head.push('"lights":' + JSON.stringify(lights));
     if (GROUPS.length) head.push('"groups":' + JSON.stringify(GROUPS));

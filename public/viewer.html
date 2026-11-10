@@ -289,7 +289,7 @@ function texturedRboxMaterial(item) {                    // item.tex = {url, til
 let swGL = null; const noGPU = () => swGL ?? (swGL = softwareGL());
 const softwareGL = () => { try { const gl = renderer.getContext(), x = gl.getExtension('WEBGL_debug_renderer_info'); return /swiftshader|llvmpipe|software/i.test(String(gl.getParameter(x ? x.UNMASKED_RENDERER_WEBGL : gl.RENDERER))); } catch (e) { return false; } };   // no real GPU (headless tests, VMs): the realistic look skips its automatic AO
 let realLook = false;                                    // scene.json "look": "real": photo-like raster view (no outlines, soft sun shadows, sky, reflections, filmic tones)
-const LOOK = { sun: 2.5, inside: 0.5, insideShadow: 0.6, sunColor: 0xfff2dc, hemi: 1.15, sky: 0xe6eeff, ground: 0xf3e9da, fill: 0.9, fillColor: 0xfff7ec, env: 0.35, ceiling: 0.22, exposure: 1.0, radius: 3 };   // daylight of the realistic look (inside / insideShadow = sun and shadow strength while the camera is under the ceiling)
+const LOOK = { sun: 2.5, inside: 0.5, insideShadow: 0.6, sunColor: 0xfff2dc, hemi: 1.15, sky: 0xe6eeff, ground: 0xf3e9da, fill: 0.9, fillColor: 0xfff7ec, env: 0.35, probe: 0.6, ceiling: 0.22, exposure: 1.0, radius: 3 };   // daylight of the realistic look (inside / insideShadow = sun and shadow strength while the camera is under the ceiling)
 window.look = LOOK;                                      // exposed for tuning from the console / headless tests (then call viewerDebug.relight())
 const SUN_DIR = new THREE.Vector3(-0.36, -0.46, 0.81).normalize();    // realistic look: sun from the south-west, about 54 degrees high (short wall shadows keep the floors readable)
 const FILL_DIR = new THREE.Vector3(0.78, 0.42, 0.46).normalize();     // fill light from the opposite side, lower
@@ -335,6 +335,55 @@ function sunLevel() {                                    // under the ceiling th
 let shellCast = true;                                    // do walls, floors and fixed finishes cast shadows? Not in the realistic look while the camera is under the ceiling (syncInside)
 const casts = o => !realLook || (!o.userData.glass && (shellCast || !o.userData.shell));   // realistic look: glass lets the sun through
 let metalEnvTex = null;                                  // shared reflection map for "mt" items (built once)
+// Room reflections (realistic look, scene.json "probes": [[x,y,z] inches, one per room]): each probe is a small cube map of the
+// room drawn once (one probe per frame, ~1.5 s after the first image), prefiltered by PMREM; polished / glass / metal pieces
+// use the probe nearest to them instead of the generic studio map. Re-made only when scene.json reloads, not on every group toggle.
+let probeTex = [], probeKey = '', probing = false, probeRun = 0, pmrem = null;
+const probeMats = new Set();                              // materials that took a probe (their intensity follows day / night)
+function probeFor(mesh) {                                 // nearest probe by plan distance to the piece's centre
+  if (!probeTex.length || !current?.probes) return -1;
+  mesh.geometry.boundingBox || mesh.geometry.computeBoundingBox();
+  const c = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+  let best = -1, bd = 1e12;
+  current.probes.forEach((p, i) => { if (!probeTex[i]) return; const d = (p[0] - c.x) ** 2 + (p[1] - c.y) ** 2; if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+function useProbes() {                                    // give the glossy materials of the current meshes their room's map
+  probeMats.clear();
+  if (!realLook || !probeTex.length) return;
+  for (const o of model.children) {
+    if (!o.isMesh) continue;
+    const ms = [].concat(o.material), shiny = o.userData.glass || ms.some(m => m.metalness > 0.5 || m.roughness <= 0.5);
+    if (!shiny) continue;
+    const k = probeFor(o); if (k < 0) continue;
+    for (const m of ms) { if (m.envMap !== probeTex[k]) { m.envMap = probeTex[k]; m.needsUpdate = true; } m.envMapIntensity = m.metalness > 0.5 ? 1 : LOOK.probe; probeMats.add(m); }
+  }
+  setProbeLevel();
+}
+function setProbeLevel() { for (const m of probeMats) if (m.metalness <= 0.5) m.envMapIntensity = night ? 0.08 : LOOK.probe; }
+function bakeProbes() {
+  if (!realLook || !current?.probes || noGPU() && !window.__forceProbes || rt.on) return;
+  const key = JSON.stringify(current.probes) + current.items.length; if (key === probeKey) { useProbes(); return; }
+  probeKey = key; const run = ++probeRun, list = current.probes;
+  pmrem = pmrem || new THREE.PMREMGenerator(renderer);
+  const step = (i) => {
+    if (run !== probeRun) return;
+    if (i >= list.length) { useProbes(); invalidate(); return; }
+    const was = { fp: ceilingMesh?.visible, bg: scene.background };
+    const rtgt = new THREE.WebGLCubeRenderTarget(96, { type: THREE.HalfFloatType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+    const cam = new THREE.CubeCamera(2, 3000, rtgt); cam.up.set(0, 0, 1);
+    cam.position.set(...list[i]); scene.add(cam); cam.updateMatrixWorld(true);
+    probing = true; syncInside(); if (ceilingMesh) ceilingMesh.visible = true;   // the room as seen from inside: ceiling on, walls not shadowing the sun
+    const env = scene.environment; scene.environment = null;
+    cam.update(renderer, scene);
+    scene.environment = env; probing = false; syncInside(); if (ceilingMesh) ceilingMesh.visible = was.fp;
+    scene.remove(cam);
+    probeTex[i]?.dispose(); probeTex[i] = pmrem.fromCubemap(rtgt.texture).texture; rtgt.dispose();
+    shadowsDirty(); invalidate();
+    requestAnimationFrame(() => step(i + 1));
+  };
+  probeTex = []; setTimeout(() => step(0), 1500);
+}
 const metalEnv = () => metalEnvTex || (metalEnvTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture);
 const emissiveMats = [];                                 // items with "em": glow in night mode
 function materialFor(c) {
@@ -474,6 +523,36 @@ function rboxGeometry({ b, r, top, bot = 0 }, uv = false) {   // rounded box: fi
   return g;
 }
 
+function chamferBox(x0, y0, z0, x1, y1, z1, b) {          // box with its 12 edges cut at 45 degrees (b inches): catches a thin highlight like a real rounded edge, 44 triangles
+  const h = [(x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2], pos = [], nor = [];
+  const poly = (pts, n) => {                              // convex polygon, fan, wound to face along n
+    const a = new THREE.Vector3(...pts[0]), c = new THREE.Vector3(...pts[1]), d = new THREE.Vector3(...pts[2]);
+    const flip = c.clone().sub(a).cross(d.clone().sub(a)).dot(new THREE.Vector3(...n)) < 0;
+    const l = Math.hypot(...n);
+    for (let i = 1; i < pts.length - 1; i++) for (const q of flip ? [pts[0], pts[i + 1], pts[i]] : [pts[0], pts[i], pts[i + 1]]) { pos.push(...q); nor.push(n[0] / l, n[1] / l, n[2] / l); }
+  };
+  const S = [-1, 1];
+  for (let a = 0; a < 3; a++) {                           // big faces
+    const b1 = (a + 1) % 3, b2 = (a + 2) % 3;
+    for (const sa of S) {
+      const pts = [], n = [0, 0, 0]; n[a] = sa;
+      for (const [u, v] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) { const p = [0, 0, 0]; p[a] = sa * h[a]; p[b1] = u * (h[b1] - b); p[b2] = v * (h[b2] - b); pts.push(p); }
+      poly(pts, n);
+    }
+    for (const sa of S) for (const sb of S) {             // edge strips along axis b2, between faces a and b1
+      const n = [0, 0, 0]; n[a] = sa; n[b1] = sb; const pts = [];
+      for (const w of [1, -1, -1, 1]) { const p = [0, 0, 0]; p[b2] = w * (h[b2] - b); pts.push(p); }
+      pts[0][a] = sa * h[a]; pts[0][b1] = sb * (h[b1] - b); pts[1][a] = sa * h[a]; pts[1][b1] = sb * (h[b1] - b);
+      pts[2][a] = sa * (h[a] - b); pts[2][b1] = sb * h[b1]; pts[3][a] = sa * (h[a] - b); pts[3][b1] = sb * h[b1];
+      poly(pts, n);
+    }
+  }
+  for (const sx of S) for (const sy of S) for (const sz of S) poly([[sx * h[0], sy * (h[1] - b), sz * (h[2] - b)], [sx * (h[0] - b), sy * h[1], sz * (h[2] - b)], [sx * (h[0] - b), sy * (h[1] - b), sz * h[2]]], [sx, sy, sz]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  return g;
+}
 function geometryFor(item) {
   if (item.tube) return tubeGeometry(item.tube);
   if (item.slab) return slabGeometry(item.slab);
@@ -481,6 +560,10 @@ function geometryFor(item) {
   if (item.rbox) return rboxGeometry(item.rbox, !!item.tex);
   if (item.box) {
     const [x0, y0, z0, x1, y1, z1] = item.box;
+    if (realLook && item.g && !item.tex && !(item.c && item.c[3] < 255) && !item.ne) {   // realistic look: pieces of furniture get cut edges (walls and finishes stay crisp so their seams don't show)
+      const m = Math.min(x1 - x0, y1 - y0, z1 - z0);
+      if (m >= 0.6) return chamferBox(x0, y0, z0, x1, y1, z1, Math.min(0.2, m * 0.15));
+    }
     const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0);
     g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
     return g;
@@ -712,6 +795,7 @@ function build(data) {
   pivots.clear();                                         // each movable piece turns around the centre of its plan, as drawn in scene.json
   for (const o of model.children) if (o.userData.mv) { o.geometry.computeBoundingBox(); const b = pivots.get(o.userData.mv); b ? b.union(o.geometry.boundingBox) : pivots.set(o.userData.mv, o.geometry.boundingBox.clone()); }
   for (const o of model.children) if (o.userData.mv) placeMv(o);
+  useProbes();                                            // rooms already probed keep their reflections across group toggles
   if (ceilingMesh) { scene.remove(ceilingMesh); ceilingMesh.geometry.dispose(); ceilingMesh = null; }
   if (data.ceiling) {
     ceilingMesh = new THREE.Mesh(slabGeometry({ o: data.ceiling.o, h: [], z: data.ceiling.z }), materialFor([250, 250, 248, 255]));
@@ -762,7 +846,7 @@ async function load() {
       savedGroups = JSON.stringify([...start].filter(id => !gone(id)).sort()); showSave();
     }   // default-on groups ("on": true in scene.json) only when the URL has no ?g
     current = data;
-    build(data);
+    build(data); bakeProbes();
     if (firstLoad && realLook && !new URLSearchParams(location.search).has('ao') && !matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches && !noGPU()) aoOn();   // realistic look: contact shadows on by default (desktop), ?ao=0 keeps them off
     if (firstLoad) { firstLoad = false; applyInitialView(data); if (new URLSearchParams(location.search).has('fp')) enterFP(); if (new URLSearchParams(location.search).has('rt')) rtOn(); if (+(new URLSearchParams(location.search).get('ao') ?? 0)) aoOn(); }   // later reloads keep your orbit
     status.textContent = t('v.status.objects', { n: data.items.length, time: new Date().toLocaleTimeString(locale()) });
@@ -815,7 +899,7 @@ function applyNight() {
     if (!noGPU()) { scene.environment = metalEnv(); scene.environmentIntensity = night ? 0.04 : LOOK.env; } else if (!night) hemi.intensity = LOOK.hemi * 2;   // image-based lighting on every material is far too slow without a GPU
     renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = night ? 1.3 : LOOK.exposure;   // Neutral keeps the colours of the finishes (ACES greyed them)
   }
-  shadowsDirty();
+  shadowsDirty(); setProbeLevel();
   if (ceilingMesh) { ceilingMesh.material.emissive.set(0xffffff); ceilingMesh.material.emissiveIntensity = night || rt.on ? 0 : realLook ? LOOK.ceiling : 0.5; }   // keeps the white ceiling white in daylight (it only gets light from below otherwise)
   lightsGroup.visible = night;
   for (const m of emissiveMats) { m.emissiveIntensity = night ? 1.6 : 0; m.needsUpdate = true; }
@@ -1671,7 +1755,7 @@ document.getElementById('snap').onclick = () => { snapReq = true; };
 // shadows of its own walls; from above it is the usual open model. At night the shell keeps casting (lamps must not shine through walls).
 function syncInside() {
   const cz = current?.ceiling?.z?.[0];
-  const show = !!fp || (realLook && !rt.on && cz != null && camera.position.z < cz);
+  const show = !!fp || (realLook && !rt.on && cz != null && (probing || camera.position.z < cz));
   const cast = !(realLook && show && !night && !rt.on);
   if (ceilingMesh && ceilingMesh.visible !== show) { ceilingMesh.visible = show; invalidate(); }
   if (cast !== shellCast) {
@@ -1687,7 +1771,7 @@ function camMoved() {
   for (let i = 0; i < 9; i++) if (Math.abs(v[i] - camSig[i]) > (i < 3 ? 1e-4 : 1e-6)) { camSig[i] = v[i]; moved = true; }   // above the 1e-7 jitter of the orbit damping
   return moved;
 }
-window.viewerDebug = { stats: () => ({ frames, live: performance.now() < liveUntil, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, programs: renderer.info.programs?.length, ceiling: !!ceilingMesh?.visible, shellCast, outlines: model.children.filter(o => o.isLineSegments).length, shadowsPending: renderer.shadowMap.needsUpdate }),
+window.viewerDebug = { stats: () => ({ frames, live: performance.now() < liveUntil, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, programs: renderer.info.programs?.length, ceiling: !!ceilingMesh?.visible, shellCast, outlines: model.children.filter(o => o.isLineSegments).length, shadowsPending: renderer.shadowMap.needsUpdate, probes: probeTex.filter(Boolean).length, probeMats: probeMats.size }),
                        live: ms => invalidate(ms), relight: () => { sun.shadow.radius = realLook ? LOOK.radius : 1; applyNight(); } };   // for headless tests and tuning
 
 load();
