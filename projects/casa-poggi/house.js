@@ -1,9 +1,10 @@
-// Casa Poggi (Milano, primo piano): generator of projects/casa-poggi/scene.json. All measures in cm (x right = east, y up = north toward the courtyard, z up); output in inches.
+// Casa Poggi (Milano, primo piano): generator of projects/casa-poggi/scene.json. The base version: finishing details on by default and
+// the viewer's photo-like look (`look: 'real'`). All measures in cm (x right = east, y up = north toward the courtyard, z up); output in inches.
 // Usage: node projects/casa-poggi/house.js [output_file]
 // Source: floor plan PDF "Planimetria_Casa_Poggi_Milano_modificata" (stato di fatto). "measured" = printed on the drawing, "estimate" = guessed.
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
-const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'consolle-50', 'divano-soderhamn', 'credenza-zoom', 'porta-camera', 'pavimento-terrazzo'] });
+const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'consolle-50', 'divano-soderhamn', 'credenza-zoom', 'porta-camera', 'pavimento-terrazzo', 'battiscopa', 'infissi'] });
 const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
 
 // ---------- dimensions (cm) ----------
@@ -573,7 +574,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // OPTION (former version casa-poggi-gabbia-cucina): kept hidden, the user switches it on in the Groups panel
 require('./gabbia-cucina')(kit, { H, Y0: YK0 - TK, Y1: YS1, WHITE });
 
-// OPTION: realistic finishing details (skirting boards, window frames, door trims), shared with casa-poggi-realistica
+// OPTION: realistic finishing details (skirting boards, window frames, door trims)
 require('./dettagli-realistici')(kit, { XR, XC0, XB0, SW: ROOMS.soggiorno.w, YC1, YI0, YI1, YS0, YS1, YK0, XK0, XK1, KP, KA, KB, PF, CAM_PF, SOG_PF, CAM_DOOR,
   BATH_DOOR: { from: XB0 + 30, to: XB0 + 100 }, ENTRY, BAGNO_WIN, DOOR_H, ccw });
 
@@ -608,6 +609,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
 kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),
+  look: 'real',
   ceiling: kit.ceiling([[XC0, 0], [XR, 0], [XR, YS1], [XK0, YS1], KA, KB, [0, YK0], [0, YI0], [XC0, YI0]], H, H + 2),
 });
 console.log('wrote', path.relative(process.cwd(), out), '-', kit.items.length, 'items');
