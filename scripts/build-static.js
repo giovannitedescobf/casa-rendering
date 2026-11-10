@@ -52,6 +52,17 @@ for (const name of Object.keys(FONTS)) fs.copyFileSync(fontPath(ROOT, name), pat
 
 // three.js served from the same site (same relative paths as server.js): only build/ (ES modules) and the OrbitControls utilities are needed
 copyDir(path.join(THREE, 'build'), path.join(OUT, 'three/build'), f => /three\.(module|core|webgpu|tsl)\.js$/.test(f));   // webgpu + tsl: WebGPU path tracer
+// The two files every viewer loads (three.module.js, three.core.js) are minified for the published site: same names and
+// exports, so every import still resolves, less than half the bytes to download and a third to parse. keepNames keeps
+// class / function names. Without esbuild (or if it fails) the readable sources are published as before.
+try {
+  const esbuild = require('esbuild');
+  for (const f of ['three.module.js', 'three.core.js']) {
+    const file = path.join(OUT, 'three/build', f), src = fs.readFileSync(file, 'utf8');
+    const out = esbuild.transformSync(src, { minify: true, keepNames: true, format: 'esm', target: 'esnext', legalComments: 'inline' }).code;
+    if (out.length < src.length && /\bexport\b/.test(out)) fs.writeFileSync(file, out);
+  }
+} catch (e) { console.warn('three.js published unminified:', e.message.split('\n')[0]); }
 copyDir(path.join(THREE, 'examples/jsm/controls'), path.join(OUT, 'three/examples/jsm/controls'));
 copyDir(path.join(THREE, 'examples/jsm/postprocessing'), path.join(OUT, 'three/examples/jsm/postprocessing'), f => /\.js$/.test(f));   // path tracer (Pass.js) + ambient occlusion (EffectComposer, GTAOPass)
 copyDir(path.join(THREE, 'examples/jsm/shaders'), path.join(OUT, 'three/examples/jsm/shaders'), f => /(Copy|Output|GTAO|PoissonDenoise)Shader\.js$/.test(f));
@@ -80,7 +91,7 @@ fs.writeFileSync(path.join(OUT, '_headers'), '/*\n  X-Robots-Tag: noindex, nofol
 fs.writeFileSync(path.join(OUT, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
 
 // ---------- thumbnails: screenshot of the viewer in headless Chrome, served from dist/ ----------
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2' };
 async function makeThumbs() {
   if (NO_THUMBS) return { done: [], why: '--no-thumbs' };
   let chromium;

@@ -59,7 +59,7 @@ box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + T
     // one piece for soggiorno + ingresso, also across the opening between them (user: no strip there)
     for (const [n, poly] of [['Soggiorno', [[0, YI0], [XR, YI0], [XR, YI1], [ROOMS.soggiorno.w, YI1], [ROOMS.soggiorno.w, YS1], [0, YS1]]]]) {
       slab(`/Pavimento_Terrazzo/Terrazzo_${n}`, [120, 112, 104, 255], poly, 0, TZ.z);
-      kit.items[kit.items.length - 1].tex = { url: 'textures/terrazzo-rainbow-gleam.png', tile: kit.inch(TZ.tile * TZ.n) };
+      kit.items[kit.items.length - 1].tex = { url: 'textures/terrazzo-rainbow-gleam.webp', tile: kit.inch(TZ.tile * TZ.n) };
     }
   }); }
 
@@ -71,7 +71,7 @@ box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + T
   defGroup('pavimento-marazzi', 'Piastrella Marazzi Frammento Macro Verde Naturale (60 x 120)', 'Finiture', 'pavimento', { fixed: true });
   group('pavimento-marazzi', () => {
     slab('/Pavimento_Marazzi/Marazzi_Soggiorno', [228, 230, 224, 255], [[0, YI0], [XR, YI0], [XR, YI1], [ROOMS.soggiorno.w, YI1], [ROOMS.soggiorno.w, YS1], [0, YS1]], 0, MZ.z);
-    kit.items[kit.items.length - 1].tex = { url: 'textures/marazzi-frammento-macro-verde.jpg', tile: kit.inch(MZ.tile) };
+    kit.items[kit.items.length - 1].tex = { url: 'textures/marazzi-frammento-macro-verde.webp', tile: kit.inch(MZ.tile) };
   }); }
 
 // alternative floor (off by default, the user picks it): Marazzi Crogiolo D_Segni Colore Tappeto 8, cement-look tiles
@@ -82,12 +82,12 @@ box('/Casa/Pavimento_Soggiorno', C.floor, 0, YS0, -4, ROOMS.soggiorno.w, YS1 + T
   defGroup('pavimento-crogiolo', 'Marazzi Crogiolo Disegni (20 x 20)', 'Finiture', 'pavimento', { fixed: true });
   group('pavimento-crogiolo', () => {
     slab('/Pavimento_Crogiolo/Crogiolo_Soggiorno', [214, 196, 176, 255], [[0, YI0], [XR, YI0], [XR, YI1], [ROOMS.soggiorno.w, YI1], [ROOMS.soggiorno.w, YS1], [0, YS1]], 0, CG.z);
-    kit.items[kit.items.length - 1].tex = { url: 'textures/marazzi-crogiolo-d-segni-tappeto8.jpg', tile: kit.inch(CG.tile) };
+    kit.items[kit.items.length - 1].tex = { url: 'textures/marazzi-crogiolo-d-segni-tappeto8.webp', tile: kit.inch(CG.tile) };
   }); }
 
 // camera: herringbone parquet (honey oak, 7 x 42 cm boards at 45 degrees, from the user's photo) + darker border band   pattern measured on photo, sizes estimate
 slab('/Casa/Camera/Parquet', [150, 95, 50, 255], [[XC0 - TW, -TE], [XR + TE, -TE], [XR + TE, YI0 - TI], [XC0 - TW, YI0 - TI]], -4, 0);
-kit.items[kit.items.length - 1].tex = { url: 'textures/parquet-spina.png', tile: kit.inch(PARQUET.tile) };
+kit.items[kit.items.length - 1].tex = { url: 'textures/parquet-spina.webp', tile: kit.inch(PARQUET.tile) };
 { const o = PARQUET.bandOff, w = PARQUET.bandW, x0 = XC0, x1 = XR, y0 = 0, y1 = YC1, z = 0.3;
   box('/Casa/Camera/Fascia_Sud', PARQUET.band, x0 + o, y0 + o, 0, x1 - o, y0 + o + w, z);
   box('/Casa/Camera/Fascia_Nord', PARQUET.band, x0 + o, y1 - o - w, 0, x1 - o, y1 - o, z);
@@ -232,7 +232,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 { const x0 = 0, x1 = 330, y0 = YS1 + TE, y1 = y0 + BALC_D, G = [150, 154, 158, 255], CURB = [226, 214, 190, 255];
   box('/Casa/Balcone_Cortile/Soletta', C.balcony, x0, y0, -16, x1, y1, -3);
   slab('/Casa/Balcone_Cortile/Piastrelle', [214, 198, 172, 255], [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], -3, -2);
-  kit.items[kit.items.length - 1].tex = { url: 'textures/piastrelle-balcone.png', tile: kit.inch(60) };
+  kit.items[kit.items.length - 1].tex = { url: 'textures/piastrelle-balcone.webp', tile: kit.inch(60) };
   const cb = 10, ch = 8;   // curb width / height
   box('/Casa/Balcone_Cortile/Cordolo_Fronte', CURB, x0, y1 - cb, -2, x1, y1, ch);
   box('/Casa/Balcone_Cortile/Cordolo_Ovest', CURB, x0, y0, -2, x0 + cb, y1 - cb, ch);
@@ -326,7 +326,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   });
   kit.items.filter(i => i.n.includes('Credenza_Teca_Vetro')).forEach(i => { i.ne = 1; });
   // walnut grain (procedural, scripts/walnut-texture.py: the 3D file has none): vertical on the fronts, along the length on the top
-  const WT = { url: 'textures/noce-venato.jpg', tile: kit.inch(60) };
+  const WT = { url: 'textures/noce-venato.webp', tile: kit.inch(60) };
   kit.items.filter(i => /Credenza_Mobile_(Anta|Montante|Corpo)/.test(i.n)).forEach(i => { i.tex = { ...WT, face: '-x' }; });
   kit.items.filter(i => /Credenza_Mobile_Top/.test(i.n)).forEach(i => { i.tex = { ...WT, face: '+z' }; });
 }
@@ -398,7 +398,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     // (scripts/corduroy-texture.py, colour of the user's fabric photo, 5 mm ribs), no outlines on any piece
     kit.items.filter(i => i.n.startsWith('/Divano_Redoute/')).forEach(i => {
       i.ne = 1;
-      if (i.rbox && (i.c === C || i.c === C2)) i.tex = { url: 'textures/velluto-coste-ruggine.jpg', tile: kit.inch(14) };   // 28 ribs per tile = 5 mm
+      if (i.rbox && (i.c === C || i.c === C2)) i.tex = { url: 'textures/velluto-coste-ruggine.webp', tile: kit.inch(14) };   // 28 ribs per tile = 5 mm
     });
   }
 }
@@ -416,7 +416,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   for (const L of LENS) group(id(L), () => {
     for (let k = 0; k * 50 < L; k++) {                       // top: one 50 cm panel per leaf, the seams show as lines
       B(`Piano_${'abcdef'[k]}`, TOP, 0, W, k * 50, Math.min(L, k * 50 + 50), 73, 75);
-      kit.items[kit.items.length - 1].tex = { url: 'textures/legno-marshall.jpg', tile: kit.inch(60), face: '+z' };
+      kit.items[kit.items.length - 1].tex = { url: 'textures/legno-marshall.webp', tile: kit.inch(60), face: '+z' };
     }
     B('Fascia_Muro', BR, 2, W - 2, 0, 3, 65, 73);            // bronze apron
     B('Fascia_Fronte', BR, 2, W - 2, L - 3, L, 65, 73);
@@ -494,7 +494,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // leaf names carry no digits so the whole bookcase moves as one piece
 { const yc = (YI1 + YS0) / 2, xc = 52, PW = 3, PD = 6.2, GAP = 0.25, HK = 1.78, SL = 84, SD = 35;
   const xi0 = xc - SL / 2 - HK - GAP, xi1 = xc + SL / 2 + HK + GAP;                 // inner faces of the two posts
-  const BRZ = [150, 122, 84, 255], NOCE = [92, 58, 38, 255], FUME = [70, 62, 54, 255], WOOD = { url: 'textures/noce-venato.jpg', tile: kit.inch(60) };
+  const BRZ = [150, 122, 84, 255], NOCE = [92, 58, 38, 255], FUME = [70, 62, 54, 255], WOOD = { url: 'textures/noce-venato.webp', tile: kit.inch(60) };
   const L = i => 'abcdefghij'[i];
   const HT = 315, SH = [40, ...[1, 2, 3].map(k => 140 + k * (HT - 140) / 4)], CZ = 80;   // post height, shelf bottoms, container bottom
   defGroup('libreria', 'Libreria Riflessi Techwall (2 montanti h 315, 4 mensole L84 + contenitore a ribalta)', 'Arredi');
@@ -605,6 +605,28 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     tube('/Armadio/Serratura', [80, 60, 40, 255], [[xf - 2, ym + 6, W.split + 70], [xf - 3, ym + 6, W.split + 70]], [1, 1]);
   });
   defGroup('armadio', 'Armadio a muro', 'Arredi', null, { fixed: true }); }
+
+// ---------- surface finish for the realistic look: "ro" = roughness, 0 polished .. 1 matte (the viewer's default is 0.85) ----------
+// one rule per material, the first match wins; metals ("mt") and glass keep their own values   all values estimate
+{ const FINISH = [
+    [/^\/Pavimento_Terrazzo\//, 0.3],                                    // polished terrazzo
+    [/^\/Pavimento_Marazzi\//, 0.5],                                     // porcelain stoneware, "Naturale" finish
+    [/^\/Pavimento_Crogiolo\//, 0.62],                                   // matt cement-look tile
+    [/^\/Casa\/Camera\/(Parquet|Fascia)/, 0.42],                         // varnished oak
+    [/^\/Casa\/Pavimento_/, 0.6],
+    [/Balcone_Cortile\/Piastrelle/, 0.7], [/Ringhiera\//, 0.5], [/Copertina_/, 0.6], [/Cordolo_/, 0.75],
+    [/Porta_Ingresso\/Maniglia|Porta_Bagno\/(Placca|Maniglia)|Porta_Placca/, 0.35],   // door furniture
+    [/^\/Casa\/Porta_(Ingresso|Bagno)\/|^\/Porta_Camera\/|^\/Armadio\//, 0.45],  // lacquered / varnished joinery
+    [/^\/(Battiscopa|Infissi)\//, 0.5],
+    [/^\/(Split_Camera|Condizionatore)\//, 0.4],                         // plastic, painted sheet metal
+    [/Credenza_(Teca|Gamba)|^\/Gabbia_Cucina\/Gabbia_(Montante|Traverso)|^\/Porta_Cucina\/Porta_(Sud|Nord)/, 0.4],   // powder-coated steel, aluminium
+    [/Credenza_Mobile|Libreria_Montante_.*_Fusto|Libreria_Contenitore/, 0.45],   // satin walnut
+    [/^\/Libreria\//, 0.55], [/Consolle_Piano/, 0.5], [/^\/Consolle_Marshall\//, 0.45],
+    [/Divano_(Gamba|Telaio)/, 0.3], [/_Piede_/, 0.5], [/^\/Divano_/, 1],  // chrome legs, steel frame, plastic feet, fabric
+    [/Gatto_(Occhio|Naso)/, 0.25], [/^\/Gatto\//, 1],
+    [/Lampada_Vetro/, 0.3],                                              // opal glass
+  ];
+  for (const i of kit.items) { if (i.mt || i.c[3] < 255) continue; const f = FINISH.find(([re]) => re.test(i.n)); if (f) i.ro = f[1]; } }
 
 kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno

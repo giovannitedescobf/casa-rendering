@@ -14,7 +14,7 @@ const HOST = process.env.HOST || '127.0.0.1';                                   
 const THREE = path.join(__dirname, 'node_modules', 'three');
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css',
-               '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
+               '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 const clients = new Map();                                        // project id -> Set of SSE responses
 
 function send(res, code, type, body) {
