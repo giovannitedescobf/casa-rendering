@@ -53,7 +53,7 @@ Tell the user in one short line when you add something ("Added to CLAUDE.md: ...
   package.json, node_modules/
   server.log, dist/, CLAUDE.local.md   git-ignored: background server log, static build, local deployment notes
 ```
-Projects in the repo: `projects/casa-poggi/` (title "Casa Poggi_Versione Base": the base version of a real flat, Italian data, written by `house.js`); the former alternative versions were deleted on request and live on as hidden groups in the base (user: keep options as switchable, off groups; the user picks which one is on); `projects/casa-poggi-realistica/` ("Casa Poggi_Versione Realistica": a copy of the base generator, same objects and groups, with `look: 'real'` and the finishing-detail groups `battiscopa` / `infissi` on; the details live in `dettagli-realistici.js`, the same file in both folders, hidden in the base). A change to the base's objects must be repeated in the copy's `house.js` (it is a copy, not an import).
+Projects in the repo: `projects/casa-poggi/` (title "Casa Poggi_Versione Base": the base version of a real flat, Italian data, written by `house.js`); the former alternative versions were deleted on request and live on as hidden groups in the base (user: keep options as switchable, off groups; the user picks which one is on). It uses the realistic look (`look: 'real'`) with the finishing-detail groups `battiscopa` / `infissi` on (`dettagli-realistici.js`); the former plain-look base was deleted on request and this one took its id and title.
 
 ### Run / stop
 ```bash
