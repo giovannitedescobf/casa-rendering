@@ -239,7 +239,7 @@ function freePort() {
           if (sc.look === 'real') {
             ok(`${id}: reflection probes are valid points inside the model (or absent)`, !sc.probes || (Array.isArray(sc.probes) && sc.probes.every(q => Array.isArray(q) && q.length === 3 && q.every(Number.isFinite))), JSON.stringify(sc.probes));
             const under = sc.ceiling && sc.camera.eye[2] < sc.ceiling.z[0];
-            ok(`${id}: realistic look: ${under ? 'under the ceiling it is drawn and the shell casts no sun shadows' : 'from above the model is open and the shell casts shadows'}, no outlines`, s1.ceiling === !!under && s1.shellCast === !under && s1.outlines === 0, JSON.stringify(s1));
+            ok(`${id}: realistic look: ${under ? 'under the ceiling it is drawn and casts the sun shadow (light only through openings)' : 'from above the model is open (ceiling hidden, not casting)'}, no outlines`, s1.ceiling === !!under && s1.ceilingCast === !!under && s1.shellCast === true && s1.outlines === 0, JSON.stringify(s1));
           }
         }
         // camera dropdown
