@@ -240,6 +240,7 @@ function texturedRboxMaterial(item) {                    // item.tex = {url, til
   return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0.0, side: THREE.DoubleSide });
 }
 
+let realLook = false;                                    // scene.json "look": "real": photo-like raster view (no outlines, soft sun shadows, sky reflections, filmic tones)
 let metalEnvTex = null;                                  // shared reflection map for "mt" items (built once)
 const metalEnv = () => metalEnvTex || (metalEnvTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture);
 const emissiveMats = [];                                 // items with "em": glow in night mode
@@ -562,6 +563,12 @@ function addCollider(item) {                                      // only what c
   }
 }
 function build(data) {
+  const real = data.look === 'real';
+  if (real !== realLook) {                                // sharper, softer sun shadows for the realistic look
+    realLook = real;
+    sun.shadow.mapSize.set(real ? 4096 : 2048, real ? 4096 : 2048); sun.shadow.radius = real ? 3 : 1;
+    sun.shadow.map?.dispose(); sun.shadow.map = null;
+  }
   fixedGroups.clear();
   for (const g of data.groups || []) if (g.fixed) fixedGroups.add(g.id);
   colliders = [];
@@ -586,6 +593,7 @@ function build(data) {
     const mesh = new THREE.Mesh(geo, item.tex && item.box ? texturedBoxMaterials(item) : item.tex && item.slab ? texturedSlabMaterials(item) : item.tex && item.rbox ? texturedRboxMaterial(item) : materialFor(item.c));
     if (item.mt) for (const m of [].concat(mesh.material)) { m.metalness = item.mt[0]; m.roughness = item.mt[1]; m.envMap = metalEnv(); }   // "mt": [metalness, roughness], mirror-like metal
     if (item.em) for (const m of [].concat(mesh.material)) { m.emissive = m.color.clone(); emissiveMats.push(m); }
+    if (realLook && !item.mt && item.c && item.c[3] < 255) for (const m of [].concat(mesh.material)) m.roughness = 0.06;   // glass reflects the sky
     mesh.name = item.n;
     mesh.castShadow = mesh.receiveShadow = true;
     model.add(mesh);
@@ -595,6 +603,7 @@ function build(data) {
       new THREE.LineBasicMaterial({ color: mvKey && mvKey === moveKey(item) ? 0xb5532a : 0x2a2d33 }));
     model.add(edges);
     mesh.userData.mv = edges.userData.mv = moveKey(item);
+    if (realLook) edges.visible = !!mvKey && mvKey === edges.userData.mv;   // realistic look: outlines only on the piece selected for moving
   }
   pivots.clear();                                         // each movable piece turns around the centre of its plan, as drawn in scene.json
   for (const o of model.children) if (o.userData.mv) { o.geometry.computeBoundingBox(); const b = pivots.get(o.userData.mv); b ? b.union(o.geometry.boundingBox) : pivots.set(o.userData.mv, o.geometry.boundingBox.clone()); }
@@ -636,7 +645,8 @@ async function load() {
     }   // default-on groups ("on": true in scene.json) only when the URL has no ?g
     current = data;
     build(data);
-    if (firstLoad) { firstLoad = false; applyInitialView(data); if (new URLSearchParams(location.search).has('fp')) enterFP(); if (new URLSearchParams(location.search).has('rt')) rtOn(); if (new URLSearchParams(location.search).has('ao')) aoOn(); }   // later reloads keep your orbit
+    if (firstLoad && realLook && !new URLSearchParams(location.search).has('ao') && !matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches) aoOn();   // realistic look: contact shadows on by default (desktop), ?ao=0 keeps them off
+    if (firstLoad) { firstLoad = false; applyInitialView(data); if (new URLSearchParams(location.search).has('fp')) enterFP(); if (new URLSearchParams(location.search).has('rt')) rtOn(); if (+(new URLSearchParams(location.search).get('ao') ?? 0)) aoOn(); }   // later reloads keep your orbit
     status.textContent = t('v.status.objects', { n: data.items.length, time: new Date().toLocaleTimeString(locale()) });
   } catch (e) {
     console.error('scene load failed:', e);
@@ -678,6 +688,12 @@ function applyNight() {
   hemi.intensity = night ? 0.1 : 2.4;
   hemi.color.set(night ? 0x7a8cb8 : 0xffffff); hemi.groundColor.set(night ? 0x1c202a : 0xb4b8c0);
   sun.visible = !night;
+  sun.intensity = realLook ? 3.6 : 2.2; sun.color.set(realLook ? 0xfff8ee : 0xffffff);
+  if (realLook && !rt.on) {                               // realistic look: sky-coloured ambient + image-based reflections + filmic tone curve (Render sets its own)
+    if (!night) { scene.background.set(0xcfe0f0); hemi.intensity = 0.95; hemi.color.set(0xeef3ff); hemi.groundColor.set(0xc4b8a6); }
+    scene.environment = metalEnv(); scene.environmentIntensity = night ? 0.04 : 0.3;
+    renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = night ? 1.3 : 1.0;   // Neutral keeps the colours of the finishes (ACES greyed them)
+  }
   if (ceilingMesh) { ceilingMesh.material.emissive.set(0xffffff); ceilingMesh.material.emissiveIntensity = night || rt.on ? 0 : 0.5; }   // keeps the white ceiling white in daylight (it only gets light from below otherwise)
   lightsGroup.visible = night;
   for (const m of emissiveMats) { m.emissiveIntensity = night ? 1.6 : 0; m.needsUpdate = true; }
@@ -714,7 +730,7 @@ async function aoOn() {
   } catch (e) { console.error('AO not available:', e); aoBtn.textContent = 'AO'; return; }
   ao.on = true; aoBtn.textContent = 'AO'; aoBtn.classList.add('active'); setParams({ ao: 1 });
 }
-function aoOff() { ao.on = false; aoBtn.classList.remove('active'); setParams({ ao: null }); }
+function aoOff() { ao.on = false; aoBtn.classList.remove('active'); setParams({ ao: realLook ? 0 : null }); }
 aoBtn.onclick = () => ao.on ? aoOff() : aoOn();
 
 // ---- Render button (key T, ?rt=1): progressive GPU path tracing (three-gpu-pathtracer, loaded on demand): global illumination, soft shadows, light bouncing off walls.
@@ -1234,7 +1250,7 @@ renderer.domElement.addEventListener('pointerdown', ev => downAt = [ev.clientX, 
 let mvTimer = null, drag = null;
 function setMv(k) {
   mvKey = k;
-  for (const o of model.children) if (o.isLineSegments) o.material.color.setHex(k && o.userData.mv === k ? 0xb5532a : 0x2a2d33);
+  for (const o of model.children) if (o.isLineSegments) { o.material.color.setHex(k && o.userData.mv === k ? 0xb5532a : 0x2a2d33); if (realLook) o.visible = !!k && o.userData.mv === k; }
 }
 function floorPoint(ev, z) {
   const r = renderer.domElement.getBoundingClientRect();

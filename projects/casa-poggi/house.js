@@ -573,6 +573,10 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // OPTION (former version casa-poggi-gabbia-cucina): kept hidden, the user switches it on in the Groups panel
 require('./gabbia-cucina')(kit, { H, Y0: YK0 - TK, Y1: YS1, WHITE });
 
+// OPTION: realistic finishing details (skirting boards, window frames, door trims), shared with casa-poggi-realistica
+require('./dettagli-realistici')(kit, { XR, XC0, XB0, SW: ROOMS.soggiorno.w, YC1, YI0, YI1, YS0, YS1, YK0, XK0, XK1, KP, KA, KB, PF, CAM_PF, SOG_PF, CAM_DOOR,
+  BATH_DOOR: { from: XB0 + 30, to: XB0 + 100 }, ENTRY, BAGNO_WIN, DOOR_H, ccw });
+
 const out = process.argv[2] || path.join(__dirname, 'scene.json');
 // built-in wardrobe on the east end wall of the ingresso (from the user's photos): full corridor width, 10 cm side frames,
 // 2 upper doors (1 panel, lock on the right one) + 2 tall lower doors (4 panels)   width/top gap measured, recessed: only 5 cm (frame + doors) stand out of the wall, split heights estimate
