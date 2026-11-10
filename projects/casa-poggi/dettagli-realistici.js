@@ -1,4 +1,4 @@
-// Realistic finishing details, shared by the base (hidden) and casa-poggi-realistica (on): white skirting boards in every
+// Realistic finishing details (on by default): white skirting boards in every
 // room, the porte-finestre (fixed frame + two glazed leaves drawn open 90 degrees inward, so the balconies stay reachable
 // in first person), stone thresholds, the bathroom window frame and the architraves around the interior doors.
 // Two fixed groups (finishes, like the paint and the floors: they belong to the walls and never move).
