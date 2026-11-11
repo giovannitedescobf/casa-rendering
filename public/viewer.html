@@ -46,6 +46,9 @@
   #setmenu { display: none; position: absolute; top: calc(100% + 11px); left: -6px; z-index: 6; flex-direction: column; gap: 4px; min-width: 130px;
              background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 4px 14px rgba(28,35,48,.12); }   /* settings (Dims, unit, Click to measure): a dropdown under the gear; stays open while toggling, folds on a click elsewhere */
   #setmenu button { text-align: left; }
+  #qrow { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; margin-top: 2px; border-top: 1px solid var(--line-soft); }   /* Quality: Auto, then 1 (minimum) .. 5 (maximum) */
+  #qlab { font-size: 12px; color: var(--muted); }
+  #qbtns { display: flex; gap: 3px; } #qbtns button { flex: 1; text-align: center; padding-left: 6px; padding-right: 6px; }
   #langrow { display: flex; gap: 4px; padding-top: 4px; margin-top: 2px; border-top: 1px solid var(--line-soft); }
   #langrow button { flex: 1; text-align: center; }
   #bar.set #setmenu { display: flex; }
@@ -124,6 +127,7 @@
     #bar.open #views { display: flex; order: 3; flex: 1 1 100%; gap: 6px; flex-wrap: wrap; }
     #bar.open #setmenu button, #bar.open #snap { display: inline-block; order: 4; }
     #bar.open #setmenu #aobtn { display: none; }
+    #qrow { display: none; } #bar.open #qrow { display: flex; flex-direction: row; align-items: center; order: 5; flex: 1 1 100%; border: 0; margin: 0; padding: 0; } #bar.open #qrow #qbtns button { display: inline-block; } #qbtns { flex: 1; }
     #groups { left: 6px; right: 6px; bottom: calc(max(6px, env(safe-area-inset-bottom)) + 44px); max-height: 60vh; width: auto; }
     #groups label { padding: 7px 0; font-size: 14px; }
     #fphint { max-width: calc(100vw - 24px); bottom: max(12px, env(safe-area-inset-bottom)); }
@@ -135,7 +139,7 @@
 <div id="bar"><a id="home" data-i18n="v.home" data-i18n-title="v.home.title" href="../" title="Project list">← Projects</a><span id="dot"></span><span id="status" data-i18n="v.connecting">connecting…</span><button id="morebtn" data-i18n-title="v.more.title" title="Views, dimensions">Views ▾</button>
   <span id="camctl"><button id="camBtn" data-i18n-title="v.cam.title" data-i18n-aria="v.cam.aria" title="Camera views (1-9)" aria-label="Camera views" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.71,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.66-3.56L100.28,48h55.43l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></button>
   <span id="views"></span></span>
-  <span id="setctl"><button id="setBtn" data-i18n-title="v.set.title" data-i18n-aria="v.set.aria" title="Settings: dimensions, units, click to measure" aria-label="Settings" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm109.94-52.79a8,8,0,0,0-3.89-5.4l-29.83-17-.12-33.62a8,8,0,0,0-2.83-6.08,111.91,111.91,0,0,0-36.72-20.67,8,8,0,0,0-6.46.59L128,41.85,97.88,25a8,8,0,0,0-6.47-.6A112.1,112.1,0,0,0,54.73,45.15a8,8,0,0,0-2.83,6.07l-.15,33.65-29.83,17a8,8,0,0,0-3.89,5.4,106.47,106.47,0,0,0,0,41.56,8,8,0,0,0,3.89,5.4l29.83,17,.12,33.62a8,8,0,0,0,2.83,6.08,111.91,111.91,0,0,0,36.72,20.67,8,8,0,0,0,6.46-.59L128,214.15,158.12,231a7.91,7.91,0,0,0,3.9,1,8.09,8.09,0,0,0,2.57-.42,112.1,112.1,0,0,0,36.68-20.73,8,8,0,0,0,2.83-6.07l.15-33.65,29.83-17a8,8,0,0,0,3.89-5.4A106.47,106.47,0,0,0,237.94,107.21Zm-15,34.91-28.57,16.25a8,8,0,0,0-3,3c-.58,1-1.19,2.06-1.81,3.06a7.94,7.94,0,0,0-1.22,4.21l-.15,32.25a95.89,95.89,0,0,1-25.37,14.3L134,199.13a8,8,0,0,0-3.91-1h-.19c-1.21,0-2.43,0-3.64,0a8.08,8.08,0,0,0-4.1,1l-28.84,16.1A96,96,0,0,1,67.88,201l-.11-32.2a8,8,0,0,0-1.22-4.22c-.62-1-1.23-2-1.8-3.06a8.09,8.09,0,0,0-3-3.06l-28.6-16.29a90.49,90.49,0,0,1,0-28.26L61.67,97.63a8,8,0,0,0,3-3c.58-1,1.19-2.06,1.81-3.06a7.94,7.94,0,0,0,1.22-4.21l.15-32.25a95.89,95.89,0,0,1,25.37-14.3L122,56.87a8,8,0,0,0,4.1,1c1.21,0,2.43,0,3.64,0a8.08,8.08,0,0,0,4.1-1l28.84-16.1A96,96,0,0,1,188.12,55l.11,32.2a8,8,0,0,0,1.22,4.22c.62,1,1.23,2,1.8,3.06a8.09,8.09,0,0,0,3,3.06l28.6,16.29A90.49,90.49,0,0,1,222.9,142.12Z"/></svg></button><span id="setmenu"><button id="dims" data-i18n="v.dims" data-i18n-title="v.dims.title" title="Show overall dimensions (M)">Dims</button><button id="unit" data-i18n-title="v.unit.title" title="Change units (U)">cm</button><button id="seldims" data-i18n="v.measure" data-i18n-title="v.measure.title" class="on" title="Show / hide the dimensions on click and the hover tooltip (K)">Click to measure</button><button id="aobtn" data-i18n-title="v.ao.title" title="Ambient occlusion: contact shadows in the corners (O)">AO</button><span id="langrow" role="group" data-i18n-aria="lang.label"><button data-lang="en">EN</button><button data-lang="it">IT</button></span></span></span>
+  <span id="setctl"><button id="setBtn" data-i18n-title="v.set.title" data-i18n-aria="v.set.aria" title="Settings: dimensions, units, click to measure" aria-label="Settings" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm109.94-52.79a8,8,0,0,0-3.89-5.4l-29.83-17-.12-33.62a8,8,0,0,0-2.83-6.08,111.91,111.91,0,0,0-36.72-20.67,8,8,0,0,0-6.46.59L128,41.85,97.88,25a8,8,0,0,0-6.47-.6A112.1,112.1,0,0,0,54.73,45.15a8,8,0,0,0-2.83,6.07l-.15,33.65-29.83,17a8,8,0,0,0-3.89,5.4,106.47,106.47,0,0,0,0,41.56,8,8,0,0,0,3.89,5.4l29.83,17,.12,33.62a8,8,0,0,0,2.83,6.08,111.91,111.91,0,0,0,36.72,20.67,8,8,0,0,0,6.46-.59L128,214.15,158.12,231a7.91,7.91,0,0,0,3.9,1,8.09,8.09,0,0,0,2.57-.42,112.1,112.1,0,0,0,36.68-20.73,8,8,0,0,0,2.83-6.07l.15-33.65,29.83-17a8,8,0,0,0,3.89-5.4A106.47,106.47,0,0,0,237.94,107.21Zm-15,34.91-28.57,16.25a8,8,0,0,0-3,3c-.58,1-1.19,2.06-1.81,3.06a7.94,7.94,0,0,0-1.22,4.21l-.15,32.25a95.89,95.89,0,0,1-25.37,14.3L134,199.13a8,8,0,0,0-3.91-1h-.19c-1.21,0-2.43,0-3.64,0a8.08,8.08,0,0,0-4.1,1l-28.84,16.1A96,96,0,0,1,67.88,201l-.11-32.2a8,8,0,0,0-1.22-4.22c-.62-1-1.23-2-1.8-3.06a8.09,8.09,0,0,0-3-3.06l-28.6-16.29a90.49,90.49,0,0,1,0-28.26L61.67,97.63a8,8,0,0,0,3-3c.58-1,1.19-2.06,1.81-3.06a7.94,7.94,0,0,0,1.22-4.21l.15-32.25a95.89,95.89,0,0,1,25.37-14.3L122,56.87a8,8,0,0,0,4.1,1c1.21,0,2.43,0,3.64,0a8.08,8.08,0,0,0,4.1-1l28.84-16.1A96,96,0,0,1,188.12,55l.11,32.2a8,8,0,0,0,1.22,4.22c.62,1,1.23,2,1.8,3.06a8.09,8.09,0,0,0,3,3.06l28.6,16.29A90.49,90.49,0,0,1,222.9,142.12Z"/></svg></button><span id="setmenu"><button id="dims" data-i18n="v.dims" data-i18n-title="v.dims.title" title="Show overall dimensions (M)">Dims</button><button id="unit" data-i18n-title="v.unit.title" title="Change units (U)">cm</button><button id="seldims" data-i18n="v.measure" data-i18n-title="v.measure.title" class="on" title="Show / hide the dimensions on click and the hover tooltip (K)">Click to measure</button><button id="aobtn" data-i18n-title="v.ao.title" title="Ambient occlusion: contact shadows in the corners (O)">AO</button><span id="qrow" role="group" data-i18n-aria="v.q.aria"><span id="qlab" data-i18n="v.q">Quality</span><span id="qbtns"><button data-q="auto" data-i18n="v.q.auto" data-i18n-title="v.q.auto.title">Auto</button><button data-q="4" data-i18n-title="v.q.min" title="Minimum">1</button><button data-q="3">2</button><button data-q="2">3</button><button data-q="1">4</button><button data-q="0" data-i18n-title="v.q.max" title="Maximum">5</button></span></span><span id="langrow" role="group" data-i18n-aria="lang.label"><button data-lang="en">EN</button><button data-lang="it">IT</button></span></span></span>
   <span id="actions">
   <span id="rtctl"><button id="rtbtn" data-i18n-title="v.render.title" title="Path-traced render: global illumination, soft shadows (T)">Render</button> <button id="dnbtn" data-i18n-title="v.denoise.title" class="active" title="Denoiser (a-trous filter guided by normals and depth) on the render">Denoise</button></span>
   <button id="snap" data-i18n-title="v.png.title" title="Save the image on screen as a PNG, without buttons or labels (P)">PNG</button>
@@ -1337,9 +1341,12 @@ aoBtn.onclick = () => { aoByUser = !ao.on; ao.on ? aoOff() : aoOn(); };
 // for this browser (localStorage "quality"): 0 = everything, 1 = no automatic AO, 2 = pixel ratio 1.5, 3 = pixel ratio 1 + 1024 px sun shadows,
 // 4 = no indirect light (flat ambient). It never goes back up by itself (it would flicker between levels); ?q=0 resets it, ?q=N forces a level.
 const QUALITY_MS = 45, QUALITY_MAX = 4;
-const quality = { level: 0, dts: [], since: 0 };
-try { const q = new URLSearchParams(location.search).get('q'); quality.level = Math.max(0, Math.min(QUALITY_MAX, q != null ? +q || 0 : +(localStorage.getItem('quality') || 0))); if (q != null) localStorage.setItem('quality', String(quality.level)); } catch (e) {}
-const qualityOn = () => !noGPU() || !!window.__forceQuality;   // software GL (tests, thumbnails) is slow by nature: keep their pictures stable
+// The Quality buttons (settings menu: Auto, 1 = minimum .. 5 = maximum, i.e. level 4 .. 0) pick a level by hand: the automatic steps then stop
+// (localStorage "qualityManual") until Auto is chosen again; a level chosen by hand also applies on software GL.
+const quality = { level: 0, dts: [], since: 0, manual: false };
+try { const q = new URLSearchParams(location.search).get('q'); quality.level = Math.max(0, Math.min(QUALITY_MAX, q != null ? +q || 0 : +(localStorage.getItem('quality') || 0))); quality.manual = q == null && localStorage.getItem('qualityManual') === '1'; if (q != null) { localStorage.setItem('quality', String(quality.level)); localStorage.removeItem('qualityManual'); } } catch (e) {}
+const qualityAuto = () => !noGPU() || !!window.__forceQuality;   // software GL (tests, thumbnails) is slow by nature: keep their pictures stable
+const qualityOn = () => quality.manual || qualityAuto();
 function applyQuality() {
   const L = quality.level, dpr = Math.min(devicePixelRatio, L >= 3 ? 1 : L >= 2 ? 1.5 : 2);
   if (L >= 1 && ao.on && !aoByUser) { ao.on = false; aoBtn.classList.remove('active'); }
@@ -1350,7 +1357,7 @@ function applyQuality() {
   invalidate();
 }
 function perfSample(dt, now) {
-  if (!qualityOn() || quality.level >= QUALITY_MAX || rt.on || rtw.on || document.hidden) return;
+  if (quality.manual || !qualityAuto() || quality.level >= QUALITY_MAX || rt.on || rtw.on || document.hidden) return;
   if (dt > 8000 || now - Math.max(lastInput, lastMove) > Math.max(300, dt * 1.5) || now - quality.since < 1500) return;   // only frames drawn back to back while the view moves, and a moment after a change of level
   quality.dts.push(dt);
   const n = quality.dts.length, sum = quality.dts.reduce((a, b) => a + b, 0);
@@ -1360,8 +1367,21 @@ function perfSample(dt, now) {
   quality.level++; quality.since = now;
   try { localStorage.setItem('quality', String(quality.level)); } catch (e) {}
   console.info(`quality: frames took ${Math.round(m)} ms while moving, level ${quality.level}`);
-  applyQuality();
+  applyQuality(); syncQualityUI();
 }
+const qBtns = [...document.querySelectorAll('#qbtns button')];
+function syncQualityUI() { for (const b of qBtns) b.classList.toggle('on', b.dataset.q === 'auto' ? !quality.manual : quality.manual && +b.dataset.q === quality.level); }
+function setQuality(v) {                                  // a Quality button: 'auto' or a level 0 (maximum) .. 4 (minimum)
+  const gi0 = giCapable(), manual = v !== 'auto', level = manual ? +v : 0;
+  quality.manual = manual; quality.level = level; quality.dts = []; quality.since = performance.now();
+  try { localStorage.setItem('quality', String(level)); manual ? localStorage.setItem('qualityManual', '1') : localStorage.removeItem('qualityManual'); } catch (e) {}
+  if (new URLSearchParams(location.search).has('q')) setParams({ q: null });
+  applyQuality(); syncQualityUI();
+  if (level === 0 && realLook && !ao.on && !noGPU() && !matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches) aoOn();   // maximum: the automatic AO comes back
+  if (giCapable() !== gi0) load();                        // the indirect light (level 4 drops it) is built into the materials and the tessellation: rebuild
+}
+for (const b of qBtns) b.onclick = () => setQuality(b.dataset.q);
+syncQualityUI();
 
 // ---- Render button (key T, ?rt=1): progressive GPU path tracing (three-gpu-pathtracer, loaded on demand): global illumination, soft shadows, light bouncing off walls.
 // The raster view is what you edit in; this is for judging the lights. Needs a real GPU. The accumulated image restarts when the camera, scene, lights or night mode change.

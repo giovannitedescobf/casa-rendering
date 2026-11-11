@@ -258,6 +258,19 @@ function freePort() {
               ok(`${id}: quality level 3 (?q=3): pixel ratio 1, no automatic AO, remembered`, qs.s.quality === 3 && qs.s.dpr === 1 && !qs.s.ao && qs.saved === '3', JSON.stringify({ q: qs.s.quality, dpr: qs.s.dpr, ao: qs.s.ao, saved: qs.saved }));
               await q.evaluate(() => localStorage.removeItem('quality')); await q.close();
             }
+            {   // the Quality buttons: a level chosen by hand applies (also on software GL), stops the automatic steps, survives a reload; Auto gives it back
+              const q = await browser.newPage({ viewport: { width: 1300, height: 820 }, locale: 'en-US' });
+              await q.goto(`${base}/${id}/`, { waitUntil: 'commit' }); await loaded(q);
+              await q.click('#setBtn'); await q.click('#qbtns button[data-q="3"]');   // "2"
+              await q.waitForFunction(() => window.viewerDebug.stats().dpr === 1, null, { timeout: 30000 }).catch(() => {});
+              const m = await q.evaluate(() => ({ s: window.viewerDebug.stats(), on: document.querySelector('#qbtns button.on')?.dataset.q }));
+              await q.reload({ waitUntil: 'commit' }); await loaded(q);
+              const r = await q.evaluate(() => ({ s: window.viewerDebug.stats(), on: document.querySelector('#qbtns button.on')?.dataset.q }));
+              await q.click('#setBtn'); await q.click('#qbtns button[data-q="auto"]');
+              const a = await q.evaluate(() => ({ s: window.viewerDebug.stats(), on: document.querySelector('#qbtns button.on')?.dataset.q, man: localStorage.getItem('qualityManual') }));
+              ok(`${id}: Quality buttons: "2" applies level 3 and is kept after a reload, Auto resets`, m.s.quality === 3 && m.s.dpr === 1 && m.on === '3' && r.s.quality === 3 && r.on === '3' && a.s.quality === 0 && a.on === 'auto' && a.man === null, JSON.stringify({ m: [m.s.quality, m.s.dpr, m.on], r: [r.s.quality, r.on], a: [a.s.quality, a.on, a.man] }));
+              await q.evaluate(() => { localStorage.removeItem('quality'); localStorage.removeItem('qualityManual'); }); await q.close();
+            }
           }
         }
         // camera dropdown
