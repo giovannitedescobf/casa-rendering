@@ -646,6 +646,7 @@ kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),
   look: 'real',
+  shade: [[-TS - 300, YC1, 0, -TS, YK0 - TK, H]],   // the common stair behind the front door is a closed space: no daylight comes in from there (depth estimate)
   probes: [[180, 900, 131.37], [435, 900, 131.37], [320, 240, 131.37]],   // reflection probes: living area, bathroom, bedroom (estimate: room centres; the odd height keeps the camera off the exact plane of a shelf top, where the bump shader gives NaN edge-on)
   ceiling: kit.ceiling([[XC0, 0], [XR, 0], [XR, YS1], [XK0, YS1], KA, KB, [0, YK0], [0, YI0], [XC0, YI0]], H, H + 2),
 });

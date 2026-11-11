@@ -240,6 +240,16 @@ function freePort() {
             ok(`${id}: reflection probes are valid points inside the model (or absent)`, !sc.probes || (Array.isArray(sc.probes) && sc.probes.every(q => Array.isArray(q) && q.length === 3 && q.every(Number.isFinite))), JSON.stringify(sc.probes));
             const under = sc.ceiling && sc.camera.eye[2] < sc.ceiling.z[0];
             ok(`${id}: realistic look: ${under ? 'under the ceiling it is drawn and casts the sun shadow (light only through openings)' : 'from above the model is open (ceiling hidden, not casting)'}, no outlines`, s1.ceiling === !!under && s1.ceilingCast === !!under && s1.shellCast === true && s1.outlines === 0, JSON.stringify(s1));
+            if (under) {   // the indirect light, forced on software GL with a coarse grid and two passes: it must reach the screen without errors
+              const q = await browser.newPage({ viewport: { width: 700, height: 460 }, locale: 'en-US' }), qe = [];
+              q.on('pageerror', e => qe.push(e.message)); q.on('console', m => m.type() === 'error' && qe.push(m.text()));
+              await q.addInitScript(() => { window.__forceGI = { cols: 24, iters: 2 }; });
+              await q.goto(`${base}/${id}/`, { waitUntil: 'commit' }); await loaded(q);
+              const done = await q.waitForFunction(() => { const g = window.viewerDebug.stats().gi; return g.day >= 2 && !g.working && g.mix === 1; }, null, { timeout: 150000 }).then(() => true).catch(() => false);
+              const gd = done && await q.evaluate(() => window.viewerDebug.giData());
+              ok(`${id}: indirect light: the volume is computed, exposed and shown (forced on software GL)`, !!done && !qe.length && gd.gain > 0.5 && gd.gain <= 40 && gd.cur.some(v => v > 0) && gd.cur.every(Number.isFinite), qe.join('; ') || JSON.stringify(gd && { gain: gd.gain, iter: gd.iter }));
+              await q.close();
+            }
           }
         }
         // camera dropdown
