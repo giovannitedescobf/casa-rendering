@@ -193,12 +193,12 @@ const glReady = new Promise(res => {
 // Drawing on demand: the image is redrawn while something happens (input, camera motion, a load) and for a moment after, then
 // about every two seconds as a safety net. An idle page costs almost no GPU or battery. Anything that changes the picture
 // without an input event (a finished download, a rebuild) calls invalidate().
-let liveUntil = 0, lastDraw = 0, frames = 0;
+let liveUntil = 0, lastDraw = 0, frames = 0, lastInput = 0, lastMove = 0;   // lastInput / lastMove: the user's last input and the camera's last motion (background work waits for both)
 const IDLE_MS = 2000;
 function invalidate(ms = 1200) { liveUntil = Math.max(liveUntil, performance.now() + ms); }
 function shadowsDirty() { renderer.shadowMap.needsUpdate = true; invalidate(); }
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel', 'keydown', 'keyup', 'touchstart', 'touchmove', 'touchend', 'click', 'dblclick', 'change', 'focus', 'pageshow'])
-  addEventListener(ev, () => invalidate(), { capture: true, passive: true });
+  addEventListener(ev, () => { invalidate(); if (ev !== 'focus' && ev !== 'pageshow' && ev !== 'change') lastInput = performance.now(); }, { capture: true, passive: true });
 document.addEventListener('visibilitychange', () => invalidate());
 renderer.domElement.addEventListener('webglcontextrestored', () => shadowsDirty());
 
@@ -404,7 +404,7 @@ function bakeProbes() {
 const GI_R = 16, GI_RANGE = 4, GI_ITERS = 4, GI_CELL = 30, GI_COLS = 170, GI_TESS = 16;
 const giParam = new URLSearchParams(location.search).get('gi');
 let giBroken = false;
-const giCapable = () => realLook && !giBroken && giParam !== '0' && (!noGPU() || !!window.__forceGI);
+const giCapable = () => realLook && !giBroken && giParam !== '0' && !(quality.level >= QUALITY_MAX && qualityOn()) && (!noGPU() || !!window.__forceGI);
 const giU = { giVol: { value: null }, giVis: { value: null }, giMin: { value: new THREE.Vector3() }, giInv: { value: new THREE.Vector3(1, 1, 1) }, giN: { value: new THREE.Vector3(2, 2, 1) }, giOn: { value: 0 }, giBias: { value: 4 }, giGain: { value: 1 }, giMax: { value: 1e6 } };
 const GI_GLSL = /* glsl */`
 uniform highp sampler3D giVol;
@@ -677,8 +677,8 @@ function giSlice(e) {                                    // a few probes of the 
     giApply(gi.cache[night ? 'night' : 'day']);
   }
   gi.ms += performance.now() - t0;
-  const budget = Math.min(400, Math.max(6, gi.frame * 0.35));   // a share of the frame time: a few points per frame on a fast machine, many where a frame is slow anyway
-  gi.B = tDraw < budget / 2 ? Math.min(64, gi.B * 2) : tDraw > budget ? Math.max(1, gi.B >> 1) : gi.B;
+  const budget = 8;                                     // ms of GPU work per animation frame, at rest only: the page stays responsive on a weak GPU too
+  gi.B = tDraw < budget / 2 ? Math.min(16, gi.B * 2) : tDraw > budget ? Math.max(1, gi.B >> 1) : gi.B;
   if (e.next >= e.P && !giBroken) {                       // pass complete: one more bounce is in
     [e.cur, e.nxt] = [e.nxt, e.cur]; e.next = 0; e.iter++; giPack(e); giExpose(e);
     const shown = gi.cache[e.mode];
@@ -688,8 +688,8 @@ function giSlice(e) {                                    // a few probes of the 
       gi.cache[e.mode] = e; giFreeMesh(e);
       if (e.mode === 'day') { probeKey = ''; bakeProbes(); }   // the room reflections again, now with the rooms lit as they are shown
     } else if (!shown || shown === e) gi.cache[e.mode] = e;   // first time: on screen after the first pass (the exposure evens out the missing bounces), it refines there
+    invalidate();                                         // only a finished pass changes the picture: no redraw per slice
   }
-  invalidate();
 }
 let insideNow = false;                                    // is the camera under the ceiling (syncInside)
 function giTick(now) {
@@ -701,6 +701,7 @@ function giTick(now) {
   gi.last = now;
   giApply(shown);
   if (!want || now - gi.dirtyAt < 400 || firstLoad) return;
+  if (now - Math.max(lastInput, lastMove) < 800) return;  // the bake waits while the user moves the view: it competes with the drawing for the GPU (on a weak one the orbit stuttered)
   let w = gi.work;
   if (!w || w.mode !== mode || w.key !== gi.key) { if (shown && shown.key === gi.key && shown.done) return; w = giStart(mode); }
   if (w && !w.done && w.mesh) giSlice(w);
@@ -1236,8 +1237,8 @@ async function load() {
     }   // default-on groups ("on": true in scene.json) only when the URL has no ?g
     current = data;
     build(data); bakeProbes();
-    if (firstLoad && realLook && !new URLSearchParams(location.search).has('ao') && !matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches && !noGPU()) aoOn();   // realistic look: contact shadows on by default (desktop), ?ao=0 keeps them off
-    if (firstLoad) { firstLoad = false; applyInitialView(data); if (new URLSearchParams(location.search).has('fp')) enterFP(); if (new URLSearchParams(location.search).has('rt')) rtOn(); if (+(new URLSearchParams(location.search).get('ao') ?? 0)) aoOn(); }   // later reloads keep your orbit
+    if (firstLoad && realLook && !new URLSearchParams(location.search).has('ao') && !matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches && !noGPU() && !(qualityOn() && quality.level >= 1)) aoOn();   // realistic look: contact shadows on by default (desktop), ?ao=0 keeps them off
+    if (firstLoad) { firstLoad = false; applyInitialView(data); if (new URLSearchParams(location.search).has('fp')) enterFP(); if (new URLSearchParams(location.search).has('rt')) rtOn(); if (+(new URLSearchParams(location.search).get('ao') ?? 0)) { aoByUser = true; aoOn(); } if (qualityOn()) applyQuality(); }   // later reloads keep your orbit
     status.textContent = t('v.status.objects', { n: data.items.length, time: new Date().toLocaleTimeString(locale()) });
   } catch (e) {
     console.error('scene load failed:', e);
@@ -1327,7 +1328,40 @@ async function aoOn() {
   ao.on = true; aoBtn.textContent = 'AO'; aoBtn.classList.add('active'); setParams({ ao: 1 }); invalidate();
 }
 function aoOff() { ao.on = false; aoBtn.classList.remove('active'); setParams({ ao: realLook ? 0 : null }); }
-aoBtn.onclick = () => ao.on ? aoOff() : aoOn();
+let aoByUser = false;                                    // switched on with the button / key / ?ao=1: the quality steps leave it alone
+aoBtn.onclick = () => { aoByUser = !ao.on; ao.on ? aoOff() : aoOn(); };
+
+
+// ---- Quality that follows the machine (all looks): a weak GPU must stay fluid. While the view moves, the time between drawn frames
+// is measured; when the median of the last ~30 frames (fewer when they are very slow) is over QUALITY_MS the next cheaper level is taken, one step at a time, and remembered
+// for this browser (localStorage "quality"): 0 = everything, 1 = no automatic AO, 2 = pixel ratio 1.5, 3 = pixel ratio 1 + 1024 px sun shadows,
+// 4 = no indirect light (flat ambient). It never goes back up by itself (it would flicker between levels); ?q=0 resets it, ?q=N forces a level.
+const QUALITY_MS = 45, QUALITY_MAX = 4;
+const quality = { level: 0, dts: [], since: 0 };
+try { const q = new URLSearchParams(location.search).get('q'); quality.level = Math.max(0, Math.min(QUALITY_MAX, q != null ? +q || 0 : +(localStorage.getItem('quality') || 0))); if (q != null) localStorage.setItem('quality', String(quality.level)); } catch (e) {}
+const qualityOn = () => !noGPU() || !!window.__forceQuality;   // software GL (tests, thumbnails) is slow by nature: keep their pictures stable
+function applyQuality() {
+  const L = quality.level, dpr = Math.min(devicePixelRatio, L >= 3 ? 1 : L >= 2 ? 1.5 : 2);
+  if (L >= 1 && ao.on && !aoByUser) { ao.on = false; aoBtn.classList.remove('active'); }
+  if (renderer.getPixelRatio() !== dpr) { renderer.setPixelRatio(dpr); ao.composer?.setPixelRatio(dpr); resize(); }
+  const sm = L >= 3 ? 1024 : 2048;
+  if (sun.shadow.mapSize.x !== sm) { sun.shadow.mapSize.set(sm, sm); sun.shadow.map?.dispose(); sun.shadow.map = null; shadowsDirty(); }
+  if (L >= 4 && gi.mix) { gi.mix = 0; giApply(null); }
+  invalidate();
+}
+function perfSample(dt, now) {
+  if (!qualityOn() || quality.level >= QUALITY_MAX || rt.on || rtw.on || document.hidden) return;
+  if (dt > 8000 || now - Math.max(lastInput, lastMove) > Math.max(300, dt * 1.5) || now - quality.since < 1500) return;   // only frames drawn back to back while the view moves, and a moment after a change of level
+  quality.dts.push(dt);
+  const n = quality.dts.length, sum = quality.dts.reduce((a, b) => a + b, 0);
+  if (n < 30 && !(n >= 9 && sum > 3000)) return;           // ~30 frames, or fewer when they are very slow (a weak machine must not wait a minute)
+  const m = quality.dts.sort((a, b) => a - b)[n >> 1]; quality.dts = [];
+  if (m <= QUALITY_MS) return;
+  quality.level++; quality.since = now;
+  try { localStorage.setItem('quality', String(quality.level)); } catch (e) {}
+  console.info(`quality: frames took ${Math.round(m)} ms while moving, level ${quality.level}`);
+  applyQuality();
+}
 
 // ---- Render button (key T, ?rt=1): progressive GPU path tracing (three-gpu-pathtracer, loaded on demand): global illumination, soft shadows, light bouncing off walls.
 // The raster view is what you edit in; this is for judging the lights. Needs a real GPU. The accumulated image restarts when the camera, scene, lights or night mode change.
@@ -2163,7 +2197,7 @@ function camMoved() {
   for (let i = 0; i < 9; i++) if (Math.abs(v[i] - camSig[i]) > (i < 3 ? 1e-4 : 1e-6)) { camSig[i] = v[i]; moved = true; }   // above the 1e-7 jitter of the orbit damping
   return moved;
 }
-window.viewerDebug = { stats: () => ({ ceilingCast: !!ceilingMesh?.castShadow, frames, live: performance.now() < liveUntil, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, programs: renderer.info.programs?.length, ceiling: !!ceilingMesh?.visible, shellCast, outlines: model.children.filter(o => o.isLineSegments).length, shadowsPending: renderer.shadowMap.needsUpdate, probes: probeTex.filter(Boolean).length, probeMats: probeMats.size, gi: { mix: +gi.mix.toFixed(2), day: gi.cache.day ? gi.cache.day.iter : 0, night: gi.cache.night ? gi.cache.night.iter : 0, working: !!(gi.work && !gi.work.done), pass: gi.work ? gi.work.iter : 0, at: gi.work ? gi.work.next : 0, batch: gi.B, points: gi.work ? gi.work.P : 0, triangles: gi.tris, ms: Math.round(gi.ms) } }),
+window.viewerDebug = { stats: () => ({ quality: quality.level, dpr: renderer.getPixelRatio(), ao: ao.on, ceilingCast: !!ceilingMesh?.castShadow, frames, live: performance.now() < liveUntil, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, programs: renderer.info.programs?.length, ceiling: !!ceilingMesh?.visible, shellCast, outlines: model.children.filter(o => o.isLineSegments).length, shadowsPending: renderer.shadowMap.needsUpdate, probes: probeTex.filter(Boolean).length, probeMats: probeMats.size, gi: { mix: +gi.mix.toFixed(2), day: gi.cache.day ? gi.cache.day.iter : 0, night: gi.cache.night ? gi.cache.night.iter : 0, working: !!(gi.work && !gi.work.done), pass: gi.work ? gi.work.iter : 0, at: gi.work ? gi.work.next : 0, batch: gi.B, points: gi.work ? gi.work.P : 0, triangles: gi.tris, ms: Math.round(gi.ms) } }),
                        giData: () => { const e = gi.cache[night ? 'night' : 'day'] || gi.work; return e && { nx: e.nx, ny: e.ny, nz: e.nz, min: e.min.toArray(), cell: e.cell.toArray(), skip: [...e.skip], indoor: [...e.indoor], gain: e.gain, cur: [...e.cur].map(v => +v.toFixed(3)), iter: e.iter, ms: e.ms }; },
                        live: ms => invalidate(ms), relight: () => { sun.shadow.radius = realLook ? LOOK.radius : 1; for (const e of Object.values(gi.cache)) giExpose(e); applyNight(); },
                        view: (eye, target, fov = 65) => { applyCamera({ eye, target, fov }); invalidate(); } };   // for headless tests and tuning
@@ -2173,9 +2207,9 @@ renderer.setAnimationLoop(now => {
   stepMove(now); if (!fp) controls.update();             // in first person OrbitControls would re-aim the camera at its target
   syncInside();
   giTick(now);
-  if (camMoved()) invalidate(300);
+  if (camMoved()) { invalidate(300); lastMove = now; }
   if (!(rt.on || rtw.on || snapReq || now < liveUntil || now - lastDraw > IDLE_MS)) return;   // nothing changed: keep the image that is on screen
-  lastDraw = now; frames++;
+  perfSample(now - lastDraw, now); lastDraw = now; frames++;
   if (!rtFrame()) { if (ao.on && ao.composer) ao.composer.render(); else renderer.render(scene, camera); }
   if (snapReq) { snapReq = false; snapshot(); }
   placeLabels();

@@ -250,6 +250,15 @@ function freePort() {
               ok(`${id}: indirect light: the volume is computed, exposed and shown (forced on software GL)`, !!done && !qe.length && gd.gain > 0.5 && gd.gain <= 40 && gd.cur.some(v => v > 0) && gd.cur.every(Number.isFinite), qe.join('; ') || JSON.stringify(gd && { gain: gd.gain, iter: gd.iter }));
               await q.close();
             }
+            {   // quality steps: a forced level is applied and remembered (the automatic steps need a slow real GPU, checked by hand with the GPU string overridden)
+              const q = await browser.newPage({ viewport: { width: 700, height: 460 }, locale: 'en-US' });
+              await q.addInitScript(() => { window.__forceQuality = true; });
+              await q.goto(`${base}/${id}/?q=3`, { waitUntil: 'commit' }); await loaded(q);
+              await q.waitForFunction(() => window.viewerDebug.stats().dpr === 1, null, { timeout: 30000 }).catch(() => {});
+              const qs = await q.evaluate(() => ({ s: window.viewerDebug.stats(), saved: localStorage.getItem('quality') }));
+              ok(`${id}: quality level 3 (?q=3): pixel ratio 1, no automatic AO, remembered`, qs.s.quality === 3 && qs.s.dpr === 1 && !qs.s.ao && qs.saved === '3', JSON.stringify({ q: qs.s.quality, dpr: qs.s.dpr, ao: qs.s.ao, saved: qs.saved }));
+              await q.evaluate(() => localStorage.removeItem('quality')); await q.close();
+            }
           }
         }
         // camera dropdown
