@@ -2179,7 +2179,7 @@ document.getElementById('snap').onclick = () => { snapReq = true; };
 // shadows of its own walls; from above it is the usual open model. At night the shell keeps casting (lamps must not shine through walls).
 function syncInside() {
   const cz = current?.ceiling?.z?.[0];
-  const show = !!fp || (realLook && !rt.on && cz != null && (probing || camera.position.z < cz));
+  const show = !!fp || (realLook && !rt.on && cz != null && probing);   // closed rooms only in first person: an orbit view, also zoomed into a room, keeps the open model with the sun and its shadows (user: zooming in turned everything dark and the shadows vanished)
   insideNow = show;
   const cast = true;                                       // walls always shadow the sun: inside, daylight only enters through the openings (glass casts no shadow)
   if (ceilingMesh && ceilingMesh.visible !== show) { ceilingMesh.visible = show; invalidate(); }
