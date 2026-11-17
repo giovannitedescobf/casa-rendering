@@ -626,7 +626,18 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
   defGroup('rivestimento-rombini', 'Rivestimento bagno Mutina Rombini Large Vert (fogli 18,6 x 31,5)', 'Finiture', null, { fixed: true });
   kit.compose({ g: 'rivestimento-rombini', url: 'textures/mutina-rombini-large-vert.webp', w: 18.6, h: 31.5, t: 2.2, k: 6, gloss: 1, def: 'empty', surf: BW });
   defGroup('rivestimento-punto', 'Rivestimento bagno Mutina Punto Up (fogli 21,1 x 31,5)', 'Finiture', null, { fixed: true });
-  kit.compose({ g: 'rivestimento-punto', url: 'textures/mutina-punto-up.webp', w: 21.1, h: 31.5, t: 1.5, k: 12, gloss: 1, def: 'empty', surf: BW }); }
+  kit.compose({ g: 'rivestimento-punto', url: 'textures/mutina-punto-up.webp', w: 21.1, h: 31.5, t: 1.5, k: 12, gloss: 1, def: 'empty', surf: BW });
+  // More bathroom options (sizes from the makers' sites; Pico dot pitch and Onda thickness are estimates).
+  defGroup('rivestimento-pico', 'Rivestimento bagno Mutina Pico puntini bordeaux (60 x 60)', 'Finiture', null, { fixed: true });
+  kit.compose({ g: 'rivestimento-pico', url: 'textures/mutina-pico-bordeaux.webp', w: 60, h: 60, t: 1.2, k: 1, gloss: 0, def: 'empty', surf: BW });
+  defGroup('rivestimento-pulse', 'Rivestimento bagno Terratinta Pulse Mist Prisma verde bottiglia (4 x 31,5)', 'Finiture', null, { fixed: true });
+  kit.compose({ g: 'rivestimento-pulse', url: 'textures/terratinta-pulse-prisma-verde.webp', w: 4, h: 31.5, t: 0.85, k: 22, gloss: 1, def: 'empty', surf: BW });
+  defGroup('rivestimento-reed', 'Rivestimento bagno Terratinta Reed Muted Moss (13,2 x 40)', 'Finiture', null, { fixed: true });
+  kit.compose({ g: 'rivestimento-reed', url: 'textures/terratinta-reed-muted-moss.webp', w: 13.2, h: 40, t: 1.0, k: 3, gloss: 1, def: 'empty', surf: BW });
+  defGroup('rivestimento-blunotte', 'Rivestimento bagno Florim Sensicolore Blunotte Onda 2 (5,7 x 23,2)', 'Finiture', null, { fixed: true });
+  kit.compose({ g: 'rivestimento-blunotte', url: 'textures/florim-onda-blunotte.webp', w: 5.7, h: 23.2, t: 0.9, k: 10, gloss: 1, def: 'empty', surf: BW });
+  defGroup('rivestimento-laguna', 'Rivestimento bagno Florim Sensicolore Laguna Onda 2 (5,7 x 23,2)', 'Finiture', null, { fixed: true });
+  kit.compose({ g: 'rivestimento-laguna', url: 'textures/florim-onda-laguna.webp', w: 5.7, h: 23.2, t: 0.9, k: 10, gloss: 1, def: 'empty', surf: BW }); }
 // ---------- surface finish for the realistic look: "ro" = roughness, 0 polished .. 1 matte (the viewer's default is 0.85) ----------
 // one rule per material, the first match wins; metals ("mt") and glass keep their own values   all values estimate
 { const FINISH = [
@@ -672,7 +683,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     'libreria': [S, 'Arredi'], 'lampada-terra': [S, 'Luci'], 'gatto': [S, 'Animali'],
     'porte': [IC, 'Porte'], 'armadio': [IC, 'Arredi'],
     'gabbia-cucina': [CU, 'Pareti e vetrate'], 'porta-cucina': [CU, 'Porte'],
-    'porta-bagno': [B, 'Porte'], 'rivestimento-rombini': [B, 'Rivestimenti'], 'rivestimento-punto': [B, 'Rivestimenti'],
+    'porta-bagno': [B, 'Porte'], 'rivestimento-rombini': [B, 'Rivestimenti'], 'rivestimento-punto': [B, 'Rivestimenti'], 'rivestimento-pico': [B, 'Rivestimenti'], 'rivestimento-pulse': [B, 'Rivestimenti'], 'rivestimento-reed': [B, 'Rivestimenti'], 'rivestimento-blunotte': [B, 'Rivestimenti'], 'rivestimento-laguna': [B, 'Rivestimenti'],
     'porta-camera': [CA, 'Porte'], 'split-camera': [CA, 'Impianti'],
     'condizionatore': [BA, 'Impianti'],
     'pittura': [TC, 'Pareti'], 'battiscopa': [TC, 'Finiture'], 'infissi': [TC, 'Infissi'],
