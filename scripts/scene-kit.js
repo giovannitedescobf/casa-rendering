@@ -51,6 +51,22 @@ function createScene({ defaultOn = [] } = {}) {
   const spawn = (p, yaw) => ({ p: p.map(inch), yaw });
   const ceiling = (poly, z0, z1) => ({ o: poly.map(pt), z: [inch(z0), inch(z1)] });
 
+  // Composable tiles (the viewer's tile composer): a material placed tile by tile on the surfaces of the rooms it
+  // belongs to. compose({ g, url, w, h, t, k, rot, gap, gloss, def, surf }) in cm: tile w x h, thickness t, `k` variants
+  // side by side in the texture, rot = random 90-degree turns, def 'full' (every tile laid) or 'empty'.
+  // A surface: { id, o: [x,y,z], n: [nx,ny,nz] (into the room, axis-aligned), len, ht, holes: [[u0,v0,u1,v1]] } for a wall
+  // (u runs left to right seen from the room, v up), or { id, o, poly: [[u,v]...] } for a floor (u = +x, v = +y).
+  const COMPOSE = [];
+  const compose = spec => {
+    const iv = a => a.map(inch);
+    const surf = spec.surf.map(s => {
+      const n = s.n || [0, 0, 1], u = n[2] ? [1, 0, 0] : [-n[1], n[0], 0], v = n[2] ? [0, 1, 0] : [0, 0, 1];
+      const poly = s.poly || [[0, 0], [s.len, 0], [s.len, s.ht], [0, s.ht]];
+      return Object.assign({ id: s.id, o: iv(s.o), u, v, n, poly: poly.map(iv) }, s.holes ? { holes: s.holes.map(iv) } : {});
+    });
+    COMPOSE.push(Object.assign({}, spec, { w: inch(spec.w), h: inch(spec.h), t: inch(spec.t), gap: inch(spec.gap || 0.2), surf }));
+  };
+
   // one item per line, so a diff of scene.json stays readable; keys that are absent are omitted
   function write(out, { camera: cam, spawn: sp, ceiling: ce }) {
     const head = ['"units":"inches"', '"camera":' + JSON.stringify(cam)];
@@ -58,10 +74,11 @@ function createScene({ defaultOn = [] } = {}) {
     if (ce) head.push('"ceiling":' + JSON.stringify(ce));
     if (lights.length) head.push('"lights":' + JSON.stringify(lights));
     if (GROUPS.length) head.push('"groups":' + JSON.stringify(GROUPS));
+    if (COMPOSE.length) head.push('"compose":' + JSON.stringify(COMPOSE));
     fs.writeFileSync(out, '{' + head.join(',') + ',"items":[\n' + items.map(i => JSON.stringify(i)).join(',\n') + '\n]}\n');
   }
 
-  return { items, GROUPS, lights, inch, box, wall, slab, tray, tube, rbox, quad, mesh, defGroup, group, light, camera, spawn, ceiling, write };
+  return { items, GROUPS, lights, inch, box, wall, slab, tray, tube, rbox, quad, mesh, defGroup, group, light, camera, spawn, ceiling, compose, write };
 }
 
 module.exports = { createScene };

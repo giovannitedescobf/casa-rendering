@@ -601,6 +601,28 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
   });
   defGroup('armadio', 'Armadio a muro', 'Arredi', null, { fixed: true }); }
 
+// ---------- tile composer (viewer): materials laid tile by tile, only on the surfaces of the rooms they belong to ----------
+// Floors for soggiorno + ingresso/corridoio: Grandinetti terrazzo 60 x 60 (product photos of one tile; every tile gets a
+// random 90-degree turn so no two neighbours look identical), default = the whole floor, same variant as the other floors.
+{ const FLOOR = [{ id: 'soggiorno-corridoio', o: [0, YI0, 0], poly: [[0, 0], [XR, 0], [XR, ROOMS.ingresso.d], [ROOMS.soggiorno.w, ROOMS.ingresso.d], [ROOMS.soggiorno.w, YS1 - YI0], [0, YS1 - YI0]] }];
+  for (const [id, label, img] of [['pavimento-san-giuliano', '208 San Giuliano', 'san-giuliano'], ['pavimento-verde-de-lumi', "213 Verde de' Lumi", 'verde-de-lumi'], ['pavimento-arcobaleno', '212 Arcobaleno', 'arcobaleno']]) {
+    defGroup(id, `Pavimento Grandinetti ${label} (60 x 60)`, 'Finiture', 'pavimento', { fixed: true });
+    kit.compose({ g: id, url: `textures/grandinetti-${img}.jpg`, w: 60, h: 60, t: 0.3, k: 1, rot: 1, gap: 0.1, def: 'full', surf: FLOOR });
+  } }
+// Bathroom wall tiles (Mutina, Ronan & Erwan Bouroullec; sizes from mutina.it): laid sheet by sheet, walls of the bagno only,
+// nothing laid by default (the user composes them). Rombini Triangle Large Vert: 3 strips 6 x 31.5 on a 18.6 x 31.5 sheet,
+// 2.2 cm; Punto Up: 5 strips 4 x 31.5 on a 21.1 x 31.5 sheet, 1.5 cm. Textures = sheets cut from the product photos.
+{ const s = 0.3, BW = [
+    { id: 'bagno-ovest', o: [XB0 + s, YS0, 0], n: [1, 0, 0], len: ROOMS.bagno.d, ht: H },
+    { id: 'bagno-est', o: [XR - s, YS1, 0], n: [-1, 0, 0], len: ROOMS.bagno.d, ht: H },
+    { id: 'bagno-nord', o: [XB0, YS1 - s, 0], n: [0, -1, 0], len: ROOMS.bagno.w, ht: H, holes: [[BAGNO_WIN.from - XB0, BAGNO_WIN.sill, BAGNO_WIN.to - XB0, BAGNO_WIN.head]] },
+    { id: 'bagno-sud', o: [XR, YS0 + s, 0], n: [0, 1, 0], len: ROOMS.bagno.w, ht: H, holes: [[XR - XB0 - 100, 0, XR - XB0 - 30, DOOR_H]] },
+  ];
+  defGroup('rivestimento-rombini', 'Rivestimento bagno Mutina Rombini Large Vert (fogli 18,6 x 31,5)', 'Finiture', null, { fixed: true });
+  kit.compose({ g: 'rivestimento-rombini', url: 'textures/mutina-rombini-large-vert.jpg', w: 18.6, h: 31.5, t: 2.2, k: 6, gloss: 1, def: 'empty', surf: BW });
+  defGroup('rivestimento-punto', 'Rivestimento bagno Mutina Punto Up (fogli 21,1 x 31,5)', 'Finiture', null, { fixed: true });
+  kit.compose({ g: 'rivestimento-punto', url: 'textures/mutina-punto-up.jpg', w: 21.1, h: 31.5, t: 1.5, k: 12, gloss: 1, def: 'empty', surf: BW }); }
+
 kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),

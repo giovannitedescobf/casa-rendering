@@ -80,6 +80,17 @@
   #groups button.gico svg { width: 14px; height: 14px; fill: currentColor; }
   #groups h4.trash { color: #b42318; }
   #groups .acts { display: flex; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-soft); }
+  #groups button.gico.comp { background: var(--accent); }
+  #groups button.gico.comp:hover { background: var(--accent-ink, #8f3f1f); }
+  #compbar { position: fixed; left: 50%; top: 58px; transform: translateX(-50%); z-index: 6; display: none; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+             max-width: calc(100vw - 32px); box-sizing: border-box; background: var(--surface); border: 1px solid var(--accent); border-radius: 8px; padding: 6px 10px; box-shadow: var(--shadow); }
+  #compbar.open { display: flex; }
+  #compbar .ct { font-weight: 600; }
+  #compbar .ch { color: var(--muted); font-size: 12px; }
+  #compui { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
+  #compui button { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; width: 26px; height: 26px; padding: 0; border-radius: 50%; font: 700 16px/1 var(--sans, inherit);
+                   color: #fff; background: var(--accent); border: 2px solid #fff; display: none; }
+  #compui button.del { background: #d92d20; }
   #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
   .dim { position: absolute; transform: translate(-50%, -50%); background: #fff; color: var(--accent-ink); font: 600 12px var(--mono); font-variant-numeric: tabular-nums; border: 1px solid var(--accent);
          border-radius: 4px; padding: 1px 5px; font-weight: 600; white-space: nowrap; }
@@ -144,6 +155,8 @@
 <button id="gbtn" data-i18n="v.groups" data-i18n-title="v.groups.title" title="Show / hide groups of objects (G)">Groups</button>
 <div id="groups"></div>
 <div id="labels"></div>
+<div id="compbar"><span class="ct"></span><span class="ch" data-i18n="c.hint">Click a surface to lay a tile · + adds one next to the selected tile · × removes it</span><button id="cfill" data-i18n="c.fill">Fill</button><button id="cclear" data-i18n="c.clear">Clear</button><button id="cdone" data-i18n="c.done">Done</button></div>
+<div id="compui"></div>
 <div id="tip"></div>
 <div id="fphint" data-i18n="v.fphint">WASD / arrows: move · Q / E: turn · click: mouse look (click again to stop) · Shift: run · F / Esc: exit</div>
 <script type="importmap">
@@ -453,6 +466,12 @@ const gone = id => trash.has(id) || deleted.has(id);
 function saveTrash() {
   try { liveTrash() === savedTrash ? localStorage.removeItem(TR_STORE) : localStorage.setItem(TR_STORE, liveTrash()); } catch (e) {}
 }
+// Tile composer: moved.json "_tiles": {groupId: {surfaceId: ["i,j", ...]}} = the tiles laid by hand (a group missing here
+// shows its scene default: every tile, or none). Draft in this browser until 'Save positions'.
+const TL_STORE = 'tiles:' + location.pathname;
+let tiles = {}, savedTiles = null;
+const liveTiles = () => JSON.stringify(Object.fromEntries(Object.keys(tiles).sort().map(g => [g, Object.fromEntries(Object.keys(tiles[g]).sort().map(k => [k, [...tiles[g][k]].sort()]))])));
+function saveTiles() { try { liveTiles() === savedTiles ? localStorage.removeItem(TL_STORE) : localStorage.setItem(TL_STORE, liveTiles()); } catch (e) {} showSave?.(); }
 const mvJSON = m => JSON.stringify(Object.fromEntries([...m].map(([k, v]) => [k, v.map(x => Math.round(x * 100) / 100)]).sort((a, b) => a[0] < b[0] ? -1 : 1)), null, 1);
 async function loadMoved() {
   let file = {};
@@ -461,6 +480,11 @@ async function loadMoved() {
   delete file._groups;
   trash = new Set(Array.isArray(file._trash) ? file._trash : []); deleted = new Set(Array.isArray(file._deleted) ? file._deleted : []);
   delete file._trash; delete file._deleted;
+  tiles = {}; for (const [g, ss] of Object.entries(file._tiles || {})) tiles[g] = Object.fromEntries(Object.entries(ss).map(([k, v]) => [k, new Set(v)]));
+  delete file._tiles;
+  savedTiles = liveTiles();
+  try { const d = JSON.parse(localStorage.getItem(TL_STORE)); if (d && typeof d === 'object') { tiles = {}; for (const [g, ss] of Object.entries(d)) tiles[g] = Object.fromEntries(Object.entries(ss).map(([k, v]) => [k, new Set(v)])); } } catch (e) {}
+  saveTiles();
   savedTrash = liveTrash();
   try { const d = JSON.parse(localStorage.getItem(TR_STORE)); if (d && Array.isArray(d.t) && Array.isArray(d.d)) { trash = new Set(d.t); deleted = new Set(d.d); } } catch (e) {}
   saveTrash();                                                     // drops a draft that equals the published state
@@ -492,7 +516,7 @@ function undoMove(back = true) {
 const SAVE_REPO = location.hostname.endsWith('.github.io') && [location.hostname.split('.')[0], location.pathname.split('/')[1]];   // owner, repo of a GitHub Pages site
 function showSave() {
   const b = document.getElementById('mvsave');
-  if (b) b.hidden = !SAVE_REPO || savedMoved === null || (mvJSON(moved) === savedMoved && (savedGroups === null || liveGroups() === savedGroups) && liveTrash() === savedTrash);
+  if (b) b.hidden = !SAVE_REPO || savedMoved === null || (mvJSON(moved) === savedMoved && (savedGroups === null || liveGroups() === savedGroups) && liveTrash() === savedTrash && liveTiles() === savedTiles);
   const u = document.getElementById('mvundo');
   if (u) u.disabled = !mvUndo.length;
   const r = document.getElementById('mvredo');
@@ -510,6 +534,8 @@ async function publishMoved() {
   const extra = { _groups: groupsNow };                                                             // positions + the groups switched on now + the trash
   if (trash.size) extra._trash = [...trash].sort();
   if (deleted.size) extra._deleted = [...deleted].sort();
+  const tilesNow = liveTiles();
+  if (tilesNow !== '{}') extra._tiles = JSON.parse(tilesNow);
   const body = JSON.stringify(Object.assign(JSON.parse(mvJSON(moved)), extra), null, 1) + '\n', trashNow = liveTrash();
   btn.disabled = true;
   try {
@@ -520,7 +546,7 @@ async function publishMoved() {
       content: btoa(String.fromCharCode(...new TextEncoder().encode(body))) }) });
     if (!r.ok) throw new Error(String(r.status));
     try { localStorage.setItem('ghToken', tok.trim()); } catch (e) {}
-    savedMoved = mvJSON(moved); savedGroups = JSON.stringify(groupsNow); savedTrash = trashNow; saveTrash();
+    savedMoved = mvJSON(moved); savedGroups = JSON.stringify(groupsNow); savedTrash = trashNow; saveTrash(); savedTiles = tilesNow; saveTiles();
     showSave();
     alert(t('v.mvsave.ok'));
   } catch (e) {
@@ -596,6 +622,7 @@ function build(data) {
     model.add(edges);
     mesh.userData.mv = edges.userData.mv = moveKey(item);
   }
+  buildTiles(data);
   pivots.clear();                                         // each movable piece turns around the centre of its plan, as drawn in scene.json
   for (const o of model.children) if (o.userData.mv) { o.geometry.computeBoundingBox(); const b = pivots.get(o.userData.mv); b ? b.union(o.geometry.boundingBox) : pivots.set(o.userData.mv, o.geometry.boundingBox.clone()); }
   for (const o of model.children) if (o.userData.mv) placeMv(o);
@@ -1116,6 +1143,7 @@ function groupsChanged() {
 }
 const ICON_TRASH = '<svg viewBox="0 0 256 256" aria-hidden="true"><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/></svg>';
 const ICON_RESTORE = '<svg viewBox="0 0 256 256" aria-hidden="true"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z"/></svg>';
+const ICON_GRID = '<svg viewBox="0 0 256 256" aria-hidden="true"><path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z"/></svg>';
 function gicon(cls, svg, label, fn) {                       // a small icon button of the Groups panel (trash / put back / delete for good)
   const b = document.createElement('button'); b.type = 'button'; b.className = 'gico' + (cls ? ' ' + cls : '');
   b.innerHTML = svg; b.title = label; b.setAttribute('aria-label', label); b.onclick = e => { e.preventDefault(); fn(); };
@@ -1165,7 +1193,8 @@ function renderGroups(data) {
       cb.onchange = () => { setGroup(d.id, cb.checked); for (const x of groupsEl.querySelectorAll('input[data-gid]')) if (x.dataset.gid === d.id) x.focus(); };   // the panel is rebuilt: keep the focus on this checkbox
       l.append(cb, d.label + (d.variant ? '  ·  ' + t('g.variant') : ''));
       const row = document.createElement('div'); row.className = 'grow';
-      row.append(l, gicon('', ICON_TRASH, t('g.trash.move', { name: d.label }), () => trashGroup(d.id)));
+      if ((data.compose || []).some(c => c.g === d.id)) row.append(l, gicon('comp', ICON_GRID, t('g.compose', { name: d.label }), () => startCompose(d.id)), gicon('', ICON_TRASH, t('g.trash.move', { name: d.label }), () => trashGroup(d.id)));
+      else row.append(l, gicon('', ICON_TRASH, t('g.trash.move', { name: d.label }), () => trashGroup(d.id)));
       groupsEl.appendChild(row);
     }
   }
@@ -1334,11 +1363,198 @@ window.mvState = name => {                                         // for headle
 
 renderer.domElement.addEventListener('pointerup', ev => {                 // a click, not a drag
   if (!downAt || Math.hypot(ev.clientX - downAt[0], ev.clientY - downAt[1]) > 4) return;
+  if (comp) { compClick(ev); return; }
   if (!selDims) return;
   const hit = pick(ev);
   selected = hit && hit.name !== selected ? hit.name : null;
   refreshDims();
 });
+
+
+// ---- tile composer: scene.json "compose" = [{g, url, w, h, t, k, rot, gap, gloss, def, surf: [{id, o, u, v, n, poly, holes}]}] (inches).
+// A group's tiles lie on its surfaces only (the rooms the material belongs to), on a grid from the surface origin
+// (u, v); a tile cut by the outline is clipped. Compose mode (the grid button in the Groups panel): click a surface to
+// lay or select a tile, + lays the next one beside the selected tile, x removes it; 'Save positions' publishes them.
+const texCache = new Map();
+function tileTex(url) {
+  if (!texCache.has(url)) { const tx = textureLoader.load(url); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8; texCache.set(url, tx); }
+  return texCache.get(url);
+}
+const cellCache = new Map();
+function inPoly(o, x, y) { let c = false; for (let i = 0, j = o.length - 1; i < o.length; j = i++) if ((o[i][1] > y) !== (o[j][1] > y) && x < (o[j][0] - o[i][0]) * (y - o[i][1]) / (o[j][1] - o[i][1]) + o[i][0]) c = !c; return c; }
+function clipRect(poly, r) {                                     // Sutherland-Hodgman: polygon cut by the rectangle r = [u0, v0, u1, v1]
+  let out = poly;
+  for (const [ax, sgn, lim] of [[0, 1, r[0]], [0, -1, r[2]], [1, 1, r[1]], [1, -1, r[3]]]) {
+    const inp = out; out = [];
+    const ins = p => sgn * (p[ax] - lim) >= -1e-9;
+    for (let i = 0; i < inp.length; i++) {
+      const a = inp[i], b = inp[(i + 1) % inp.length];
+      if (ins(a)) out.push(a);
+      if (ins(a) !== ins(b)) { const f = (lim - a[ax]) / (b[ax] - a[ax]); out.push([a[0] + f * (b[0] - a[0]), a[1] + f * (b[1] - a[1])]); }
+    }
+    if (!out.length) break;
+  }
+  return out;
+}
+function tilePieces(spec, sf, i, j, g2 = 0) {                     // the tile (i, j) cut by the surface outline and its openings (doors, windows): a list of polygons
+  let rects = [[i * spec.w + g2, j * spec.h + g2, (i + 1) * spec.w - g2, (j + 1) * spec.h - g2]];
+  for (const h of sf.holes || []) rects = rects.flatMap(r => {
+    if (h[0] >= r[2] || h[2] <= r[0] || h[1] >= r[3] || h[3] <= r[1]) return [r];
+    const out = [];
+    if (h[0] > r[0]) out.push([r[0], r[1], h[0], r[3]]);
+    if (h[2] < r[2]) out.push([h[2], r[1], r[2], r[3]]);
+    const x0 = Math.max(r[0], h[0]), x1 = Math.min(r[2], h[2]);
+    if (h[1] > r[1]) out.push([x0, r[1], x1, h[1]]);
+    if (h[3] < r[3]) out.push([x0, h[3], x1, r[3]]);
+    return out;
+  });
+  return rects.map(r => clipRect(sf.poly, r)).filter(c => c.length >= 3);
+}
+const polyArea = c => { let a = 0; for (let k = 0; k < c.length; k++) { const p = c[k], q = c[(k + 1) % c.length]; a += p[0] * q[1] - q[0] * p[1]; } return Math.abs(a) / 2; };
+function validCells(spec, sf) {                                  // "i,j" of every tile that falls (at least partly) on the surface and not in an opening
+  const key = spec.g + '|' + sf.id;
+  if (cellCache.has(key)) return cellCache.get(key);
+  const us = sf.poly.map(p => p[0]), vs = sf.poly.map(p => p[1]), set = new Set();
+  for (let i = Math.floor(Math.min(...us) / spec.w); i * spec.w < Math.max(...us) - 1e-6; i++)
+    for (let j = Math.floor(Math.min(...vs) / spec.h); j * spec.h < Math.max(...vs) - 1e-6; j++) {
+      if (tilePieces(spec, sf, i, j).reduce((a, c) => a + polyArea(c), 0) > spec.w * spec.h * 0.02) set.add(i + ',' + j);
+    }
+  cellCache.set(key, set);
+  return set;
+}
+function laid(spec, sf) {                                        // the tiles on a surface: drawn by hand, else the scene default
+  const g = tiles[spec.g];
+  if (g) return g[sf.id] || new Set();
+  return spec.def === 'full' ? validCells(spec, sf) : new Set();
+}
+function editable(spec) {                                        // first edit of a group: start from what is shown
+  if (!tiles[spec.g]) tiles[spec.g] = Object.fromEntries(spec.surf.map(sf => [sf.id, new Set(laid(spec, sf))]));
+  for (const sf of spec.surf) if (!tiles[spec.g][sf.id]) tiles[spec.g][sf.id] = new Set();
+  return tiles[spec.g];
+}
+const wpt = (sf, pu, pv, d) => [0, 1, 2].map(a => sf.o[a] + sf.u[a] * pu + sf.v[a] * pv + sf.n[a] * d);
+function tileGeometry(spec, sf, si, cells) {
+  const pos = [], uv = [], g2 = spec.gap / 2;
+  for (const c of cells) {
+    const [i, j] = c.split(',').map(Number);
+    const hsh = Math.imul(i * 73856093 ^ j * 19349663 ^ si * 83492791, 2654435761) >>> 0;
+    const vi = hsh % (spec.k || 1), rot = spec.rot ? (hsh >>> 8) % 4 : 0;
+    const tuv = p => {
+      let s = (p[0] - i * spec.w) / spec.w, q = (p[1] - j * spec.h) / spec.h;
+      for (let r = 0; r < rot; r++) [s, q] = [q, 1 - s];
+      return [(vi + s) / (spec.k || 1), q];
+    };
+    for (const poly of tilePieces(spec, sf, i, j, g2)) {
+    for (const [a, b, cc] of THREE.ShapeUtils.triangulateShape(poly.map(p => new THREE.Vector2(...p)), [])) {
+      const tri = THREE.ShapeUtils.isClockWise([poly[a], poly[b], poly[cc]].map(p => new THREE.Vector2(...p))) ? [a, cc, b] : [a, b, cc];
+      for (const k of tri) { pos.push(...wpt(sf, ...poly[k], spec.t)); uv.push(...tuv(poly[k])); }
+    }
+    for (let k = 0; k < poly.length; k++) {                        // the tile's edges, down to the surface
+      const p = poly[k], q = poly[(k + 1) % poly.length];
+      const A = wpt(sf, ...p, 0), B = wpt(sf, ...q, 0), C = wpt(sf, ...q, spec.t), D = wpt(sf, ...p, spec.t), e = tuv(p);
+      pos.push(...A, ...B, ...C, ...A, ...C, ...D); for (let m = 0; m < 6; m++) uv.push(...e);
+    }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  return g;
+}
+function buildTiles(data) {
+  for (const o of [...model.children]) if (o.userData.tile) { model.remove(o); o.geometry.dispose(); }
+  for (const spec of data.compose || []) {
+    if (!enabledGroups.has(spec.g) || gone(spec.g)) continue;
+    const label = (data.groups || []).find(x => x.id === spec.g)?.label || spec.g;
+    const mat = new THREE.MeshStandardMaterial({ map: tileTex(spec.url), roughness: spec.gloss ? 0.22 : 0.75, side: THREE.DoubleSide });
+    spec.surf.forEach((sf, si) => {
+      const cells = laid(spec, sf);
+      if (!cells.size) return;
+      const m = new THREE.Mesh(tileGeometry(spec, sf, si, cells), mat);
+      m.name = '/' + label + '/' + sf.id; m.userData.tile = { g: spec.g, s: sf.id };
+      m.castShadow = m.receiveShadow = true;
+      model.add(m);
+    });
+  }
+}
+let comp = null, selCell = null;                                // compose mode: the group being composed, the selected tile {s, i, j}
+const compbar = document.getElementById('compbar'), compui = document.getElementById('compui');
+const compSpec = () => current && comp && (current.compose || []).find(c => c.g === comp);
+function startCompose(g) {
+  comp = g; selCell = null;
+  if (!enabledGroups.has(g)) setGroup(g, true);
+  const d = groupDefs.find(x => x.id === g);
+  compbar.querySelector('.ct').textContent = t('c.title', { name: d ? d.label : g });
+  compbar.classList.add('open');
+  groupsEl.classList.remove('open'); gbtn.classList.remove('open');
+}
+function endCompose() { comp = null; selCell = null; compbar.classList.remove('open'); placeComp(); }
+function tilesChanged() { saveTiles(); if (current) buildTiles(current); }
+function compClick(ev) {
+  const spec = compSpec(); if (!spec) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  let best = null;
+  for (const sf of spec.surf) {
+    const n = new THREE.Vector3(...sf.n), dn = ray.ray.direction.dot(n);
+    if (dn >= 0) continue;                                       // seen from behind (outside the room)
+    const o = new THREE.Vector3(...sf.o), dist = o.clone().sub(ray.ray.origin).dot(n) / dn;
+    if (dist <= 0 || (best && dist >= best.dist)) continue;
+    const p = ray.ray.at(dist, new THREE.Vector3()).sub(o), pu = p.dot(new THREE.Vector3(...sf.u)), pv = p.dot(new THREE.Vector3(...sf.v));
+    if (!inPoly(sf.poly, pu, pv)) continue;
+    best = { dist, sf, pu, pv };
+  }
+  if (!best) { selCell = null; return; }
+  const i = Math.floor(best.pu / spec.w), j = Math.floor(best.pv / spec.h), c = i + ',' + j;
+  if (!validCells(spec, best.sf).has(c)) return;
+  const set = editable(spec)[best.sf.id];
+  if (!set.has(c)) { set.add(c); tilesChanged(); }
+  selCell = { s: best.sf.id, i, j };
+}
+const compBtns = {};
+for (const [k, txt, cls] of [['up', '+'], ['down', '+'], ['left', '+'], ['right', '+'], ['del', '×', 'del']]) {
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; if (cls) b.className = cls;
+  b.title = t(k === 'del' ? 'c.del' : 'c.add'); b.setAttribute('aria-label', b.title);
+  b.onclick = () => {
+    const spec = compSpec(); if (!spec || !selCell) return;
+    const set = editable(spec)[selCell.s];
+    if (k === 'del') { set.delete(selCell.i + ',' + selCell.j); selCell = null; }
+    else { const [di, dj] = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0] }[k]; selCell = { s: selCell.s, i: selCell.i + di, j: selCell.j + dj }; set.add(selCell.i + ',' + selCell.j); }
+    tilesChanged();
+  };
+  compui.appendChild(b); compBtns[k] = b;
+}
+function placeComp() {
+  const spec = compSpec(), sf = spec && selCell && spec.surf.find(s => s.id === selCell.s);
+  for (const b of Object.values(compBtns)) b.style.display = 'none';
+  if (!sf) return;
+  const set = laid(spec, sf), valid = validCells(spec, sf), w = view.clientWidth, h = view.clientHeight;
+  const show = (b, i, j) => {
+    _v.set(...wpt(sf, (i + .5) * spec.w, (j + .5) * spec.h, spec.t)).project(camera);
+    if (_v.z >= 1 || Math.abs(_v.x) > 1 || Math.abs(_v.y) > 1) return;
+    b.style.display = 'block'; b.style.left = ((_v.x + 1) / 2) * w + 'px'; b.style.top = ((1 - _v.y) / 2) * h + 'px';
+  };
+  const { i, j } = selCell;
+  if (set.has(i + ',' + j)) show(compBtns.del, i, j);
+  for (const [k, di, dj] of [['up', 0, 1], ['down', 0, -1], ['left', -1, 0], ['right', 1, 0]]) {
+    const c = (i + di) + ',' + (j + dj);
+    if (valid.has(c) && !set.has(c)) show(compBtns[k], i + di, j + dj);
+  }
+}
+function fillClear(fill) {                                        // the surface of the selected tile, or every surface of the group
+  const spec = compSpec(); if (!spec) return;
+  const ed = editable(spec);
+  for (const sf of spec.surf) if (!selCell || selCell.s === sf.id) ed[sf.id] = fill ? new Set(validCells(spec, sf)) : new Set();
+  if (!fill) selCell = null;
+  tilesChanged();
+}
+document.getElementById('cfill').onclick = () => fillClear(true);
+document.getElementById('cclear').onclick = () => fillClear(false);
+document.getElementById('cdone').onclick = endCompose;
+addEventListener('keydown', e => { if (e.key === 'Escape' && comp) endCompose(); });
+window.compState = () => ({ comp, selCell, tiles: JSON.parse(liveTiles()) });   // for headless tests
 
 const _v = new THREE.Vector3();
 function placeLabels() {
@@ -1529,7 +1745,7 @@ load();
 renderer.setAnimationLoop(now => { stepMove(now); if (!fp) controls.update();   // in first person OrbitControls would re-aim the camera at its target
    if (!rtFrame()) { if (ao.on && ao.composer) ao.composer.render(); else renderer.render(scene, camera); }
    if (snapReq) { snapReq = false; snapshot(); }
-   placeLabels(); });
+   placeLabels(); placeComp(); });
 </script>
 </body>
 </html>
