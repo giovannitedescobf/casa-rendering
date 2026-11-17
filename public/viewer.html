@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:,">
 <title>Vibe Interiors</title>
+<script>
+  // Start downloading the scene and the saved positions right away, in parallel with three.js (the module script below picks these promises up on its first load).
+  window.__boot = { scene: fetch('scene.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+                    moved: fetch('moved.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null) };
+</script>
 <style>
   @font-face { font-family: 'Geist'; src: url(../fonts/geist.woff2) format('woff2'); font-weight: 100 900; font-display: swap; }
   @font-face { font-family: 'Geist Mono'; src: url(../fonts/geist-mono.woff2) format('woff2'); font-weight: 100 900; font-display: swap; }
@@ -41,6 +46,9 @@
   #setmenu { display: none; position: absolute; top: calc(100% + 11px); left: -6px; z-index: 6; flex-direction: column; gap: 4px; min-width: 130px;
              background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px; box-shadow: 0 4px 14px rgba(28,35,48,.12); }   /* settings (Dims, unit, Click to measure): a dropdown under the gear; stays open while toggling, folds on a click elsewhere */
   #setmenu button { text-align: left; }
+  #qrow { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; margin-top: 2px; border-top: 1px solid var(--line-soft); }   /* Quality: Auto, then 1 (minimum) .. 5 (maximum) */
+  #qlab { font-size: 12px; color: var(--muted); }
+  #qbtns { display: flex; gap: 3px; } #qbtns button { flex: 1; text-align: center; padding-left: 6px; padding-right: 6px; }
   #langrow { display: flex; gap: 4px; padding-top: 4px; margin-top: 2px; border-top: 1px solid var(--line-soft); }
   #langrow button { flex: 1; text-align: center; }
   #bar.set #setmenu { display: flex; }
@@ -130,6 +138,7 @@
     #bar.open #views { display: flex; order: 3; flex: 1 1 100%; gap: 6px; flex-wrap: wrap; }
     #bar.open #setmenu button, #bar.open #snap { display: inline-block; order: 4; }
     #bar.open #setmenu #aobtn { display: none; }
+    #qrow { display: none; } #bar.open #qrow { display: flex; flex-direction: row; align-items: center; order: 5; flex: 1 1 100%; border: 0; margin: 0; padding: 0; } #bar.open #qrow #qbtns button { display: inline-block; } #qbtns { flex: 1; }
     #groups { left: 6px; right: 6px; bottom: calc(max(6px, env(safe-area-inset-bottom)) + 44px); max-height: 60vh; width: auto; }
     #groups label { padding: 7px 0; font-size: 14px; }
     #fphint { max-width: calc(100vw - 24px); bottom: max(12px, env(safe-area-inset-bottom)); }
@@ -141,7 +150,7 @@
 <div id="bar"><a id="home" data-i18n="v.home" data-i18n-title="v.home.title" href="../" title="Project list">← Projects</a><span id="dot"></span><span id="status" data-i18n="v.connecting">connecting…</span><button id="morebtn" data-i18n-title="v.more.title" title="Views, dimensions">Views ▾</button>
   <span id="camctl"><button id="camBtn" data-i18n-title="v.cam.title" data-i18n-aria="v.cam.aria" title="Camera views (1-9)" aria-label="Camera views" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.71,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.66-3.56L100.28,48h55.43l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></button>
   <span id="views"></span></span>
-  <span id="setctl"><button id="setBtn" data-i18n-title="v.set.title" data-i18n-aria="v.set.aria" title="Settings: dimensions, units, click to measure" aria-label="Settings" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm109.94-52.79a8,8,0,0,0-3.89-5.4l-29.83-17-.12-33.62a8,8,0,0,0-2.83-6.08,111.91,111.91,0,0,0-36.72-20.67,8,8,0,0,0-6.46.59L128,41.85,97.88,25a8,8,0,0,0-6.47-.6A112.1,112.1,0,0,0,54.73,45.15a8,8,0,0,0-2.83,6.07l-.15,33.65-29.83,17a8,8,0,0,0-3.89,5.4,106.47,106.47,0,0,0,0,41.56,8,8,0,0,0,3.89,5.4l29.83,17,.12,33.62a8,8,0,0,0,2.83,6.08,111.91,111.91,0,0,0,36.72,20.67,8,8,0,0,0,6.46-.59L128,214.15,158.12,231a7.91,7.91,0,0,0,3.9,1,8.09,8.09,0,0,0,2.57-.42,112.1,112.1,0,0,0,36.68-20.73,8,8,0,0,0,2.83-6.07l.15-33.65,29.83-17a8,8,0,0,0,3.89-5.4A106.47,106.47,0,0,0,237.94,107.21Zm-15,34.91-28.57,16.25a8,8,0,0,0-3,3c-.58,1-1.19,2.06-1.81,3.06a7.94,7.94,0,0,0-1.22,4.21l-.15,32.25a95.89,95.89,0,0,1-25.37,14.3L134,199.13a8,8,0,0,0-3.91-1h-.19c-1.21,0-2.43,0-3.64,0a8.08,8.08,0,0,0-4.1,1l-28.84,16.1A96,96,0,0,1,67.88,201l-.11-32.2a8,8,0,0,0-1.22-4.22c-.62-1-1.23-2-1.8-3.06a8.09,8.09,0,0,0-3-3.06l-28.6-16.29a90.49,90.49,0,0,1,0-28.26L61.67,97.63a8,8,0,0,0,3-3c.58-1,1.19-2.06,1.81-3.06a7.94,7.94,0,0,0,1.22-4.21l.15-32.25a95.89,95.89,0,0,1,25.37-14.3L122,56.87a8,8,0,0,0,4.1,1c1.21,0,2.43,0,3.64,0a8.08,8.08,0,0,0,4.1-1l28.84-16.1A96,96,0,0,1,188.12,55l.11,32.2a8,8,0,0,0,1.22,4.22c.62,1,1.23,2,1.8,3.06a8.09,8.09,0,0,0,3,3.06l28.6,16.29A90.49,90.49,0,0,1,222.9,142.12Z"/></svg></button><span id="setmenu"><button id="dims" data-i18n="v.dims" data-i18n-title="v.dims.title" title="Show overall dimensions (M)">Dims</button><button id="unit" data-i18n-title="v.unit.title" title="Change units (U)">cm</button><button id="seldims" data-i18n="v.measure" data-i18n-title="v.measure.title" class="on" title="Show / hide the dimensions on click and the hover tooltip (K)">Click to measure</button><button id="aobtn" data-i18n-title="v.ao.title" title="Ambient occlusion: contact shadows in the corners (O)">AO</button><span id="langrow" role="group" data-i18n-aria="lang.label"><button data-lang="en">EN</button><button data-lang="it">IT</button></span></span></span>
+  <span id="setctl"><button id="setBtn" data-i18n-title="v.set.title" data-i18n-aria="v.set.aria" title="Settings: dimensions, units, click to measure" aria-label="Settings" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm109.94-52.79a8,8,0,0,0-3.89-5.4l-29.83-17-.12-33.62a8,8,0,0,0-2.83-6.08,111.91,111.91,0,0,0-36.72-20.67,8,8,0,0,0-6.46.59L128,41.85,97.88,25a8,8,0,0,0-6.47-.6A112.1,112.1,0,0,0,54.73,45.15a8,8,0,0,0-2.83,6.07l-.15,33.65-29.83,17a8,8,0,0,0-3.89,5.4,106.47,106.47,0,0,0,0,41.56,8,8,0,0,0,3.89,5.4l29.83,17,.12,33.62a8,8,0,0,0,2.83,6.08,111.91,111.91,0,0,0,36.72,20.67,8,8,0,0,0,6.46-.59L128,214.15,158.12,231a7.91,7.91,0,0,0,3.9,1,8.09,8.09,0,0,0,2.57-.42,112.1,112.1,0,0,0,36.68-20.73,8,8,0,0,0,2.83-6.07l.15-33.65,29.83-17a8,8,0,0,0,3.89-5.4A106.47,106.47,0,0,0,237.94,107.21Zm-15,34.91-28.57,16.25a8,8,0,0,0-3,3c-.58,1-1.19,2.06-1.81,3.06a7.94,7.94,0,0,0-1.22,4.21l-.15,32.25a95.89,95.89,0,0,1-25.37,14.3L134,199.13a8,8,0,0,0-3.91-1h-.19c-1.21,0-2.43,0-3.64,0a8.08,8.08,0,0,0-4.1,1l-28.84,16.1A96,96,0,0,1,67.88,201l-.11-32.2a8,8,0,0,0-1.22-4.22c-.62-1-1.23-2-1.8-3.06a8.09,8.09,0,0,0-3-3.06l-28.6-16.29a90.49,90.49,0,0,1,0-28.26L61.67,97.63a8,8,0,0,0,3-3c.58-1,1.19-2.06,1.81-3.06a7.94,7.94,0,0,0,1.22-4.21l.15-32.25a95.89,95.89,0,0,1,25.37-14.3L122,56.87a8,8,0,0,0,4.1,1c1.21,0,2.43,0,3.64,0a8.08,8.08,0,0,0,4.1-1l28.84-16.1A96,96,0,0,1,188.12,55l.11,32.2a8,8,0,0,0,1.22,4.22c.62,1,1.23,2,1.8,3.06a8.09,8.09,0,0,0,3,3.06l28.6,16.29A90.49,90.49,0,0,1,222.9,142.12Z"/></svg></button><span id="setmenu"><button id="dims" data-i18n="v.dims" data-i18n-title="v.dims.title" title="Show overall dimensions (M)">Dims</button><button id="unit" data-i18n-title="v.unit.title" title="Change units (U)">cm</button><button id="seldims" data-i18n="v.measure" data-i18n-title="v.measure.title" class="on" title="Show / hide the dimensions on click and the hover tooltip (K)">Click to measure</button><button id="aobtn" data-i18n-title="v.ao.title" title="Ambient occlusion: contact shadows in the corners (O)">AO</button><span id="qrow" role="group" data-i18n-aria="v.q.aria"><span id="qlab" data-i18n="v.q">Quality</span><span id="qbtns"><button data-q="auto" data-i18n="v.q.auto" data-i18n-title="v.q.auto.title">Auto</button><button data-q="4" data-i18n-title="v.q.min" title="Minimum">1</button><button data-q="3">2</button><button data-q="2">3</button><button data-q="1">4</button><button data-q="0" data-i18n-title="v.q.max" title="Maximum">5</button></span></span><span id="langrow" role="group" data-i18n-aria="lang.label"><button data-lang="en">EN</button><button data-lang="it">IT</button></span></span></span>
   <span id="actions">
   <span id="rtctl"><button id="rtbtn" data-i18n-title="v.render.title" title="Path-traced render: global illumination, soft shadows (T)">Render</button> <button id="dnbtn" data-i18n-title="v.denoise.title" class="active" title="Denoiser (a-trous filter guided by normals and depth) on the render">Denoise</button></span>
   <button id="snap" data-i18n-title="v.png.title" title="Save the image on screen as a PNG, without buttons or labels (P)">PNG</button>
@@ -166,6 +175,7 @@
   "three-gpu-pathtracer": "../vendor/three-gpu-pathtracer/src/index.js", "three-gpu-pathtracer/webgpu": "../vendor/three-gpu-pathtracer/src/webgpu/index.js",
   "oidn-web": "../vendor/oidn-web/dist/oidn.js", "@pmndrs/upscaler": "../vendor/@pmndrs/upscaler/dist/index.js" } }
 </script>
+<link rel="modulepreload" href="../three/build/three.core.js">
 <script type="module">
 import * as THREE from 'three';
 import { t, applyI18n, locale } from '../i18n.mjs';
@@ -179,12 +189,39 @@ const dot = document.getElementById('dot');
 const status = document.getElementById('status');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(devicePixelRatio);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));  // phones report 3 or more: 2 looks the same and has less than half the pixels to shade
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.autoUpdate = false;                  // shadow maps are redrawn only when something that casts or lights changed (shadowsDirty), not on every frame of an orbit
 view.appendChild(renderer.domElement);
+// The first build must not start on a GL context that is still coming up: with the scene already downloaded (early fetch
+// in <head>) it began at once and every synchronous GL call (environment map, shader checks) stalled, 3.6 s to the first
+// frame instead of 0.9 s in headless Chrome. So the first load waits for a GPU fence to signal and for 100 ms since the
+// context was made (1.5 s at most); on a real network the scene arrives later than that anyway.
+const glReady = new Promise(res => {
+  const gl = renderer.getContext(), t0 = performance.now();
+  let sync = null; try { sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0); gl.flush(); } catch (e) {}
+  (function poll() {
+    const age = performance.now() - t0; let s = null; try { s = sync && gl.clientWaitSync(sync, 0, 0); } catch (e) {}
+    if (age > 1500 || (age >= 100 && (!sync || s === gl.ALREADY_SIGNALED || s === gl.CONDITION_SATISFIED || s === gl.WAIT_FAILED))) { try { if (sync) gl.deleteSync(sync); } catch (e) {} res(); }
+    else setTimeout(poll, 10);
+  })();
+});
+
+// Drawing on demand: the image is redrawn while something happens (input, camera motion, a load) and for a moment after, then
+// about every two seconds as a safety net. An idle page costs almost no GPU or battery. Anything that changes the picture
+// without an input event (a finished download, a rebuild) calls invalidate().
+let liveUntil = 0, lastDraw = 0, frames = 0, lastInput = 0, lastMove = 0;   // lastInput / lastMove: the user's last input and the camera's last motion (background work waits for both)
+const IDLE_MS = 2000;
+function invalidate(ms = 1200) { liveUntil = Math.max(liveUntil, performance.now() + ms); }
+function shadowsDirty() { renderer.shadowMap.needsUpdate = true; invalidate(); }
+for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel', 'keydown', 'keyup', 'touchstart', 'touchmove', 'touchend', 'click', 'dblclick', 'change', 'focus', 'pageshow'])
+  addEventListener(ev, () => { invalidate(); if (ev !== 'focus' && ev !== 'pageshow' && ev !== 'change') lastInput = performance.now(); }, { capture: true, passive: true });
+document.addEventListener('visibilitychange', () => invalidate());
+renderer.domElement.addEventListener('webglcontextrestored', () => shadowsDirty());
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf4f5f7);
+const bgColor = new THREE.Color(0xf4f5f7);             // plain background; the realistic look swaps in a sky texture (skyTexture)
+scene.background = bgColor;
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);              // SketchUp is Z-up
 
 const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
@@ -202,6 +239,9 @@ sun.shadow.normalBias = 0.6;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -300, right: 300, top: 300, bottom: -300, near: 1, far: 1500 });
 scene.add(sun);
+const fill = new THREE.DirectionalLight(0xdde8ff, 0);    // realistic look only: a soft shadowless light from the side the sun does not reach, so shaded walls still differ by orientation
+fill.visible = false;
+scene.add(fill, fill.target);
 
 const model = new THREE.Group();
 scene.add(model);
@@ -215,54 +255,483 @@ function resize() {
   camera.updateProjectionMatrix();
   window.aoResize?.(w, h);                              // composer of the AO button (defined later)
   window.rtwResize?.(w, h);                             // WebGPU path tracer canvas
+  invalidate();
 }
 addEventListener('resize', resize);
 resize();
 
 const textureLoader = new THREE.TextureLoader();
+// One download, one decode and one GPU upload per image file: every item gets a light Texture of its own (its repeat) that
+// shares the Source of the file's base texture. The base keeps the GPU copy alive across rebuilds (group toggles, reloads).
+const texFiles = new Map();                              // url -> { base, users, avg }
+const texBySource = new WeakMap();                       // image source -> its file entry (the indirect light needs the mean colour of a textured surface)
+function sharedTexture(url) {
+  let f = texFiles.get(url);
+  if (!f) {
+    f = { users: new Set() };
+    f.base = textureLoader.load(url, () => { renderer.initTexture(f.base); for (const u of f.users) u.version++; f.avg = giAvg(f.base.image); giDirty(); invalidate(); });
+    texBySource.set(f.base.source, f);
+    f.base.colorSpace = THREE.SRGBColorSpace; f.base.wrapS = f.base.wrapT = THREE.RepeatWrapping; f.base.anisotropy = 8;
+    texFiles.set(url, f);
+  }
+  const tex = new THREE.Texture();                       // same sampler parameters as the base, or three would upload the image again
+  tex.source = f.base.source; tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = 8;
+  if (f.base.image) tex.version = 1;                     // already loaded: ready to bind (version 0 = wait for the load callback)
+  f.users.add(tex); tex.addEventListener('dispose', () => f.users.delete(tex));
+  return tex;
+}
 const FACE_INDEX = { '+x': 0, '-x': 1, '+y': 2, '-y': 3, '+z': 4, '-z': 5 };   // BoxGeometry material slots
 function texturedBoxMaterials(item) {                    // item.tex = {url, tile, face}: one textured face (tiles of `tile` inches), the rest plain
   const { url, tile, face = '-y' } = item.tex;
   const [x0, y0, z0, x1, y1, z1] = item.box;
   const dims = { x: x1 - x0, y: y1 - y0, z: z1 - z0 };
   const axes = { '-y': ['x', 'z'], '+y': ['x', 'z'], '-x': ['y', 'z'], '+x': ['y', 'z'], '-z': ['x', 'y'], '+z': ['x', 'y'] }[face];
-  const tex = textureLoader.load(url);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  const tex = sharedTexture(url);
   tex.repeat.set(dims[axes[0]] / tile, dims[axes[1]] / tile);
   const mats = Array.from({ length: 6 }, () => materialFor(item.c));
-  mats[FACE_INDEX[face]] = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, metalness: 0.0 });
+  mats[FACE_INDEX[face]] = giPatch(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, metalness: 0.0 }));
   return mats;
 }
 
 function texturedSlabMaterials(item) {                   // item.tex = {url, tile} on a slab: the top/bottom caps use world x,y as UV (tiles of `tile` inches), the sides stay plain
-  const tex = textureLoader.load(item.tex.url);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  const tex = sharedTexture(item.tex.url);
   tex.repeat.set(1 / item.tex.tile, 1 / item.tex.tile);
-  return [new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.0 }), materialFor(item.c)];   // ExtrudeGeometry groups: 0 = caps, 1 = sides
+  return [giPatch(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.0 })), materialFor(item.c)];   // ExtrudeGeometry groups: 0 = caps, 1 = sides
 }
 
 function texturedRboxMaterial(item) {                    // item.tex = {url, tile} on an rbox: the whole surface (fabric), stripes of the image run up the sides
-  const tex = textureLoader.load(item.tex.url);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  const tex = sharedTexture(item.tex.url);
   tex.repeat.set(1 / item.tex.tile, 1 / item.tex.tile);
-  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0.0, side: THREE.DoubleSide });
+  return giPatch(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0.0, side: THREE.DoubleSide }));
 }
 
+let swGL = null; const noGPU = () => swGL ?? (swGL = softwareGL());
+const softwareGL = () => { try { const gl = renderer.getContext(), x = gl.getExtension('WEBGL_debug_renderer_info'); return /swiftshader|llvmpipe|software/i.test(String(gl.getParameter(x ? x.UNMASKED_RENDERER_WEBGL : gl.RENDERER))); } catch (e) { return false; } };   // no real GPU (headless tests, VMs): the realistic look skips its automatic AO
+let realLook = false;                                    // scene.json "look": "real": photo-like raster view (no outlines, soft sun shadows, sky, reflections, filmic tones)
+const LOOK = { sun: 2.5, sunColor: 0xfff2dc, hemi: 1.15, sky: 0xe6eeff, ground: 0xf3e9da, fill: 0.9, fillColor: 0xfff7ec, env: 0.35, probe: 0.6, giSky: 1.0, giLevel: 1.5, giMax: 8, giHorizon: [1.0, 1.0, 0.98], giZenith: [0.62, 0.78, 1.08], giGround: [0.34, 0.33, 0.31], ceiling: 0.22, exposure: 1.0, radius: 3 };   // daylight of the realistic look (inside / insideShadow = sun and shadow strength while the camera is under the ceiling)
+window.look = LOOK;                                      // exposed for tuning from the console / headless tests (then call viewerDebug.relight())
+const SUN_DIR = new THREE.Vector3(-0.36, -0.46, 0.81).normalize();    // realistic look: sun from the south-west, about 54 degrees high (short wall shadows keep the floors readable)
+const FILL_DIR = new THREE.Vector3(0.78, 0.42, 0.46).normalize();     // fill light from the opposite side, lower
+const skies = [null, null];                              // [day, night] sky of the realistic look: a small cube map computed here (no download, no 2D canvas), in world axes (Z up)
+function skyTexture(dark) {
+  if (skies[+dark]) return skies[+dark];
+  // colour by elevation: v = 0 at the zenith, 0.5 at the horizon, 1 at the nadir
+  const stops = dark ? [[0, 4, 6, 11], [0.38, 10, 15, 28], [0.5, 27, 36, 56], [0.53, 16, 19, 27], [1, 7, 8, 11]]
+                     : [[0, 93, 151, 216], [0.25, 139, 184, 232], [0.42, 195, 218, 241], [0.495, 238, 243, 247], [0.525, 214, 218, 222], [1, 214, 218, 222]];   // blue zenith, pale haze at the horizon, one flat cool grey below it (the backdrop of the views from above: white walls stand out; a gradient there showed 8-bit banding)
+  const N = 96, faces = [];
+  // GL cube faces (+x -x +y -y +z -z): sample direction r from the face coordinates; three samples a cube background at (-x, y, z) of the view direction
+  const dirs = [(a, b) => [1, -b, -a], (a, b) => [-1, -b, a], (a, b) => [a, 1, b], (a, b) => [a, -1, -b], (a, b) => [a, -b, 1], (a, b) => [-a, -b, -1]];
+  for (const dir of dirs) {
+    const d = new Uint8Array(N * N * 4);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const r = dir((x + 0.5) / N * 2 - 1, (y + 0.5) / N * 2 - 1), l = Math.hypot(r[0], r[1], r[2]), wx = -r[0] / l, wy = r[1] / l, wz = r[2] / l;
+      const v = 0.5 - Math.asin(wz) / Math.PI;
+      let k = 1; while (k < stops.length - 1 && stops[k][0] < v) k++;
+      const a = stops[k - 1], b = stops[k], f = Math.min(1, Math.max(0, (v - a[0]) / (b[0] - a[0])));
+      let c = [a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f];
+      if (!dark) {                                       // a soft bright patch around the sun
+        const g = Math.max(0, 1 - Math.acos(Math.min(1, wx * SUN_DIR.x + wy * SUN_DIR.y + wz * SUN_DIR.z)) / 0.55) ** 2 * 0.75;
+        c = [c[0] + (255 - c[0]) * g, c[1] + (251 - c[1]) * g, c[2] + (238 - c[2]) * g];
+      }
+      d.set([c[0], c[1], c[2], 255], (y * N + x) * 4);
+    }
+    faces.push(new THREE.DataTexture(d, N, N));
+  }
+  const tex = new THREE.CubeTexture(faces);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.minFilter = tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = false; tex.needsUpdate = true;
+  return skies[+dark] = tex;
+}
+function outlineOf(mesh) {                               // accent outline of one mesh of the selected piece (the realistic look draws no other outlines, so they are made on selection)
+  const l = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, 20), new THREE.LineBasicMaterial({ color: 0xb5532a }));
+  l.userData.mv = mesh.userData.mv;
+  return l;
+}
+function sunLevel() {                                    // under the ceiling the sun stands in for the room's general light: weaker, with lighter shadows
+  sun.intensity = realLook ? LOOK.sun : 2.2;               // daylight is the same inside and out: indoors it only comes through the openings (walls and ceiling cast)
+  sun.shadow.intensity = 1;
+}
+let shellCast = true;                                    // do walls, floors and fixed finishes cast shadows? Not in the realistic look while the camera is under the ceiling (syncInside)
+const casts = o => !realLook || (!o.userData.glass && (shellCast || !o.userData.shell));   // realistic look: glass lets the sun through
 let metalEnvTex = null;                                  // shared reflection map for "mt" items (built once)
+// Room reflections (realistic look, scene.json "probes": [[x,y,z] inches, one per room]): each probe is a small cube map of the
+// room drawn once (one probe per frame, ~1.5 s after the first image), prefiltered by PMREM; polished / glass / metal pieces
+// use the probe nearest to them instead of the generic studio map. Re-made only when scene.json reloads, not on every group toggle.
+let probeTex = [], probeKey = '', probing = false, probeRun = 0, pmrem = null;
+const probeMats = new Set();                              // materials that took a probe (their intensity follows day / night)
+function probeFor(mesh) {                                 // nearest probe by plan distance to the piece's centre
+  if (!probeTex.length || !current?.probes) return -1;
+  mesh.geometry.boundingBox || mesh.geometry.computeBoundingBox();
+  const c = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+  let best = -1, bd = 1e12;
+  current.probes.forEach((p, i) => { if (!probeTex[i]) return; const d = (p[0] - c.x) ** 2 + (p[1] - c.y) ** 2; if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+function useProbes() {                                    // give the glossy materials of the current meshes their room's map
+  probeMats.clear();
+  if (!realLook || !probeTex.length || window.__noProbe) return;
+  for (const o of model.children) {
+    if (!o.isMesh) continue;
+    const ms = [].concat(o.material), shiny = o.userData.glass || ms.some(m => m.metalness > 0.5 || m.roughness <= 0.5);
+    if (!shiny) continue;
+    const k = probeFor(o); if (k < 0) continue;
+    for (const m of ms) { if (m.envMap !== probeTex[k]) { m.envMap = probeTex[k]; m.needsUpdate = true; } m.envMapIntensity = m.metalness > 0.5 ? 1 : LOOK.probe; probeMats.add(m); }
+  }
+  setProbeLevel();
+}
+function setProbeLevel() { for (const m of probeMats) if (m.metalness <= 0.5) m.envMapIntensity = night ? 0.02 : LOOK.probe; }
+function bakeProbes() {
+  if (!realLook || !current?.probes || noGPU() && !window.__forceProbes || rt.on) return;
+  const key = JSON.stringify(current.probes) + current.items.length; if (key === probeKey) { useProbes(); return; }
+  probeKey = key; const run = ++probeRun, list = current.probes;
+  pmrem = pmrem || new THREE.PMREMGenerator(renderer);
+  const step = (i) => {
+    if (run !== probeRun) return;
+    if (i >= list.length) { const old = probeTex; probeTex = fresh; useProbes(); for (const o of old) o?.dispose(); invalidate(); return; }
+    const was = { fp: ceilingMesh?.visible, bg: scene.background };
+    const rtgt = new THREE.WebGLCubeRenderTarget(96, { type: THREE.HalfFloatType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+    const cam = new THREE.CubeCamera(2, 3000, rtgt); cam.up.set(0, 0, 1);
+    cam.position.set(...list[i]); scene.add(cam); cam.updateMatrixWorld(true);
+    probing = true; syncInside(); if (ceilingMesh) ceilingMesh.visible = true;   // the room as seen from inside: ceiling on, walls not shadowing the sun
+    const env = scene.environment; scene.environment = null;
+    const lit = giCapable() && gi.cache.day?.done; if (lit) { giBind(gi.cache.day, 1); hemi.intensity = 0; fill.intensity = 0; }   // the rooms as their indirect light shows them
+    const bumps = []; for (const o of model.children) if (o.isMesh) for (const m of [].concat(o.material)) if (m.bumpMap) { bumps.push([m, m.bumpMap]); m.bumpMap = null; m.needsUpdate = true; }   // the bump shader gives NaN pixels in a cube face (0 / 0 on surfaces seen edge-on) that turn the whole filtered map black
+    const rough = []; for (const o of model.children) if (o.isMesh) for (const m of [].concat(o.material)) if (m.roughness < 0.3) { rough.push([m, m.roughness]); m.roughness = 0.3; }   // a mirror-polished metal lit by the sun overflows the half-float cube (Inf) and the whole filtered map turns black
+    cam.update(renderer, scene);
+    for (const [m, r] of rough) m.roughness = r;
+    for (const [m, b] of bumps) { m.bumpMap = b; m.needsUpdate = true; }
+    if (lit) giApply(gi.cache[night ? 'night' : 'day']);
+    scene.environment = env; probing = false; syncInside(); if (ceilingMesh) ceilingMesh.visible = was.fp;
+    scene.remove(cam);
+    fresh[i] = pmrem.fromCubemap(rtgt.texture).texture; rtgt.dispose();
+    shadowsDirty(); invalidate();
+    requestAnimationFrame(() => step(i + 1));
+  };
+  const fresh = []; setTimeout(() => step(0), 1500);
+}
+
+// ---- Indirect light (realistic look): daylight that comes in through the openings and bounces around the rooms, the lamp's bounce at night ----
+// No download: an irradiance volume is computed here on the GPU. A grid of points covers the model (about one every 75 cm, three
+// heights); from each one the scene is drawn into a tiny cube (a merged copy of the meshes, one draw per face) lit by the sun through
+// the openings (shadow map) or by the night lights, with the sky seen where nothing is hit; the six faces are summed on the CPU into
+// the light arriving from +x, -x, +y, -y, +z, -z (an "ambient cube"). Repeating the pass with the previous result as ambient adds one
+// bounce each time. Surfaces then read the volume instead of the flat hemisphere + fill light: 4 nearest columns, each weighted
+// by whether a wall of the shell stands between it and the surface (distances to the walls along the axes, from the plan), so a
+// bright room never lights the next one through the wall. Baked only when it is shown (camera under the ceiling by day, always at
+// night), a few points per frame; redone after a rebuild (the old result stays on screen meanwhile). Skipped without a GPU, ?gi=0 switches it off.
+const GI_R = 16, GI_RANGE = 4, GI_ITERS = 4, GI_CELL = 30, GI_COLS = 170, GI_TESS = 16;
+const giParam = new URLSearchParams(location.search).get('gi');
+let giBroken = false;
+const giCapable = () => realLook && !giBroken && giParam !== '0' && !(quality.level >= QUALITY_MAX && qualityOn()) && (!noGPU() || !!window.__forceGI);
+const giU = { giVol: { value: null }, giVis: { value: null }, giMin: { value: new THREE.Vector3() }, giInv: { value: new THREE.Vector3(1, 1, 1) }, giN: { value: new THREE.Vector3(2, 2, 1) }, giOn: { value: 0 }, giBias: { value: 4 }, giGain: { value: 1 }, giMax: { value: 1e6 } };
+const GI_GLSL = /* glsl */`
+uniform highp sampler3D giVol;
+uniform highp sampler3D giVis;
+uniform vec3 giMin;
+uniform vec3 giInv;
+uniform vec3 giN;
+uniform float giBias;
+void giCorner( vec2 ci, float w, vec2 gxy, float zv, vec3 zc, inout vec4 ax, inout vec4 ay, inout vec4 az, inout vec4 rx, inout vec4 ry, inout vec4 rz ) {
+	vec2 uv = ( ci + 0.5 ) / giN.xy;
+	vec4 d = textureLod( giVis, vec3( uv, zv ), 0.0 ) * 2.0;
+	vec2 dl = gxy - ( ci + 0.5 );
+	float dx = dl.x > 0.0 ? d.r : d.g;
+	float dy = dl.y > 0.0 ? d.b : d.a;
+	float v = w * ( 1.0 - smoothstep( dx - 0.04, dx + 0.08, abs( dl.x ) ) ) * ( 1.0 - smoothstep( dy - 0.04, dy + 0.08, abs( dl.y ) ) );
+	vec4 sx = textureLod( giVol, vec3( uv, zc.x ), 0.0 );
+	vec4 sy = textureLod( giVol, vec3( uv, zc.y ), 0.0 );
+	vec4 sz = textureLod( giVol, vec3( uv, zc.z ), 0.0 );
+	rx += w * sx; ry += w * sy; rz += w * sz;
+	ax += v * sx; ay += v * sy; az += v * sz;
+}
+vec3 giPick( vec4 a, vec4 r ) {
+	vec4 s = a.a > 0.03 ? a : r;
+	return s.rgb / max( s.a, 0.001 );
+}
+// the light arriving at P along the x, y and z axes, from the side the normal N faces
+void giCube( vec3 P, vec3 N, out vec3 X, out vec3 Y, out vec3 Z ) {
+	vec3 g = ( P + N * giBias - giMin ) * giInv;
+	vec2 f = clamp( g.xy - 0.5, vec2( 0.0 ), giN.xy - 1.0 );
+	vec2 i0 = min( floor( f ), giN.xy - 2.0 );
+	vec2 tt = f - i0;
+	float zl = clamp( g.z, 0.5, giN.z - 0.5 );
+	float zv = ( floor( clamp( g.z, 0.0, giN.z - 0.001 ) ) + 0.5 ) / giN.z;
+	vec3 zc = ( ( vec3( 0.0, 2.0, 4.0 ) + step( N, vec3( 0.0 ) ) ) * giN.z + zl ) / ( 6.0 * giN.z );
+	vec4 ax = vec4( 0.0 ); vec4 ay = vec4( 0.0 ); vec4 az = vec4( 0.0 );
+	vec4 rx = vec4( 0.0 ); vec4 ry = vec4( 0.0 ); vec4 rz = vec4( 0.0 );
+	giCorner( i0, ( 1.0 - tt.x ) * ( 1.0 - tt.y ), g.xy, zv, zc, ax, ay, az, rx, ry, rz );
+	giCorner( i0 + vec2( 1.0, 0.0 ), tt.x * ( 1.0 - tt.y ), g.xy, zv, zc, ax, ay, az, rx, ry, rz );
+	giCorner( i0 + vec2( 0.0, 1.0 ), ( 1.0 - tt.x ) * tt.y, g.xy, zv, zc, ax, ay, az, rx, ry, rz );
+	giCorner( i0 + vec2( 1.0, 1.0 ), tt.x * tt.y, g.xy, zv, zc, ax, ay, az, rx, ry, rz );
+	X = giPick( ax, rx ); Y = giPick( ay, ry ); Z = giPick( az, rz );
+}
+`;
+const GI_LIGHT = /* glsl */`
+uniform float giOn;
+uniform float giGain;
+uniform float giMax;
+vec3 giLight( vec3 n, vec3 X, vec3 Y, vec3 Z ) {
+	vec3 n2 = n * n;
+	vec3 e = giGain * ( n2.x * X + n2.y * Y + n2.z * Z );
+	return e / ( 1.0 + dot( e, vec3( 0.2126, 0.7152, 0.0722 ) ) / giMax );
+}
+`;
+const GI_IBL = '#include <lights_fragment_maps>\n#if defined( RE_IndirectDiffuse )\n\tiblIrradiance *= 1.0 - giOn;\n#endif';   // the environment map keeps its reflections only
+function giCompile(sh) {                                 // on screen: the volume is read at the vertices (walls, floors and the ceiling are cut into ~40 cm pieces for it), a fragment only weighs the three colours by its normal
+  if (giBroken) return;
+  Object.assign(sh.uniforms, giU);
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float giOn;\nvarying vec3 vGiX;\nvarying vec3 vGiY;\nvarying vec3 vGiZ;\n' + GI_GLSL)
+    .replace('#include <project_vertex>', '#include <project_vertex>\n\tif ( giOn > 0.0 ) giCube( ( modelMatrix * vec4( transformed, 1.0 ) ).xyz, normalize( mat3( modelMatrix ) * objectNormal ), vGiX, vGiY, vGiZ );\n\telse { vGiX = vec3( 0.0 ); vGiY = vec3( 0.0 ); vGiZ = vec3( 0.0 ); }');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vGiX;\nvarying vec3 vGiY;\nvarying vec3 vGiZ;\n' + GI_LIGHT)
+    .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\n#if defined( RE_IndirectDiffuse )\n\tirradiance += giOn * giLight( inverseTransformDirection( normal, viewMatrix ), vGiX, vGiY, vGiZ );\n#endif')
+    .replace('#include <lights_fragment_maps>', GI_IBL);
+}
+function giBakeCompile(sh) {                             // the capture: the volume is read per fragment (the merged mesh is coarse); radiance out in 8 bits (cube root of 0..GI_RANGE: the rooms are dim next to the sky and need the precision at the low end), alpha 1 = something was hit (the clear alpha 0 = sky)
+  Object.assign(sh.uniforms, giU);
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGiPos;')
+    .replace('#include <project_vertex>', '#include <project_vertex>\n\tvGiPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vGiPos;\n' + GI_GLSL + GI_LIGHT)
+    .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\n#if defined( RE_IndirectDiffuse )\n\tif ( giOn > 0.0 ) { vec3 giW = inverseTransformDirection( normal, viewMatrix ); vec3 giX; vec3 giY; vec3 giZ; giCube( vGiPos, giW, giX, giY, giZ ); irradiance += giOn * giLight( giW, giX, giY, giZ ); }\n#endif')
+    .replace('#include <lights_fragment_maps>', GI_IBL)
+    .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n\tgl_FragColor = vec4( pow( clamp( gl_FragColor.rgb / ' + GI_RANGE.toFixed(1) + ', 0.0, 1.0 ), vec3( 1.0 / 3.0 ) ), 1.0 );');
+}
+const giKey = () => giBroken ? 'gi0' : 'gi1';
+function giPatch(m) { if (giCapable()) { m.onBeforeCompile = giCompile; m.customProgramCacheKey = giKey; } return m; }
+renderer.debug.onShaderError = (gl, program, vs, fs) => {   // a driver that refuses the shader: say why, then fall back to the plain ambient light instead of a black model
+  console.error('shader error:', gl.getProgramInfoLog(program), gl.getShaderInfoLog(vs), gl.getShaderInfoLog(fs));
+  if (giBroken || !giCapable()) return;
+  giBroken = true; gi.mix = 0; giApply(null);
+  scene.traverse(o => { for (const m of [].concat(o.material || [])) m.needsUpdate = true; });
+  invalidate();
+};
+const gi = { key: 0, dirtyAt: 0, mix: 0, mode: '', last: 0, cache: {}, work: null, base: { hemi: 0, fill: 0, ceil: 0 }, B: 4, frame: 16, ms: 0, tris: 0, rt: null, buf: null, cam: null, tab: null };
+function giDirty() { gi.key++; gi.dirtyAt = performance.now(); }
+function giBind(e, on, bake) {                           // bake: the raw volume, as the next bounce needs it; on screen: exposed for the rooms (gain) with the brightest values compressed (the open air seen from inside)
+  giU.giGain.value = bake || !e ? 1 : e.gain; giU.giMax.value = bake ? 1e6 : LOOK.giMax;
+  if (e) { giU.giVol.value = e.vol; giU.giVis.value = e.visTex; giU.giMin.value.copy(e.min); giU.giInv.value.set(1 / e.cell.x, 1 / e.cell.y, 1 / e.cell.z); giU.giN.value.set(e.nx, e.ny, e.nz); giU.giBias.value = e.bias; }
+  giU.giOn.value = e ? on : 0;
+}
+function giApply(e) {                                    // the volume takes the place of the flat ambient light (hemisphere, fill, the ceiling's own glow) as it fades in
+  const m = e ? gi.mix : 0;
+  giBind(e, m);
+  hemi.intensity = gi.base.hemi * (1 - m); fill.intensity = gi.base.fill * (1 - m);
+  if (ceilingMesh) ceilingMesh.material.emissiveIntensity = gi.base.ceil * (1 - m);
+}
+const GI_FACES = [[1, 0, 0, 0, 0, 1], [-1, 0, 0, 0, 0, 1], [0, 1, 0, 0, 0, 1], [0, -1, 0, 0, 0, 1], [0, 0, 1, 0, 1, 0], [0, 0, -1, 0, 1, 0]];   // view direction and up of the six cube faces = the six directions stored
+function giTables() {                                    // per texel of the six faces: direction, solid angle, and its weight (cosine x solid angle) for each of the six stored directions
+  if (gi.tab) return gi.tab;
+  const R = GI_R, T = 6 * R * R, dir = new Float32Array(T * 3), W = new Float32Array(6 * T), cam = new THREE.PerspectiveCamera(90, 1, 1, 8000), lut = new Float32Array(256);
+  for (let i = 0; i < 256; i++) lut[i] = (i / 255) ** 3 * GI_RANGE;
+  GI_FACES.forEach((F, f) => {
+    cam.position.set(0, 0, 0); cam.up.set(F[3], F[4], F[5]); cam.lookAt(F[0], F[1], F[2]); cam.updateMatrixWorld();
+    const e = cam.matrixWorld.elements;
+    for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
+      const x = (i + 0.5) / R * 2 - 1, y = (j + 0.5) / R * 2 - 1, l = Math.hypot(x, y, 1), k = f * R * R + j * R + i;
+      const d = [(e[0] * x + e[4] * y - e[8]) / l, (e[1] * x + e[5] * y - e[9]) / l, (e[2] * x + e[6] * y - e[10]) / l], dw = (2 / R) ** 2 / l ** 3;
+      dir.set(d, k * 3);
+      GI_FACES.forEach((D, n) => { W[n * T + k] = Math.max(0, d[0] * D[0] + d[1] * D[1] + d[2] * D[2]) * dw; });
+    }
+  });
+  return gi.tab = { dir, W, T, lut, cam };
+}
+function giSky(dark) {                                   // what a ray that hits nothing sees: the sky above the horizon, the ground outside below it (radiance per texel)
+  const { dir, T } = giTables(), s = new Float32Array(T * 3);
+  if (!dark) for (let k = 0; k < T; k++) {
+    const z = dir[k * 3 + 2], a = z > 0 ? Math.pow(z, 0.5) : 0, c = z > 0 ? LOOK.giHorizon.map((h, i) => (h + (LOOK.giZenith[i] - h) * a) * LOOK.giSky) : LOOK.giGround.map(v => v * LOOK.giSky);
+    s.set(c, k * 3);
+  }
+  return s;
+}
+function giAvg(img) {                                    // mean colour of a texture image (linear): what a textured floor sends back as bounce
+  try {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 8;
+    const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0, 8, 8);
+    const d = cx.getImageData(0, 0, 8, 8).data, c = new THREE.Color(), o = new THREE.Color(0, 0, 0);
+    for (let i = 0; i < d.length; i += 4) { c.setRGB(d[i] / 255, d[i + 1] / 255, d[i + 2] / 255, THREE.SRGBColorSpace); o.r += c.r / 64; o.g += c.g / 64; o.b += c.b / 64; }
+    return o;
+  } catch (e) { return null; }
+}
+const GI_BOX = [[0, 4, 6], [0, 6, 2], [1, 3, 7], [1, 7, 5], [0, 1, 5], [0, 5, 4], [2, 6, 7], [2, 7, 3], [0, 2, 3], [0, 3, 1], [4, 5, 7], [4, 7, 6]];
+function giStart(mode) {                                 // a new bake: one merged mesh of everything that sends light back, the grid, the wall distances
+  const old = gi.work;                                   // an unfinished bake is dropped (if it is the one on screen it stays there, without its mesh, until the new one is done)
+  if (old && !old.done) { if (old === gi.cache.day || old === gi.cache.night) giFreeMesh(old); else giFree(old); }
+  const pos = [], col = [], v = new THREE.Vector3(), c = new THREE.Color(), solids = [], bb = new THREE.Box3();
+  const tint = m => { c.copy(m.color); const f = m.map && texBySource.get(m.map.source); if (f?.avg) c.multiply(f.avg); };
+  const add = mesh => {
+    const geo = mesh.geometry, mats = [].concat(mesh.material), P = geo.attributes.position, idx = geo.index, M = mesh.matrixWorld;
+    mesh.updateMatrixWorld(true); geo.boundingBox || geo.computeBoundingBox(); const b = geo.boundingBox;
+    if (mesh.userData.solid) solids.push(new THREE.Box3().copy(b).applyMatrix4(M).expandByScalar(-0.5));
+    if (Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z) < 10) return;   // handles, legs: nothing to bounce
+    if (geo.userData.cut) {                              // a box with cut edges: its plain box is enough here
+      tint(mats[0]);
+      for (const tri of GI_BOX) for (const k of tri) { v.set(k & 1 ? b.max.x : b.min.x, k & 2 ? b.max.y : b.min.y, k & 4 ? b.max.z : b.min.z).applyMatrix4(M); pos.push(v.x, v.y, v.z); col.push(c.r, c.g, c.b); }
+      return;
+    }
+    const n = idx ? idx.count : P.count, groups = mats.length > 1 && geo.groups.length ? geo.groups : [{ start: 0, count: n, materialIndex: 0 }];
+    for (const g of groups) {
+      tint(mats[g.materialIndex] || mats[0]);
+      for (let k = g.start, e = Math.min(n, g.start + g.count); k < e; k++) { v.fromBufferAttribute(P, idx ? idx.getX(k) : k).applyMatrix4(M); pos.push(v.x, v.y, v.z); col.push(c.r, c.g, c.b); }
+    }
+  };
+  for (const o of model.children) if (o.isMesh && !o.userData.glass) add(o);
+  if (ceilingMesh) add(ceilingMesh);
+  for (const b of current?.shade || []) {                 // closed spaces next to the model that are not drawn (a common stair): dark boxes, so no sky comes in from there
+    c.setRGB(0.25, 0.25, 0.25);
+    for (const tri of GI_BOX) for (const k of tri) { pos.push(k & 1 ? b[3] : b[0], k & 2 ? b[4] : b[1], k & 4 ? b[5] : b[2]); col.push(c.r, c.g, c.b); }
+  }
+  if (pos.length < 9) return null;
+  const nor = new Float32Array(pos.length), a = new THREE.Vector3(), b2 = new THREE.Vector3(), d = new THREE.Vector3();
+  for (let i = 0; i < pos.length; i += 9) {
+    a.set(pos[i], pos[i + 1], pos[i + 2]); b2.set(pos[i + 3], pos[i + 4], pos[i + 5]).sub(a); d.set(pos[i + 6], pos[i + 7], pos[i + 8]).sub(a); b2.cross(d).normalize();
+    for (let k = 0; k < 9; k += 3) { nor[i + k] = b2.x; nor[i + k + 1] = b2.y; nor[i + k + 2] = b2.z; bb.expandByPoint(a.set(pos[i + k], pos[i + k + 1], pos[i + k + 2])); }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  mat.onBeforeCompile = giBakeCompile; mat.customProgramCacheKey = () => 'gibake';
+  const mesh = new THREE.Mesh(geo, mat); mesh.receiveShadow = true; mesh.frustumCulled = false; mesh.visible = false; mesh.name = '__gi'; scene.add(mesh);
+  // the grid: probes at the cell centres, over the whole model in plan and from the floor to the ceiling
+  const z0 = Math.max(bb.min.z, Math.min(0, bb.max.z - 1)), z1 = current?.ceiling ? current.ceiling.z[0] : bb.max.z, nz = 3;
+  let cell = GI_CELL; const sx = bb.max.x - bb.min.x, sy = bb.max.y - bb.min.y;
+  while (Math.ceil(sx / cell) * Math.ceil(sy / cell) > (window.__forceGI?.cols || GI_COLS)) cell *= 1.08;   // (__forceGI: the test hook, also on software GL, with a coarser grid and fewer passes)
+  const nx = Math.max(2, Math.ceil(sx / cell)), ny = Math.max(2, Math.ceil(sy / cell)), P = nx * ny * nz;
+  const e = { mode, key: gi.key, nx, ny, nz, P, min: new THREE.Vector3(bb.min.x, bb.min.y, z0), cell: new THREE.Vector3(sx / nx, sy / ny, Math.max(1, z1 - z0) / nz), mesh, iter: 0, next: 0, done: false,
+              cur: new Float32Array(P * 18), nxt: new Float32Array(P * 18), skip: new Uint8Array(P), indoor: new Uint8Array(P), gain: 1, sky: giSky(mode === 'night'), t0: performance.now() };
+  e.bias = 0.15 * Math.min(e.cell.x, e.cell.y);
+  // per probe: inside a wall or a piece of furniture (unused), and how far the shell's walls are along +x, -x, +y, -y (in cells / 2, 255 = none within two cells)
+  const W = walls.map(w => ({ z0: w.b[2], z1: w.b[5], o: w.o || [[w.b[0], w.b[1]], [w.b[3], w.b[1]], [w.b[3], w.b[4]], [w.b[0], w.b[4]]] }));
+  const vis = new Uint8Array(P * 4), p = new THREE.Vector3(), roof = current?.ceiling?.o;
+  for (let iz = 0; iz < nz; iz++) for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) {
+    const k = ix + nx * (iy + ny * iz), dist = [1e9, 1e9, 1e9, 1e9];
+    p.set(e.min.x + (ix + 0.5) * e.cell.x, e.min.y + (iy + 0.5) * e.cell.y, e.min.z + (iz + 0.5) * e.cell.z);
+    let inside = solids.some(s => s.containsPoint(p));
+    for (const w of W) {
+      if (p.z < w.z0 || p.z > w.z1) continue;
+      let cross = 0;
+      for (let i = 0, o = w.o, n = o.length; i < n; i++) {
+        const A = o[i], B = o[(i + 1) % n];
+        if ((A[1] > p.y) !== (B[1] > p.y)) { const x = A[0] + (p.y - A[1]) / (B[1] - A[1]) * (B[0] - A[0]); if (x > p.x) { cross++; dist[0] = Math.min(dist[0], x - p.x); } else dist[1] = Math.min(dist[1], p.x - x); }
+        if ((A[0] > p.x) !== (B[0] > p.x)) { const y = A[1] + (p.x - A[0]) / (B[0] - A[0]) * (B[1] - A[1]); if (y > p.y) dist[2] = Math.min(dist[2], y - p.y); else dist[3] = Math.min(dist[3], p.y - y); }
+      }
+      if (cross & 1) inside = true;
+    }
+    if (inside) e.skip[k] = 1;
+    e.indoor[k] = !roof || inPoly(roof, p.x, p.y) ? 1 : 0;
+    for (let i = 0; i < 4; i++) vis[k * 4 + i] = Math.round(Math.min(1, dist[i] / (i < 2 ? e.cell.x : e.cell.y) / 2) * 255);
+  }
+  e.visTex = new THREE.Data3DTexture(vis, nx, ny, nz); e.visTex.format = THREE.RGBAFormat; e.visTex.type = THREE.UnsignedByteType; e.visTex.minFilter = e.visTex.magFilter = THREE.NearestFilter; e.visTex.unpackAlignment = 1; e.visTex.needsUpdate = true;
+  e.volData = new Uint16Array(nx * ny * nz * 6 * 4);
+  e.vol = new THREE.Data3DTexture(e.volData, nx, ny, nz * 6); e.vol.format = THREE.RGBAFormat; e.vol.type = THREE.HalfFloatType; e.vol.minFilter = e.vol.magFilter = THREE.LinearFilter; e.vol.unpackAlignment = 1; e.vol.needsUpdate = true;
+  gi.tris = pos.length / 9;
+  if (!gi.rt) { gi.rt = new THREE.WebGLRenderTarget(6 * GI_R, 64 * GI_R, { depthBuffer: true }); gi.rt.texture.minFilter = gi.rt.texture.magFilter = THREE.NearestFilter; gi.buf = new Uint8Array(6 * GI_R * 64 * GI_R * 4); }
+  return gi.work = e;
+}
+function giFreeMesh(e) { if (e.mesh) { scene.remove(e.mesh); e.mesh.geometry.dispose(); e.mesh.material.dispose(); e.mesh = null; } }
+function giFree(e) { e.vol?.dispose(); e.visTex?.dispose(); giFreeMesh(e); }
+function giPack(e) {                                     // the volume as a 3D texture: six blocks of nz slices, colour x validity + validity (unused probes weigh nothing)
+  const { nx, ny, nz, cur, volData, skip } = e, h = THREE.DataUtils.toHalfFloat, one = h(1);
+  for (let k = 0; k < e.P; k++) {
+    const ix = k % nx, iy = Math.floor(k / nx) % ny, iz = Math.floor(k / (nx * ny));
+    for (let D = 0; D < 6; D++) {
+      const o = (ix + nx * (iy + ny * (D * nz + iz))) * 4, i = k * 18 + D * 3;
+      if (skip[k]) { volData[o] = volData[o + 1] = volData[o + 2] = volData[o + 3] = 0; continue; }
+      volData[o] = h(Math.min(60000, cur[i])); volData[o + 1] = h(Math.min(60000, cur[i + 1])); volData[o + 2] = h(Math.min(60000, cur[i + 2])); volData[o + 3] = one;
+    }
+  }
+  e.vol.needsUpdate = true;
+}
+function inPoly(o, x, y) { let c = false; for (let i = 0, n = o.length, j = n - 1; i < n; j = i++) if ((o[i][1] > y) !== (o[j][1] > y) && x < o[i][0] + (y - o[i][1]) / (o[j][1] - o[i][1]) * (o[j][0] - o[i][0])) c = !c; return c; }
+function giExpose(e) {                                   // like a camera set for the rooms: the gain that brings the typical (geometric mean) light under the ceiling to LOOK.giLevel
+  if (e.mode === 'night') { e.gain = 1; return; }       // the lamp is shown as it is
+  let sum = 0, n = 0;
+  for (let k = 0; k < e.P; k++) if (!e.skip[k] && e.indoor[k]) { let l = 0; for (let D = 0; D < 6; D++) l += 0.2126 * e.cur[k * 18 + D * 3] + 0.7152 * e.cur[k * 18 + D * 3 + 1] + 0.0722 * e.cur[k * 18 + D * 3 + 2]; sum += Math.log(Math.max(1e-4, l / 6)); n++; }
+  e.gain = n ? Math.min(40, Math.max(0.5, LOOK.giLevel / Math.exp(sum / n))) : 1;
+}
+function giSlice(e) {                                    // a few probes of the running pass, within a few milliseconds
+  if (renderer.shadowMap.needsUpdate) { invalidate(); return; }   // the shadow maps are redone by the next frame: they are this pass's light
+  const t0 = performance.now(), R = GI_R, { W, T, lut, cam } = giTables(), rtg = gi.rt, rows = []; let tDraw = 0;
+  const st = { rt: renderer.getRenderTarget(), bg: scene.background, env: scene.environment, ac: renderer.autoClear, cc: renderer.getClearColor(new THREE.Color()), ca: renderer.getClearAlpha(), vis: scene.children.map(o => o.visible) };
+  try {
+    scene.background = null; scene.environment = null; hemi.intensity = 0; fill.intensity = 0;
+    for (const o of scene.children) if (!(o.isLight || o === lightsGroup || o === e.mesh)) o.visible = false;
+    e.mesh.visible = true; giBind(e, e.iter > 0 ? 1 : 0, true);
+    renderer.autoClear = false; renderer.setClearColor(0x000000, 0);
+    rtg.scissorTest = false; rtg.viewport.set(0, 0, rtg.width, rtg.height); renderer.setRenderTarget(rtg); renderer.clear(true, true, false);
+    rtg.scissorTest = true;
+    while (rows.length < gi.B && e.next < e.P) {
+      const k = e.next++; if (e.skip[k]) continue;
+      if (e.iter > 0 && !e.indoor[k]) { e.nxt.set(e.cur.subarray(k * 18, k * 18 + 18), k * 18); continue; }   // the open air barely changes with the bounces: once is enough
+      const ix = k % e.nx, iy = Math.floor(k / e.nx) % e.ny, iz = Math.floor(k / (e.nx * e.ny));
+      cam.position.set(e.min.x + (ix + 0.5) * e.cell.x, e.min.y + (iy + 0.5) * e.cell.y, e.min.z + (iz + 0.5) * e.cell.z);
+      GI_FACES.forEach((F, f) => {
+        cam.up.set(F[3], F[4], F[5]); cam.lookAt(cam.position.x + F[0], cam.position.y + F[1], cam.position.z + F[2]);
+        rtg.viewport.set(f * R, rows.length * R, R, R); rtg.scissor.set(f * R, rows.length * R, R, R); renderer.setRenderTarget(rtg);
+        renderer.render(scene, cam);
+      });
+      rows.push(k);
+    }
+    if (rows.length) {
+      const buf = gi.buf, E = new Float64Array(18);
+      tDraw = performance.now() - t0;                     // the read-back below also waits for the frame before this one: it is not this slice's cost
+      renderer.readRenderTargetPixels(rtg, 0, 0, 6 * R, rows.length * R, buf);
+      rows.forEach((k, n) => {
+        E.fill(0);
+        for (let f = 0; f < 6; f++) for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
+          const b = ((n * R + j) * 6 * R + f * R + i) * 4, tx = f * R * R + j * R + i;
+          let r, g, bl;
+          if (buf[b + 3] > 127) { r = lut[buf[b]]; g = lut[buf[b + 1]]; bl = lut[buf[b + 2]]; } else { r = e.sky[tx * 3]; g = e.sky[tx * 3 + 1]; bl = e.sky[tx * 3 + 2]; }
+          if (r + g + bl === 0) continue;
+          for (let D = 0; D < 6; D++) { const w = W[D * T + tx]; if (w > 0) { E[D * 3] += r * w; E[D * 3 + 1] += g * w; E[D * 3 + 2] += bl * w; } }
+        }
+        e.nxt.set(E, k * 18);
+      });
+    }
+  } catch (err) { console.error('indirect light failed:', err); giBroken = true; gi.mix = 0; }
+  finally {
+    for (let i = 0; i < scene.children.length; i++) if (st.vis[i] !== undefined) scene.children[i].visible = st.vis[i];
+    if (e.mesh) e.mesh.visible = false;
+    gi.rt.scissorTest = false; renderer.setRenderTarget(st.rt); renderer.autoClear = st.ac; renderer.setClearColor(st.cc, st.ca);
+    scene.background = st.bg; scene.environment = st.env;
+    giApply(gi.cache[night ? 'night' : 'day']);
+  }
+  gi.ms += performance.now() - t0;
+  const budget = 8;                                     // ms of GPU work per animation frame, at rest only: the page stays responsive on a weak GPU too
+  gi.B = tDraw < budget / 2 ? Math.min(16, gi.B * 2) : tDraw > budget ? Math.max(1, gi.B >> 1) : gi.B;
+  if (e.next >= e.P && !giBroken) {                       // pass complete: one more bounce is in
+    [e.cur, e.nxt] = [e.nxt, e.cur]; e.next = 0; e.iter++; giPack(e); giExpose(e);
+    const shown = gi.cache[e.mode];
+    if (e.iter >= (window.__forceGI?.iters || GI_ITERS)) {
+      e.done = true; e.ms = performance.now() - e.t0;
+      if (shown && shown !== e) giFree(shown);
+      gi.cache[e.mode] = e; giFreeMesh(e);
+      if (e.mode === 'day') { probeKey = ''; bakeProbes(); }   // the room reflections again, now with the rooms lit as they are shown
+    } else if (!shown || shown === e) gi.cache[e.mode] = e;   // first time: on screen after the first pass (the exposure evens out the missing bounces), it refines there
+    invalidate();                                         // only a finished pass changes the picture: no redraw per slice
+  }
+}
+let insideNow = false;                                    // is the camera under the ceiling (syncInside)
+function giTick(now) {
+  if (!giCapable()) return;
+  const mode = night ? 'night' : 'day', want = !rt.on && !rtw.on && (night || insideNow), shown = gi.cache[mode], target = want && shown ? 1 : 0;
+  if (gi.mode !== mode) { gi.mode = mode; gi.mix = target; }   // day <-> night: everything changes at once anyway
+  gi.frame += (Math.min(2000, now - gi.last) - gi.frame) * 0.3;
+  if (gi.mix !== target) { const dt = Math.min(100, now - gi.last); gi.mix = target > gi.mix ? Math.min(1, gi.mix + dt / 500) : Math.max(0, gi.mix - dt / 300); invalidate(); }
+  gi.last = now;
+  giApply(shown);
+  if (!want || now - gi.dirtyAt < 400 || firstLoad) return;
+  if (now - Math.max(lastInput, lastMove) < 800) return;  // the bake waits while the user moves the view: it competes with the drawing for the GPU (on a weak one the orbit stuttered)
+  let w = gi.work;
+  if (!w || w.mode !== mode || w.key !== gi.key) { if (shown && shown.key === gi.key && shown.done) return; w = giStart(mode); }
+  if (w && !w.done && w.mesh) giSlice(w);
+}
 const metalEnv = () => metalEnvTex || (metalEnvTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture);
 const emissiveMats = [];                                 // items with "em": glow in night mode
 function materialFor(c) {
   const [r, g, b, a = 255] = c || [200, 200, 200, 255];
-  return new THREE.MeshStandardMaterial({
+  return giPatch(new THREE.MeshStandardMaterial({
     color: new THREE.Color(r / 255, g / 255, b / 255).convertSRGBToLinear(),
     roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide,
     transparent: a < 255, opacity: a / 255,
-  });
+  }));
 }
 
 function tubeGeometry({ p, r, n }) {                     // circular section along a path, parallel-transported frames, smooth normals
@@ -393,16 +862,113 @@ function rboxGeometry({ b, r, top, bot = 0 }, uv = false) {   // rounded box: fi
   return g;
 }
 
+// Relief (realistic look): item "bp" = bump strength. A textured item uses its own image as the height map (grout lines, plank gaps,
+// ribs, grain); a plain box / rbox gets a small procedural noise (plaster, fabric) mapped in world inches (NOISE_TILE per repeat).
+const NOISE_TILE = 8;
+let noiseTex = null;
+function noiseBump() {
+  if (noiseTex) return noiseTex;
+  const N = 128, a = new Float32Array(N * N); let sd = 12345;
+  for (let i = 0; i < a.length; i++) { sd = (sd * 1664525 + 1013904223) >>> 0; a[i] = sd / 4294967296; }
+  const d = new Uint8Array(N * N * 4);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {            // one wrapping blur: soft grain instead of single-pixel static
+    let v = 0; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) v += a[((y + j + N) % N) * N + (x + i + N) % N];
+    const o = (y * N + x) * 4; d[o] = d[o + 1] = d[o + 2] = Math.round(v / 9 * 255 * 2.2 - 255 * 0.6); d[o + 3] = 255;
+  }
+  noiseTex = new THREE.DataTexture(d, N, N); noiseTex.wrapS = noiseTex.wrapT = THREE.RepeatWrapping; noiseTex.magFilter = THREE.LinearFilter;
+  noiseTex.minFilter = THREE.LinearMipmapLinearFilter; noiseTex.generateMipmaps = true; noiseTex.needsUpdate = true;
+  return noiseTex;
+}
+function worldUV(g, k = 1 / NOISE_TILE) {                // planar uv in inches per face (picked by the dominant normal axis), for the noise bump
+  const p = g.attributes.position, n = g.attributes.normal, uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) {
+    const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i));
+    const [u, v] = ax >= ay && ax >= az ? [p.getY(i), p.getZ(i)] : ay >= az ? [p.getX(i), p.getZ(i)] : [p.getX(i), p.getY(i)];
+    uv[2 * i] = u * k; uv[2 * i + 1] = v * k;
+  }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+function subdivide(geo, L) {                              // cut every edge longer than L in two, again and again (non-indexed geometry; keeps normals, uvs and material groups).
+  if (geo.index) return geo;                              // The choice depends on the edge alone, so two triangles that share it are cut at the same point: no T-junctions, no pinholes
+  const A = ['position', 'normal', 'uv'].filter(k => geo.attributes[k]).map(k => ({ k, a: geo.attributes[k].array, n: geo.attributes[k].itemSize, out: [] }));
+  const count = geo.attributes.position.count, groups = geo.groups.length ? geo.groups : [{ start: 0, count, materialIndex: 0 }], ng = [], L2 = L * L;
+  const read = i => { const v = {}; for (const q of A) v[q.k] = Array.from(q.a.subarray(i * q.n, i * q.n + q.n)); return v; };
+  const mid = (a, b) => { const v = {}; for (const q of A) v[q.k] = a[q.k].map((x, i) => (x + b[q.k][i]) / 2); return v; };
+  const long = (a, b) => (a.position[0] - b.position[0]) ** 2 + (a.position[1] - b.position[1]) ** 2 + (a.position[2] - b.position[2]) ** 2 > L2;
+  const split = (a, b, c, depth) => {
+    const ab = long(a, b), bc = long(b, c), ca = long(c, a), n = ab + bc + ca;
+    if (!n || depth > 8) { for (const v of [a, b, c]) for (const q of A) q.out.push(...v[q.k]); return; }
+    if (n === 3) { const p = mid(a, b), q = mid(b, c), r = mid(c, a); split(a, p, r, depth + 1); split(p, b, q, depth + 1); split(r, q, c, depth + 1); split(p, q, r, depth + 1); return; }
+    if (n === 1) {
+      if (bc) return split(b, c, a, depth); if (ca) return split(c, a, b, depth);   // turn it so that ab is the long edge
+      const p = mid(a, b); split(a, p, c, depth + 1); split(p, b, c, depth + 1); return;
+    }
+    if (!ab) return split(b, c, a, depth); if (!bc) return split(c, a, b, depth);   // two long edges: turn it so that ca is the short one
+    const p = mid(a, b), q = mid(b, c); split(p, b, q, depth + 1); split(a, p, q, depth + 1); split(a, q, c, depth + 1);
+  };
+  for (const g of groups) {
+    const start = A[0].out.length / 3;
+    for (let i = g.start, e = Math.min(count, g.start + g.count); i + 2 < e; i += 3) split(read(i), read(i + 1), read(i + 2), 0);
+    ng.push({ start, count: A[0].out.length / 3 - start, materialIndex: g.materialIndex });
+  }
+  const out = new THREE.BufferGeometry();
+  for (const q of A) out.setAttribute(q.k, new THREE.Float32BufferAttribute(q.out, q.n));
+  if (geo.groups.length) for (const g of ng) out.addGroup(g.start, g.count, g.materialIndex);
+  geo.dispose();
+  return out;
+}
+function chamferBox(x0, y0, z0, x1, y1, z1, b) {          // box with its 12 edges cut at 45 degrees (b inches): catches a thin highlight like a real rounded edge, 44 triangles
+  const h = [(x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2], pos = [], nor = [];
+  const poly = (pts, n) => {                              // convex polygon, fan, wound to face along n
+    const a = new THREE.Vector3(...pts[0]), c = new THREE.Vector3(...pts[1]), d = new THREE.Vector3(...pts[2]);
+    const flip = c.clone().sub(a).cross(d.clone().sub(a)).dot(new THREE.Vector3(...n)) < 0;
+    const l = Math.hypot(...n);
+    for (let i = 1; i < pts.length - 1; i++) for (const q of flip ? [pts[0], pts[i + 1], pts[i]] : [pts[0], pts[i], pts[i + 1]]) { pos.push(...q); nor.push(n[0] / l, n[1] / l, n[2] / l); }
+  };
+  const S = [-1, 1];
+  for (let a = 0; a < 3; a++) {                           // big faces
+    const b1 = (a + 1) % 3, b2 = (a + 2) % 3;
+    for (const sa of S) {
+      const pts = [], n = [0, 0, 0]; n[a] = sa;
+      for (const [u, v] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) { const p = [0, 0, 0]; p[a] = sa * h[a]; p[b1] = u * (h[b1] - b); p[b2] = v * (h[b2] - b); pts.push(p); }
+      poly(pts, n);
+    }
+    for (const sa of S) for (const sb of S) {             // edge strips along axis b2, between faces a and b1
+      const n = [0, 0, 0]; n[a] = sa; n[b1] = sb; const pts = [];
+      for (const w of [1, -1, -1, 1]) { const p = [0, 0, 0]; p[b2] = w * (h[b2] - b); pts.push(p); }
+      pts[0][a] = sa * h[a]; pts[0][b1] = sb * (h[b1] - b); pts[1][a] = sa * h[a]; pts[1][b1] = sb * (h[b1] - b);
+      pts[2][a] = sa * (h[a] - b); pts[2][b1] = sb * h[b1]; pts[3][a] = sa * (h[a] - b); pts[3][b1] = sb * h[b1];
+      poly(pts, n);
+    }
+  }
+  for (const sx of S) for (const sy of S) for (const sz of S) poly([[sx * h[0], sy * (h[1] - b), sz * (h[2] - b)], [sx * (h[0] - b), sy * h[1], sz * (h[2] - b)], [sx * (h[0] - b), sy * (h[1] - b), sz * h[2]]], [sx, sy, sz]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  g.userData.cut = true;
+  return g;
+}
 function geometryFor(item) {
   if (item.tube) return tubeGeometry(item.tube);
-  if (item.slab) return slabGeometry(item.slab);
+  if (item.slab) return giCapable() ? subdivide(slabGeometry(item.slab), GI_TESS) : slabGeometry(item.slab);
   if (item.tray) return trayGeometry(item.tray);
-  if (item.rbox) return rboxGeometry(item.rbox, !!item.tex);
+  if (item.rbox) {
+    const plain = realLook && item.bp && !item.tex, g = rboxGeometry(item.rbox, !!item.tex || plain);
+    if (plain && g.attributes.uv) { const uv = g.attributes.uv; for (let i = 0; i < uv.array.length; i++) uv.array[i] /= NOISE_TILE; }
+    return g;
+  }
   if (item.box) {
     const [x0, y0, z0, x1, y1, z1] = item.box;
-    const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0);
+    if (realLook && item.g && !item.tex && !(item.c && item.c[3] < 255) && !item.ne) {   // realistic look: pieces of furniture get cut edges (walls and finishes stay crisp so their seams don't show)
+      const m = Math.min(x1 - x0, y1 - y0, z1 - z0);
+      if (m >= 0.6) { const c = chamferBox(x0, y0, z0, x1, y1, z1, Math.min(0.2, m * 0.15)); return item.bp ? worldUV(c) : c; }
+    }
+    const seg = d => giCapable() ? Math.min(24, Math.max(1, Math.ceil(d / GI_TESS))) : 1;   // the indirect light is read at the vertices: large faces (walls, paint) are cut into pieces
+    const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0, seg(x1 - x0), seg(y1 - y0), seg(z1 - z0));
     g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-    return g;
+    g.userData.cut = !item.tex;                           // (for the bake a plain box is enough)
+    return realLook && item.bp && !item.tex ? worldUV(g) : g;
   }
   const pos = [];
   for (const f of item.faces) {
@@ -475,7 +1041,9 @@ function saveTiles() { try { liveTiles() === savedTiles ? localStorage.removeIte
 const mvJSON = m => JSON.stringify(Object.fromEntries([...m].map(([k, v]) => [k, v.map(x => Math.round(x * 100) / 100)]).sort((a, b) => a[0] < b[0] ? -1 : 1)), null, 1);
 async function loadMoved() {
   let file = {};
-  try { const r = await fetch('moved.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) file = await r.json(); } catch (e) {}
+  const pre = window.__boot?.moved;                                // first load: the download started in <head>
+  if (pre) { window.__boot.moved = null; file = await pre || {}; }
+  else try { const r = await fetch('moved.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) file = await r.json(); } catch (e) {}
   if (Array.isArray(file._groups)) fileGroups = file._groups;
   delete file._groups;
   trash = new Set(Array.isArray(file._trash) ? file._trash : []); deleted = new Set(Array.isArray(file._deleted) ? file._deleted : []);
@@ -565,6 +1133,7 @@ function placeMv(o) {
   const a = (off[2] || 0) * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a), cx = (b.min.x + b.max.x) / 2, cy = (b.min.y + b.max.y) / 2;
   o.rotation.set(0, 0, a);
   o.position.set(cx + off[0] - (c * cx - sn * cy), cy + off[1] - (sn * cx + c * cy), 0);
+  shadowsDirty();
 }
 function rotateMv() {
   if (!mvKey) return;
@@ -588,6 +1157,12 @@ function addCollider(item) {                                      // only what c
   }
 }
 function build(data) {
+  const real = data.look === 'real';
+  if (real !== realLook) {                                // sharper, softer sun shadows for the realistic look
+    realLook = real;
+    sun.shadow.radius = real ? LOOK.radius : 1;   // (a 4096 px map stalled software GL: several viewers open at once never finished loading)
+    sun.shadow.map?.dispose(); sun.shadow.map = null;
+  }
   fixedGroups.clear();
   for (const g of data.groups || []) if (g.fixed) fixedGroups.add(g.id);
   colliders = [];
@@ -610,25 +1185,41 @@ function build(data) {
     if (gs.length && !gs.some(id => enabledGroups.has(id) && !gone(id))) continue;   // group switched off (or in the trash)
     const geo = geometryFor(item);
     const mesh = new THREE.Mesh(geo, item.tex && item.box ? texturedBoxMaterials(item) : item.tex && item.slab ? texturedSlabMaterials(item) : item.tex && item.rbox ? texturedRboxMaterial(item) : materialFor(item.c));
+    const glass = !!item.c && item.c[3] < 255;
+    if (item.ro != null) for (const m of [].concat(mesh.material)) m.roughness = item.ro;   // "ro": surface roughness, 0 polished .. 1 matte ("mt" and glass below win)
     if (item.mt) for (const m of [].concat(mesh.material)) { m.metalness = item.mt[0]; m.roughness = item.mt[1]; m.envMap = metalEnv(); }   // "mt": [metalness, roughness], mirror-like metal
     if (item.em) for (const m of [].concat(mesh.material)) { m.emissive = m.color.clone(); emissiveMats.push(m); }
+    if (realLook && !item.mt && glass) for (const m of [].concat(mesh.material)) m.roughness = 0.06;   // glass reflects the sky
+    if (realLook && item.bp && !item.mt && !glass) for (const m of [].concat(mesh.material)) {   // relief: own image as height map, else the shared noise
+      if (item.tex) { if (m.map) { m.bumpMap = m.map; m.bumpScale = item.bp; } } else if (item.box || item.rbox) { m.bumpMap = noiseBump(); m.bumpScale = item.bp; }
+    }
     mesh.name = item.n;
-    mesh.castShadow = mesh.receiveShadow = true;
+    mesh.userData.glass = glass;
+    mesh.userData.shell = !gs.length || gs.every(id => fixedGroups.has(id));   // walls, floors, fixed finishes
+    mesh.userData.mv = moveKey(item);
+    mesh.userData.solid = !!(item.box || item.rbox);      // a closed volume: no light probe inside it
+    mesh.receiveShadow = true; mesh.castShadow = casts(mesh) && !(realLook && item.em);   // a glowing shade is the light's own source: it must not shadow it
     model.add(mesh);
     addCollider(item);
-    if (item.ne) { mesh.userData.mv = moveKey(item); continue; }   // "ne": no outline (smooth glass)
+    if (realLook) {                                       // realistic look: an outline only on the piece selected for moving ("ne" pieces too: it is the selection mark), made when it is selected (setMv)
+      if (mvKey && mvKey === mesh.userData.mv) model.add(outlineOf(mesh));
+      continue;
+    }
+    if (item.ne) continue;                                // "ne": no outline (smooth glass)
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20),
-      new THREE.LineBasicMaterial({ color: mvKey && mvKey === moveKey(item) ? 0xb5532a : 0x2a2d33 }));
+      new THREE.LineBasicMaterial({ color: mvKey && mvKey === mesh.userData.mv ? 0xb5532a : 0x2a2d33 }));
     model.add(edges);
-    mesh.userData.mv = edges.userData.mv = moveKey(item);
+    edges.userData.mv = mesh.userData.mv;
   }
   buildTiles(data);
   pivots.clear();                                         // each movable piece turns around the centre of its plan, as drawn in scene.json
   for (const o of model.children) if (o.userData.mv) { o.geometry.computeBoundingBox(); const b = pivots.get(o.userData.mv); b ? b.union(o.geometry.boundingBox) : pivots.set(o.userData.mv, o.geometry.boundingBox.clone()); }
   for (const o of model.children) if (o.userData.mv) placeMv(o);
+  useProbes();                                            // rooms already probed keep their reflections across group toggles
+  giDirty();                                              // the indirect light is computed again for what is drawn now
   if (ceilingMesh) { scene.remove(ceilingMesh); ceilingMesh.geometry.dispose(); ceilingMesh = null; }
   if (data.ceiling) {
-    ceilingMesh = new THREE.Mesh(slabGeometry({ o: data.ceiling.o, h: [], z: data.ceiling.z }), materialFor([250, 250, 248, 255]));
+    ceilingMesh = new THREE.Mesh(geometryFor({ slab: { o: data.ceiling.o, h: [], z: data.ceiling.z } }), materialFor([250, 250, 248, 255]));
     ceilingMesh.name = '__ceiling'; ceilingMesh.visible = !!fp;
     scene.add(ceilingMesh);                              // no castShadow: the sun still reaches the rooms (the open top is how the model is normally viewed)
   }
@@ -638,6 +1229,18 @@ function build(data) {
   const c = box.getCenter(new THREE.Vector3());
   sun.target.position.copy(c);
   scene.add(sun.target);
+  const sc = sun.shadow.camera;
+  if (realLook) {                                         // sun direction of the look, shadow frustum fitted to the model (nothing clipped, all the map's texels used)
+    const r = Math.max(box.getBoundingSphere(new THREE.Sphere()).radius, 10) * 1.03;
+    sun.position.copy(c).addScaledVector(SUN_DIR, 2 * r);
+    Object.assign(sc, { left: -r, right: r, top: r, bottom: -r, near: r * 0.95, far: r * 3.05 });
+    fill.position.copy(c).addScaledVector(FILL_DIR, 2 * r); fill.target.position.copy(c);
+  } else {
+    sun.position.set(-200, -150, 400);
+    Object.assign(sc, { left: -300, right: 300, top: 300, bottom: -300, near: 1, far: 1500 });
+  }
+  sc.updateProjectionMatrix();
+  shadowsDirty();
 }
 
 function applyCamera(cam) {
@@ -652,8 +1255,10 @@ function applyCamera(cam) {
 async function load() {
   if (savedMoved === null) await loadMoved();
   try {
-    const res = await fetch('scene.json?t=' + Date.now(), { cache: 'no-store' });
-    const data = await res.json();
+    const pre = window.__boot?.scene;                                // first load: the download started in <head>, in parallel with three.js
+    if (pre) window.__boot.scene = null;
+    const data = (pre && await pre) || await (await fetch('scene.json?t=' + Date.now(), { cache: 'no-store' })).json();
+    if (firstLoad) await glReady;
     normalizeRemoved(data);
     if (!groupsInit) {                                                 // first load: groups saved with 'Save positions' (moved.json "_groups"), else the scene's defaults ("on": true); a ?g in the URL wins
       groupsInit = true;
@@ -662,8 +1267,9 @@ async function load() {
       savedGroups = JSON.stringify([...start].filter(id => !gone(id)).sort()); showSave();
     }   // default-on groups ("on": true in scene.json) only when the URL has no ?g
     current = data;
-    build(data);
-    if (firstLoad) { firstLoad = false; applyInitialView(data); if (new URLSearchParams(location.search).has('fp')) enterFP(); if (new URLSearchParams(location.search).has('rt')) rtOn(); if (new URLSearchParams(location.search).has('ao')) aoOn(); }   // later reloads keep your orbit
+    build(data); bakeProbes();
+    if (firstLoad && realLook && !new URLSearchParams(location.search).has('ao') && !matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches && !noGPU() && !(qualityOn() && quality.level >= 1)) aoOn();   // realistic look: contact shadows on by default (desktop), ?ao=0 keeps them off
+    if (firstLoad) { firstLoad = false; applyInitialView(data); if (new URLSearchParams(location.search).has('fp')) enterFP(); if (new URLSearchParams(location.search).has('rt')) rtOn(); if (+(new URLSearchParams(location.search).get('ao') ?? 0)) { aoByUser = true; aoOn(); } if (qualityOn()) applyQuality(); }   // later reloads keep your orbit
     status.textContent = t('v.status.objects', { n: data.items.length, time: new Date().toLocaleTimeString(locale()) });
   } catch (e) {
     console.error('scene load failed:', e);
@@ -683,6 +1289,7 @@ const RT_K = 110;
 const nightBtn = document.getElementById('nightbtn');
 function buildLights(data) {
   for (const o of [...lightsGroup.children]) { lightsGroup.remove(o); o.dispose?.(); }
+  shadowsDirty();
   for (const L of data.lights || []) {
     const gs = [].concat(L.g || []);
     if (gs.length && !gs.some(id => enabledGroups.has(id))) continue;
@@ -701,11 +1308,21 @@ function buildLights(data) {
   }
 }
 function applyNight() {
-  scene.background.set(night ? 0x0a0c12 : 0xf4f5f7);
-  hemi.intensity = night ? 0.1 : 2.4;
+  bgColor.set(night ? 0x0a0c12 : 0xf4f5f7); scene.background = bgColor;
+  hemi.intensity = night ? (realLook ? 0.03 : 0.1) : 2.4;
   hemi.color.set(night ? 0x7a8cb8 : 0xffffff); hemi.groundColor.set(night ? 0x1c202a : 0xb4b8c0);
   sun.visible = !night;
-  if (ceilingMesh) { ceilingMesh.material.emissive.set(0xffffff); ceilingMesh.material.emissiveIntensity = night || rt.on ? 0 : 0.5; }   // keeps the white ceiling white in daylight (it only gets light from below otherwise)
+  sunLevel(); sun.color.set(realLook ? LOOK.sunColor : 0xffffff);
+  fill.visible = false;
+  if (realLook && !rt.on) {                               // realistic look: sky, cool ambient + warm sun + fill, image-based reflections, filmic tone curve (Render sets its own)
+    scene.background = skyTexture(night);
+    if (!night) { hemi.intensity = LOOK.hemi; hemi.color.set(LOOK.sky); hemi.groundColor.set(LOOK.ground); fill.intensity = LOOK.fill; fill.color.set(LOOK.fillColor); fill.visible = true; }
+    if (!noGPU()) { scene.environment = metalEnv(); scene.environmentIntensity = night ? 0.01 : LOOK.env; } else if (!night) hemi.intensity = LOOK.hemi * 2;   // image-based lighting on every material is far too slow without a GPU
+    renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = night ? 1.3 : LOOK.exposure;   // Neutral keeps the colours of the finishes (ACES greyed them)
+  }
+  shadowsDirty(); setProbeLevel();
+  if (ceilingMesh) { ceilingMesh.material.emissive.set(0xffffff); ceilingMesh.material.emissiveIntensity = night || rt.on ? 0 : realLook ? LOOK.ceiling : 0.5; }
+  gi.base = { hemi: hemi.intensity, fill: fill.intensity, ceil: ceilingMesh ? ceilingMesh.material.emissiveIntensity : 0 }; if (giCapable()) giApply(gi.cache[night ? 'night' : 'day']);   // the indirect light scales these three down while it is on   // keeps the white ceiling white in daylight (it only gets light from below otherwise)
   lightsGroup.visible = night;
   for (const m of emissiveMats) { m.emissiveIntensity = night ? 1.6 : 0; m.needsUpdate = true; }
   nightBtn.classList.toggle('active', night);
@@ -717,7 +1334,7 @@ nightBtn.onclick = () => { night = !night; applyNight(); setParams({ night: nigh
 document.getElementById('morebtn').onclick = e => { document.getElementById('bar').classList.toggle('open'); e.currentTarget.textContent = document.getElementById('bar').classList.contains('open') ? t('v.more') + ' ▴' : t('v.more') + ' ▾'; };   // phones only
 const aoBtn = document.getElementById('aobtn');
 const ao = { on: false, composer: null, pass: null };
-window.aoResize = (w, h) => ao.composer?.setSize(w, h);
+window.aoResize = (w, h) => ao.composer?.setSize(w, h);   // (computing the occlusion at half size was tried: visibly grainier corners, so it stays at full size)
 async function aoOn() {
   aoBtn.textContent = 'AO…';
   try {
@@ -739,10 +1356,59 @@ async function aoOn() {
       ao.composer.setPixelRatio(renderer.getPixelRatio()); ao.composer.setSize(w, h);
     }
   } catch (e) { console.error('AO not available:', e); aoBtn.textContent = 'AO'; return; }
-  ao.on = true; aoBtn.textContent = 'AO'; aoBtn.classList.add('active'); setParams({ ao: 1 });
+  ao.on = true; aoBtn.textContent = 'AO'; aoBtn.classList.add('active'); setParams({ ao: 1 }); invalidate();
 }
-function aoOff() { ao.on = false; aoBtn.classList.remove('active'); setParams({ ao: null }); }
-aoBtn.onclick = () => ao.on ? aoOff() : aoOn();
+function aoOff() { ao.on = false; aoBtn.classList.remove('active'); setParams({ ao: realLook ? 0 : null }); }
+let aoByUser = false;                                    // switched on with the button / key / ?ao=1: the quality steps leave it alone
+aoBtn.onclick = () => { aoByUser = !ao.on; ao.on ? aoOff() : aoOn(); };
+
+
+// ---- Quality that follows the machine (all looks): a weak GPU must stay fluid. While the view moves, the time between drawn frames
+// is measured; when the median of the last ~30 frames (fewer when they are very slow) is over QUALITY_MS the next cheaper level is taken, one step at a time, and remembered
+// for this browser (localStorage "quality"): 0 = everything, 1 = no automatic AO, 2 = pixel ratio 1.5, 3 = pixel ratio 1 + 1024 px sun shadows,
+// 4 = no indirect light (flat ambient). It never goes back up by itself (it would flicker between levels); ?q=0 resets it, ?q=N forces a level.
+const QUALITY_MS = 45, QUALITY_MAX = 4;
+// The Quality buttons (settings menu: Auto, 1 = minimum .. 5 = maximum, i.e. level 4 .. 0) pick a level by hand: the automatic steps then stop
+// (localStorage "qualityManual") until Auto is chosen again; a level chosen by hand also applies on software GL.
+const quality = { level: 0, dts: [], since: 0, manual: false };
+try { const q = new URLSearchParams(location.search).get('q'); quality.level = Math.max(0, Math.min(QUALITY_MAX, q != null ? +q || 0 : +(localStorage.getItem('quality') || 0))); quality.manual = q == null && localStorage.getItem('qualityManual') === '1'; if (q != null) { localStorage.setItem('quality', String(quality.level)); localStorage.removeItem('qualityManual'); } } catch (e) {}
+const qualityAuto = () => !noGPU() || !!window.__forceQuality;   // software GL (tests, thumbnails) is slow by nature: keep their pictures stable
+const qualityOn = () => quality.manual || qualityAuto();
+function applyQuality() {
+  const L = quality.level, dpr = Math.min(devicePixelRatio, L >= 3 ? 1 : L >= 2 ? 1.5 : 2);
+  if (L >= 1 && ao.on && !aoByUser) { ao.on = false; aoBtn.classList.remove('active'); }
+  if (renderer.getPixelRatio() !== dpr) { renderer.setPixelRatio(dpr); ao.composer?.setPixelRatio(dpr); resize(); }
+  const sm = L >= 3 ? 1024 : 2048;
+  if (sun.shadow.mapSize.x !== sm) { sun.shadow.mapSize.set(sm, sm); sun.shadow.map?.dispose(); sun.shadow.map = null; shadowsDirty(); }
+  if (L >= 4 && gi.mix) { gi.mix = 0; giApply(null); }
+  invalidate();
+}
+function perfSample(dt, now) {
+  if (quality.manual || !qualityAuto() || quality.level >= QUALITY_MAX || rt.on || rtw.on || document.hidden) return;
+  if (dt > 8000 || now - Math.max(lastInput, lastMove) > Math.max(300, dt * 1.5) || now - quality.since < 1500) return;   // only frames drawn back to back while the view moves, and a moment after a change of level
+  quality.dts.push(dt);
+  const n = quality.dts.length, sum = quality.dts.reduce((a, b) => a + b, 0);
+  if (n < 30 && !(n >= 9 && sum > 3000)) return;           // ~30 frames, or fewer when they are very slow (a weak machine must not wait a minute)
+  const m = quality.dts.sort((a, b) => a - b)[n >> 1]; quality.dts = [];
+  if (m <= QUALITY_MS) return;
+  quality.level++; quality.since = now;
+  try { localStorage.setItem('quality', String(quality.level)); } catch (e) {}
+  console.info(`quality: frames took ${Math.round(m)} ms while moving, level ${quality.level}`);
+  applyQuality(); syncQualityUI();
+}
+const qBtns = [...document.querySelectorAll('#qbtns button')];
+function syncQualityUI() { for (const b of qBtns) b.classList.toggle('on', b.dataset.q === 'auto' ? !quality.manual : quality.manual && +b.dataset.q === quality.level); }
+function setQuality(v) {                                  // a Quality button: 'auto' or a level 0 (maximum) .. 4 (minimum)
+  const gi0 = giCapable(), manual = v !== 'auto', level = manual ? +v : 0;
+  quality.manual = manual; quality.level = level; quality.dts = []; quality.since = performance.now();
+  try { localStorage.setItem('quality', String(level)); manual ? localStorage.setItem('qualityManual', '1') : localStorage.removeItem('qualityManual'); } catch (e) {}
+  if (new URLSearchParams(location.search).has('q')) setParams({ q: null });
+  applyQuality(); syncQualityUI();
+  if (level === 0 && realLook && !ao.on && !noGPU() && !matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches) aoOn();   // maximum: the automatic AO comes back
+  if (giCapable() !== gi0) load();                        // the indirect light (level 4 drops it) is built into the materials and the tessellation: rebuild
+}
+for (const b of qBtns) b.onclick = () => setQuality(b.dataset.q);
+syncQualityUI();
 
 // ---- Render button (key T, ?rt=1): progressive GPU path tracing (three-gpu-pathtracer, loaded on demand): global illumination, soft shadows, light bouncing off walls.
 // The raster view is what you edit in; this is for judging the lights. Needs a real GPU. The accumulated image restarts when the camera, scene, lights or night mode change.
@@ -1263,7 +1929,10 @@ renderer.domElement.addEventListener('pointerdown', ev => downAt = [ev.clientX, 
 let mvTimer = null, drag = null;
 function setMv(k) {
   mvKey = k;
-  for (const o of model.children) if (o.isLineSegments) o.material.color.setHex(k && o.userData.mv === k ? 0xb5532a : 0x2a2d33);
+  invalidate();
+  if (!realLook) { for (const o of model.children) if (o.isLineSegments) o.material.color.setHex(k && o.userData.mv === k ? 0xb5532a : 0x2a2d33); return; }
+  for (const o of [...model.children]) if (o.isLineSegments) { model.remove(o); o.geometry.dispose(); o.material.dispose(); }   // realistic look: only the selected piece is outlined
+  if (k) for (const o of [...model.children]) if (o.isMesh && o.userData.mv === k) { const l = outlineOf(o); model.add(l); placeMv(l); }
 }
 function floorPoint(ev, z) {
   const r = renderer.domElement.getBoundingClientRect();
@@ -1381,7 +2050,6 @@ function tileTex(url) {
   return texCache.get(url);
 }
 const cellCache = new Map();
-function inPoly(o, x, y) { let c = false; for (let i = 0, j = o.length - 1; i < o.length; j = i++) if ((o[i][1] > y) !== (o[j][1] > y) && x < (o[j][0] - o[i][0]) * (y - o[i][1]) / (o[j][1] - o[i][1]) + o[i][0]) c = !c; return c; }
 function clipRect(poly, r) {                                     // Sutherland-Hodgman: polygon cut by the rectangle r = [u0, v0, u1, v1]
   let out = poly;
   for (const [ax, sgn, lim] of [[0, 1, r[0]], [0, -1, r[2]], [1, 1, r[1]], [1, -1, r[3]]]) {
@@ -1489,8 +2157,8 @@ function startCompose(g) {
   compbar.classList.add('open');
   groupsEl.classList.remove('open'); gbtn.classList.remove('open');
 }
-function endCompose() { comp = null; selCell = null; compbar.classList.remove('open'); placeComp(); }
-function tilesChanged() { saveTiles(); if (current) buildTiles(current); }
+function endCompose() { comp = null; selCell = null; compbar.classList.remove('open'); placeComp(); invalidate(); }
+function tilesChanged() { saveTiles(); if (current) buildTiles(current); invalidate(); }
 function compClick(ev) {
   const spec = compSpec(); if (!spec) return;
   const r = renderer.domElement.getBoundingClientRect();
@@ -1506,12 +2174,12 @@ function compClick(ev) {
     if (!inPoly(sf.poly, pu, pv)) continue;
     best = { dist, sf, pu, pv };
   }
-  if (!best) { selCell = null; return; }
+  if (!best) { selCell = null; invalidate(); return; }
   const i = Math.floor(best.pu / spec.w), j = Math.floor(best.pv / spec.h), c = i + ',' + j;
   if (!validCells(spec, best.sf).has(c)) return;
   const set = editable(spec)[best.sf.id];
   if (!set.has(c)) { set.add(c); tilesChanged(); }
-  selCell = { s: best.sf.id, i, j };
+  selCell = { s: best.sf.id, i, j }; invalidate();
 }
 const compBtns = {};
 for (const [k, txt, cls] of [['up', '+'], ['down', '+'], ['left', '+'], ['right', '+'], ['del', '×', 'del']]) {
@@ -1741,11 +2409,46 @@ function snapshot() {
 }
 document.getElementById('snap').onclick = () => { snapReq = true; };
 
+// Realistic look: with the camera under the ceiling (walking, or an orbit view from inside a room) the ceiling is drawn and the
+// shell stops casting sun shadows, so a room reads as a closed, evenly lit room instead of an open box crossed by the
+// shadows of its own walls; from above it is the usual open model. At night the shell keeps casting (lamps must not shine through walls).
+function syncInside() {
+  const cz = current?.ceiling?.z?.[0];
+  const show = !!fp || (realLook && !rt.on && cz != null && probing);   // closed rooms only in first person: an orbit view, also zoomed into a room, keeps the open model with the sun and its shadows (user: zooming in turned everything dark and the shadows vanished)
+  insideNow = show;
+  const cast = true;                                       // walls always shadow the sun: inside, daylight only enters through the openings (glass casts no shadow)
+  if (ceilingMesh && ceilingMesh.visible !== show) { ceilingMesh.visible = show; invalidate(); }
+  if (ceilingMesh) { const cc = realLook && show && !night && !rt.on; if (ceilingMesh.castShadow !== cc) { ceilingMesh.castShadow = cc; shadowsDirty(); } }   // the sun must not come through the roof
+  if (cast !== shellCast) {
+    shellCast = cast; for (const o of model.children) if (o.isMesh && o.userData.shell) o.castShadow = casts(o);
+    sunLevel();
+    shadowsDirty();
+  }
+}
+const camSig = new Float64Array(9);                      // camera state of the last check: a move keeps the drawing going
+function camMoved() {
+  const p = camera.position, q = camera.quaternion, v = [p.x, p.y, p.z, q.x, q.y, q.z, q.w, camera.fov, camera.aspect];
+  let moved = false;
+  for (let i = 0; i < 9; i++) if (Math.abs(v[i] - camSig[i]) > (i < 3 ? 1e-4 : 1e-6)) { camSig[i] = v[i]; moved = true; }   // above the 1e-7 jitter of the orbit damping
+  return moved;
+}
+window.viewerDebug = { stats: () => ({ quality: quality.level, dpr: renderer.getPixelRatio(), ao: ao.on, ceilingCast: !!ceilingMesh?.castShadow, frames, live: performance.now() < liveUntil, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, programs: renderer.info.programs?.length, ceiling: !!ceilingMesh?.visible, shellCast, outlines: model.children.filter(o => o.isLineSegments).length, shadowsPending: renderer.shadowMap.needsUpdate, probes: probeTex.filter(Boolean).length, probeMats: probeMats.size, gi: { mix: +gi.mix.toFixed(2), day: gi.cache.day ? gi.cache.day.iter : 0, night: gi.cache.night ? gi.cache.night.iter : 0, working: !!(gi.work && !gi.work.done), pass: gi.work ? gi.work.iter : 0, at: gi.work ? gi.work.next : 0, batch: gi.B, points: gi.work ? gi.work.P : 0, triangles: gi.tris, ms: Math.round(gi.ms) } }),
+                       giData: () => { const e = gi.cache[night ? 'night' : 'day'] || gi.work; return e && { nx: e.nx, ny: e.ny, nz: e.nz, min: e.min.toArray(), cell: e.cell.toArray(), skip: [...e.skip], indoor: [...e.indoor], gain: e.gain, cur: [...e.cur].map(v => +v.toFixed(3)), iter: e.iter, ms: e.ms }; },
+                       live: ms => invalidate(ms), relight: () => { sun.shadow.radius = realLook ? LOOK.radius : 1; for (const e of Object.values(gi.cache)) giExpose(e); applyNight(); },
+                       view: (eye, target, fov = 65) => { applyCamera({ eye, target, fov }); invalidate(); } };   // for headless tests and tuning
+
 load();
-renderer.setAnimationLoop(now => { stepMove(now); if (!fp) controls.update();   // in first person OrbitControls would re-aim the camera at its target
-   if (!rtFrame()) { if (ao.on && ao.composer) ao.composer.render(); else renderer.render(scene, camera); }
-   if (snapReq) { snapReq = false; snapshot(); }
-   placeLabels(); placeComp(); });
+renderer.setAnimationLoop(now => {
+  stepMove(now); if (!fp) controls.update();             // in first person OrbitControls would re-aim the camera at its target
+  syncInside();
+  giTick(now);
+  if (camMoved()) { invalidate(300); lastMove = now; }
+  if (!(rt.on || rtw.on || snapReq || now < liveUntil || now - lastDraw > IDLE_MS)) return;   // nothing changed: keep the image that is on screen
+  perfSample(now - lastDraw, now); lastDraw = now; frames++;
+  if (!rtFrame()) { if (ao.on && ao.composer) ao.composer.render(); else renderer.render(scene, camera); }
+  if (snapReq) { snapReq = false; snapshot(); }
+  placeLabels(); placeComp();
+});
 </script>
 </body>
 </html>

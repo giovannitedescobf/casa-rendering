@@ -13,16 +13,16 @@
   9.76
  ],
  "/Divano_Redoute/Divano#": [
-  -0.18,
-  -6.96
+  5.38,
+  -5.85
  ],
  "/Gatto/Gatto#": [
-  -114.71,
-  50.31
+  -74.26,
+  45.88
  ],
  "/Lampada/Lampada#": [
-  116.22,
-  143.82
+  116.64,
+  135.13
  ],
  "/Lampada/Lampada#7": [
   0.59,
@@ -38,11 +38,13 @@
  ],
  "_groups": [
   "armadio",
+  "battiscopa",
   "condizionatore",
   "consolle-50",
   "credenza-zoom",
   "divano-redoute",
   "gatto",
+  "infissi",
   "lampada-terra",
   "libreria",
   "pavimento-crogiolo",

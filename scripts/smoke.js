@@ -87,6 +87,12 @@ function freePort() {
       ok('kit.wall: segments, sill and lintel pieces for a door and a window', k.items.map(i => i.n).join() === '/W_Seg1,/W_Lintel1,/W_Seg2,/W_Sill2,/W_Lintel2,/W_Seg3', k.items.map(i => i.n).join());
       let threw = false; try { k.wall('/X', [1, 2, 3], [0, 0, 400, 10], 260, [{ from: 100, to: 190 }, { from: 150, to: 200 }]); } catch { threw = true; }
       ok('kit.wall refuses overlapping openings', threw);
+      { const k2 = require('./scene-kit').createScene(), f = path.join(os.tmpdir(), `look-${process.pid}.json`);   // "look" is written only when asked for
+        k2.box('/A', [1, 2, 3, 255], 0, 0, 0, 1, 1, 1);
+        k2.write(f, { camera: k2.camera([0, 0, 0], [1, 1, 1]), look: 'real' }); const withLook = JSON.parse(fs.readFileSync(f, 'utf8')).look;
+        k2.write(f, { camera: k2.camera([0, 0, 0], [1, 1, 1]) }); const without = 'look' in JSON.parse(fs.readFileSync(f, 'utf8'));
+        fs.unlinkSync(f);
+        ok('kit.write: the realistic look is written only when asked for', withLook === 'real' && !without); }
       k.light({ p: [10, 10, 100], i: 100 }); k.light({ p: [10, 10, 100], g: 'lamps' });
       ok('kit.light adds no default group, only the one passed', k.lights[0].g === undefined && k.lights[1].g === 'lamps');
     }
@@ -146,6 +152,14 @@ function freePort() {
     ok('dist has index.html, projects.json, plan.mjs, i18n.mjs, licence texts, fonts, three, _headers', ['index.html', 'projects.json', 'plan.mjs', 'i18n.mjs', 'licenses/three.txt', 'licenses/oidn-weights.txt', 'fonts/geist.woff2', 'fonts/geist-mono.woff2', 'three/build/three.module.js', '_headers'].every(has));
     for (const id of ids) ok(`dist/${id}/ has index.html, scene.json, textures where used`, has(`${id}/index.html`) && has(`${id}/scene.json`) && (!fs.existsSync(path.join(PROJECTS, id, 'textures')) || has(`${id}/textures`)));
     if (has('projects.json')) ok('dist/projects.json lists every project', JSON.parse(fs.readFileSync(path.join(dist, 'projects.json'), 'utf8')).map(p => p.id).join() === ids.join());
+    { const size = f => fs.statSync(f).size, src = path.join(ROOT, 'node_modules/three/build/three.core.js'), out = path.join(dist, 'three/build/three.core.js');
+      let esbuild = true; try { require.resolve('esbuild'); } catch { esbuild = false; }
+      if (!esbuild) warn('esbuild not installed: three.js is published unminified');
+      else ok('three.js is minified in dist (same file names, still ES modules)', has('three/build/three.core.js') && size(out) < size(src) / 2 && /\bexport\s*\{/.test(fs.readFileSync(out, 'utf8')) && size(path.join(dist, 'three/build/three.module.js')) < size(path.join(ROOT, 'node_modules/three/build/three.module.js')), `${size(out)} of ${size(src)} bytes`); }
+    for (const id of ids) {
+      const urls = [...new Set(JSON.parse(fs.readFileSync(path.join(PROJECTS, id, 'scene.json'), 'utf8')).items.filter(i => i.tex).map(i => i.tex.url))];
+      ok(`${id}: every texture cited by the scene is in the project and in dist (${urls.length})`, urls.every(u => fs.existsSync(path.join(PROJECTS, id, u)) && has(`${id}/${u}`)), urls.filter(u => !fs.existsSync(path.join(PROJECTS, id, u))).join());
+    }
     ok('viewer in dist reaches shared files with ../ and is marked static', /\.\.\/three\//.test(fs.readFileSync(path.join(dist, ids[0], 'index.html'), 'utf8')) && /STATIC_BUILD = true/.test(fs.readFileSync(path.join(dist, ids[0], 'index.html'), 'utf8')));
 
     section('dev server');
@@ -213,6 +227,52 @@ function freePort() {
         const info = list.find(p => p.id === id), p = await open(`/${id}/`);
         await loaded(p);
         ok(`${id}: viewer loads ${info.items} objects without errors`, (await p.textContent('#status')).startsWith(info.items + ' objects') && !p.errors.length, p.errors.join('; '));
+        {   // drawing on demand, shared textures, the realistic look's inside mode
+          const stats = () => p.evaluate(() => window.viewerDebug.stats()), sc = JSON.parse(fs.readFileSync(path.join(PROJECTS, id, 'scene.json'), 'utf8'));
+          await p.waitForTimeout(2600); const f0 = (await stats()).frames; await p.waitForTimeout(3000); const s1 = await stats();
+          ok(`${id}: an idle viewer stops redrawing (heartbeat only)`, s1.frames - f0 <= 3, `${s1.frames - f0} frames in 3 s`);
+          await p.mouse.move(640, 420); await p.mouse.down(); await p.mouse.move(700, 430, { steps: 5 }); await p.mouse.up();
+          await p.waitForFunction(n => window.viewerDebug.stats().frames > n, s1.frames, { timeout: 20000 }).catch(() => {});
+          ok(`${id}: an orbit drag redraws`, (await stats()).frames > s1.frames);
+          const files = new Set(sc.items.filter(i => i.tex).map(i => i.tex.url)).size;
+          ok(`${id}: one GPU texture per image file, not one per item`, s1.textures <= files + 6, `${s1.textures} textures for ${files} files`);
+          if (sc.look === 'real') {
+            ok(`${id}: reflection probes are valid points inside the model (or absent)`, !sc.probes || (Array.isArray(sc.probes) && sc.probes.every(q => Array.isArray(q) && q.length === 3 && q.every(Number.isFinite))), JSON.stringify(sc.probes));
+            ok(`${id}: realistic look: an orbit view is the open model (ceiling hidden, not casting), no outlines`, !s1.ceiling && !s1.ceilingCast && s1.shellCast === true && s1.outlines === 0, JSON.stringify(s1));
+            if (sc.ceiling) {   // first person (closed rooms): the indirect light, forced on software GL with a coarse grid and two passes, must reach the screen without errors
+              const q = await browser.newPage({ viewport: { width: 700, height: 460 }, locale: 'en-US' }), qe = [];
+              q.on('pageerror', e => qe.push(e.message)); q.on('console', m => m.type() === 'error' && qe.push(m.text()));
+              await q.addInitScript(() => { window.__forceGI = { cols: 24, iters: 2 }; });
+              await q.goto(`${base}/${id}/?fp=1`, { waitUntil: 'commit' }); await loaded(q);
+              const done = await q.waitForFunction(() => { const g = window.viewerDebug.stats().gi; return g.day >= 2 && !g.working && g.mix === 1; }, null, { timeout: 150000 }).then(() => true).catch(() => false);
+              const gd = done && await q.evaluate(() => window.viewerDebug.giData());
+              ok(`${id}: indirect light: the volume is computed, exposed and shown (forced on software GL)`, !!done && !qe.length && gd.gain > 0.5 && gd.gain <= 40 && gd.cur.some(v => v > 0) && gd.cur.every(Number.isFinite), qe.join('; ') || JSON.stringify(gd && { gain: gd.gain, iter: gd.iter }));
+              await q.close();
+            }
+            {   // quality steps: a forced level is applied and remembered (the automatic steps need a slow real GPU, checked by hand with the GPU string overridden)
+              const q = await browser.newPage({ viewport: { width: 700, height: 460 }, locale: 'en-US' });
+              await q.addInitScript(() => { window.__forceQuality = true; });
+              await q.goto(`${base}/${id}/?q=3`, { waitUntil: 'commit' }); await loaded(q);
+              await q.waitForFunction(() => window.viewerDebug.stats().dpr === 1, null, { timeout: 30000 }).catch(() => {});
+              const qs = await q.evaluate(() => ({ s: window.viewerDebug.stats(), saved: localStorage.getItem('quality') }));
+              ok(`${id}: quality level 3 (?q=3): pixel ratio 1, no automatic AO, remembered`, qs.s.quality === 3 && qs.s.dpr === 1 && !qs.s.ao && qs.saved === '3', JSON.stringify({ q: qs.s.quality, dpr: qs.s.dpr, ao: qs.s.ao, saved: qs.saved }));
+              await q.evaluate(() => localStorage.removeItem('quality')); await q.close();
+            }
+            {   // the Quality buttons: a level chosen by hand applies (also on software GL), stops the automatic steps, survives a reload; Auto gives it back
+              const q = await browser.newPage({ viewport: { width: 1300, height: 820 }, locale: 'en-US' });
+              await q.goto(`${base}/${id}/`, { waitUntil: 'commit' }); await loaded(q);
+              await q.click('#setBtn'); await q.click('#qbtns button[data-q="3"]');   // "2"
+              await q.waitForFunction(() => window.viewerDebug.stats().dpr === 1, null, { timeout: 30000 }).catch(() => {});
+              const m = await q.evaluate(() => ({ s: window.viewerDebug.stats(), on: document.querySelector('#qbtns button.on')?.dataset.q }));
+              await q.reload({ waitUntil: 'commit' }); await loaded(q);
+              const r = await q.evaluate(() => ({ s: window.viewerDebug.stats(), on: document.querySelector('#qbtns button.on')?.dataset.q }));
+              await q.click('#setBtn'); await q.click('#qbtns button[data-q="auto"]');
+              const a = await q.evaluate(() => ({ s: window.viewerDebug.stats(), on: document.querySelector('#qbtns button.on')?.dataset.q, man: localStorage.getItem('qualityManual') }));
+              ok(`${id}: Quality buttons: "2" applies level 3 and is kept after a reload, Auto resets`, m.s.quality === 3 && m.s.dpr === 1 && m.on === '3' && r.s.quality === 3 && r.on === '3' && a.s.quality === 0 && a.on === 'auto' && a.man === null, JSON.stringify({ m: [m.s.quality, m.s.dpr, m.on], r: [r.s.quality, r.on], a: [a.s.quality, a.on, a.man] }));
+              await q.evaluate(() => { localStorage.removeItem('quality'); localStorage.removeItem('qualityManual'); }); await q.close();
+            }
+          }
+        }
         // camera dropdown
         await p.click('#camBtn');
         ok(`${id}: camera dropdown opens (aria-expanded)`, (await p.getAttribute('#camBtn', 'aria-expanded')) === 'true' && await p.isVisible('#views'));
