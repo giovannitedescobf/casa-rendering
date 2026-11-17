@@ -663,6 +663,28 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
   ];
   for (const i of kit.items) { if (i.mt || i.c[3] < 255 || !(i.tex || i.box || i.rbox)) continue; const f = RELIEF.find(([re]) => re.test(i.n)); if (f) i.bp = f[1]; } }
 
+// ---------- Groups panel: room > sub-group > objects (user). Every group gets its room and its sub-group here ----------
+{ const S = 'Soggiorno', IC = 'Ingresso / corridoio', SC = 'Soggiorno + corridoio', B = 'Bagno', CA = 'Camera', CU = 'Cucina', BA = 'Balconi', TC = 'Tutta la casa';
+  const PLACE = {
+    'pavimento-terrazzo': [SC, 'Pavimenti'], 'pavimento-marazzi': [SC, 'Pavimenti'], 'pavimento-crogiolo': [SC, 'Pavimenti'],
+    'pavimento-san-giuliano': [SC, 'Pavimenti'], 'pavimento-verde-de-lumi': [SC, 'Pavimenti'], 'pavimento-arcobaleno': [SC, 'Pavimenti'],
+    'credenza-zoom': [S, 'Arredi'], 'divano-soderhamn': [S, 'Divani'], 'divano-redoute': [S, 'Divani'], 'divano-redoute-aperto': [S, 'Divani'],
+    'libreria': [S, 'Arredi'], 'lampada-terra': [S, 'Luci'], 'gatto': [S, 'Animali'],
+    'porte': [IC, 'Porte'], 'armadio': [IC, 'Arredi'],
+    'gabbia-cucina': [CU, 'Pareti e vetrate'], 'porta-cucina': [CU, 'Porte'],
+    'porta-bagno': [B, 'Porte'], 'rivestimento-rombini': [B, 'Rivestimenti'], 'rivestimento-punto': [B, 'Rivestimenti'],
+    'porta-camera': [CA, 'Porte'], 'split-camera': [CA, 'Impianti'],
+    'condizionatore': [BA, 'Impianti'],
+    'pittura': [TC, 'Pareti'], 'battiscopa': [TC, 'Finiture'], 'infissi': [TC, 'Infissi'],
+  };
+  for (const g of kit.GROUPS) {
+    const p = PLACE[g.id] || (g.id.startsWith('consolle-') ? [S, 'Tavoli'] : null);
+    if (!p) throw new Error('group without a room: ' + g.id);
+    [g.room, g.cat] = p;
+  }
+  const ORDER = [IC, S, SC, CU, B, CA, BA, TC];   // panel order of the rooms
+  kit.GROUPS.sort((a, b) => ORDER.indexOf(a.room) - ORDER.indexOf(b.room)); }
+
 kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),

@@ -73,6 +73,13 @@
   #groups h4.cat { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
   #groups h4.cat:hover { color: var(--accent); }
   #groups h4.cat:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  #groups h4.room { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; color: var(--ink); font-size: 12px; margin-top: 10px; }
+  #groups h4.room:hover { color: var(--accent); }
+  #groups h4.room .chev { display: inline-block; width: 10px; transition: transform .12s; font-size: 14px; line-height: 1; }
+  #groups h4.room.open .chev { transform: rotate(90deg); }
+  #groups h4.room .cnt { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--accent); }
+  #groups h4.cat.sub { margin-left: 14px; }
+  #groups .grow.sub { margin-left: 28px; }
   #groups h4.cat .chev { display: inline-block; width: 10px; transition: transform .12s; font-size: 14px; line-height: 1; }
   #groups h4.cat.open .chev { transform: rotate(90deg); }
   #groups h4.cat .cnt { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--accent); }
@@ -1778,7 +1785,7 @@ function refreshDims() {
 const groupsEl = document.getElementById('groups'), gbtn = document.getElementById('gbtn');
 function computeGroupDefs(data) {
   const defs = new Map();
-  for (const g of data.groups || []) defs.set(g.id, { id: g.id, label: g.label || g.id, cat: g.cat || t('g.other'), variant: g.variant || null, skipAll: !!g.skipAll, alt: g.alt || null });
+  for (const g of data.groups || []) defs.set(g.id, { id: g.id, label: g.label || g.id, room: g.room || null, cat: g.cat || t('g.other'), variant: g.variant || null, skipAll: !!g.skipAll, alt: g.alt || null });
   for (const it of data.items) for (const id of [].concat(it.g || [])) if (!defs.has(id)) defs.set(id, { id, label: id, cat: t('g.other'), variant: null });
   for (const L of data.lights || []) for (const id of [].concat(L.g || [])) if (!defs.has(id)) defs.set(id, { id, label: id, cat: t('g.other'), variant: null });   // a light's group needs a checkbox too
   return [...defs.values()];
@@ -1840,17 +1847,34 @@ function renderGroups(data) {
   gbtn.textContent = n ? t('v.groups.count', { n }) : t('v.groups');
   groupsEl.innerHTML = '';
   const shown = groupDefs.filter(d => !gone(d.id));
-  const cats = [...new Set(shown.map(d => d.cat))];
+  const rooms = [...new Set(shown.map(d => d.room))];             // room > sub-group > groups ("room" in scene.json groups; none = one level, as before)
+  for (const room of rooms) {
+  const inRoom = shown.filter(x => x.room === room);
+  if (room) {
+    const rk = 'room:' + room, rOpen = !collapsedCats.has(rk);
+    const h = document.createElement('h4'); h.className = 'room' + (rOpen ? ' open' : '');
+    h.tabIndex = 0; h.setAttribute('role', 'button'); h.setAttribute('aria-expanded', String(rOpen));
+    const chev = document.createElement('span'); chev.className = 'chev'; chev.textContent = '›';
+    h.append(chev, room);
+    const nOn = inRoom.filter(d => enabledGroups.has(d.id)).length;
+    if (!rOpen && nOn) { const c = document.createElement('span'); c.className = 'cnt'; c.textContent = t('g.on', { n: nOn }); h.appendChild(c); }
+    h.onclick = () => { collapsedCats.has(rk) ? collapsedCats.delete(rk) : collapsedCats.add(rk); saveCollapsed(); renderGroups(current); };
+    h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.onclick(); } };
+    groupsEl.appendChild(h);
+    if (!rOpen) continue;
+  }
+  const cats = [...new Set(inRoom.map(d => d.cat))];
   for (const cat of cats) {
-    const inCat = shown.filter(x => x.cat === cat), isOpen = !collapsedCats.has(cat);
-    const h = document.createElement('h4'); h.className = 'cat' + (isOpen ? ' open' : '');   // clickable title: > folded, v open
-    h.tabIndex = 0; h.setAttribute('role', 'button'); h.setAttribute('aria-expanded', String(isOpen)); h.dataset.cat = cat;
+    const ck = room ? room + '|' + cat : cat;
+    const inCat = inRoom.filter(x => x.cat === cat), isOpen = !collapsedCats.has(ck);
+    const h = document.createElement('h4'); h.className = 'cat' + (room ? ' sub' : '') + (isOpen ? ' open' : '');   // clickable title: > folded, v open
+    h.tabIndex = 0; h.setAttribute('role', 'button'); h.setAttribute('aria-expanded', String(isOpen)); h.dataset.cat = ck;
     const chev = document.createElement('span'); chev.className = 'chev'; chev.textContent = '›';
     h.append(chev, cat);
     const nOn = inCat.filter(d => enabledGroups.has(d.id)).length;
     if (!isOpen && nOn) { const c = document.createElement('span'); c.className = 'cnt'; c.textContent = t('g.on', { n: nOn }); h.appendChild(c); }
-    h.onclick = () => { collapsedCats.has(cat) ? collapsedCats.delete(cat) : collapsedCats.add(cat); saveCollapsed(); renderGroups(current); };
-    h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.onclick(); for (const x of groupsEl.querySelectorAll('h4.cat')) if (x.dataset.cat === cat) x.focus(); } };   // the panel is rebuilt: put the focus back on the same header
+    h.onclick = () => { collapsedCats.has(ck) ? collapsedCats.delete(ck) : collapsedCats.add(ck); saveCollapsed(); renderGroups(current); };
+    h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.onclick(); for (const x of groupsEl.querySelectorAll('h4.cat')) if (x.dataset.cat === ck) x.focus(); } };   // the panel is rebuilt: put the focus back on the same header
     groupsEl.appendChild(h);
     if (!isOpen) continue;
     for (const d of inCat) {
@@ -1858,11 +1882,12 @@ function renderGroups(data) {
       cb.type = 'checkbox'; cb.checked = enabledGroups.has(d.id); cb.dataset.gid = d.id;
       cb.onchange = () => { setGroup(d.id, cb.checked); for (const x of groupsEl.querySelectorAll('input[data-gid]')) if (x.dataset.gid === d.id) x.focus(); };   // the panel is rebuilt: keep the focus on this checkbox
       l.append(cb, d.label + (d.variant ? '  ·  ' + t('g.variant') : ''));
-      const row = document.createElement('div'); row.className = 'grow';
+      const row = document.createElement('div'); row.className = 'grow' + (room ? ' sub' : '');
       if ((data.compose || []).some(c => c.g === d.id)) row.append(l, gicon('comp', ICON_GRID, t('g.compose', { name: d.label }), () => startCompose(d.id)), gicon('', ICON_TRASH, t('g.trash.move', { name: d.label }), () => trashGroup(d.id)));
       else row.append(l, gicon('', ICON_TRASH, t('g.trash.move', { name: d.label }), () => trashGroup(d.id)));
       groupsEl.appendChild(row);
     }
+  }
   }
   const inTrash = groupDefs.filter(d => trash.has(d.id));
   if (inTrash.length) {
