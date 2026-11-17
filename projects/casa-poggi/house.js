@@ -699,6 +699,14 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
 kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),
+  // room views (user): from above each room's door, looking at the room's centre (orbit target there)   estimate
+  views: [   // eye just inside the door, near the ceiling (orbit views draw none), looking down the room
+    { name: 'Ingresso', eye: [15, YI0 + 80, H - 30], target: [XR - 60, YI0 + 80, 60], fov: 75 },
+    { name: 'Soggiorno', eye: [180, YS0 + 15, H - 30], target: [180, YS1 - 80, 40], fov: 75 },
+    { name: 'Cucina', eye: [-15, YK0 + 30, H - 30], target: [(XK0 + XK1) / 2, YS1 - 40, 40], fov: 80 },
+    { name: 'Bagno', eye: [XB0 + 65, YS0 + 15, H - 30], target: [XB0 + 65, YS1 - 60, 40], fov: 75 },
+    { name: 'Camera', eye: [270, YC1 - 15, H - 30], target: [(XC0 + XR) / 2, 60, 40], fov: 75 },
+  ],
   look: 'real',
   shade: [[-TS - 300, YC1, 0, -TS, YK0 - TK, H]],   // the common stair behind the front door is a closed space: no daylight comes in from there (depth estimate)
   probes: [[180, 900, 131.37], [435, 900, 131.37], [320, 240, 131.37]],   // reflection probes: living area, bathroom, bedroom (estimate: room centres; the odd height keeps the camera off the exact plane of a shelf top, where the bump shader gives NaN edge-on)

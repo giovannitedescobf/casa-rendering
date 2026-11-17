@@ -363,7 +363,7 @@ function freePort() {
         for (const lang of ['en', 'it']) {
           const m = await open(`/${ids[0]}/?lang=${lang}`, 390, 844); await loaded(m); await m.click('#morebtn'); await m.waitForTimeout(300);
           const box = await m.$$eval('#views button', bs => ({ n: bs.length, minW: Math.min(...bs.map(b => b.getBoundingClientRect().width)), right: Math.max(...bs.map(b => b.getBoundingClientRect().right)) }));
-          ok(`mobile (390 px, ${lang}): every camera view button is visible and inside the window`, box.n === 9 && box.minW > 20 && box.right <= 390, JSON.stringify(box));
+          ok(`mobile (390 px, ${lang}): every camera view button is visible and inside the window`, box.n >= 9 && box.minW > 20 && box.right <= 390, JSON.stringify(box));
           await m.close();
         }
       }
