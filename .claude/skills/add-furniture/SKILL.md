@@ -48,3 +48,6 @@ kit.group('wardrobe-v2', () => {
 1. Regenerate (`node projects/<id>/<generator>.js`) and run `npm test` (also checks that `scene.json` equals the generator's output).
 2. Show it: headless screenshot of `/<id>/?g=<group ids>&cam=...` or ask the user to open `/<id>/` and tick the group; compare variants side by side when there are several.
 3. Ask what is next: adjust it, add the alternative, move on. Do not commit or push without asking; `check-and-publish` does that cleanly.
+
+## Room and sub-group (mandatory, user rule)
+Every new group is added to the generator's room table (`PLACE` in the casa-poggi generator: `id: [room, sub-group]`): the room it stands in and the matching existing sub-group (a lamp in the living room -> that room, `Luci`). Create the room or the sub-group when none fits. The Groups panel shows room > sub-group > objects; the generator throws on a group without a room.
