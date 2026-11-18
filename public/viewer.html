@@ -106,7 +106,9 @@
   #compui { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
   #compui button { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; width: 26px; height: 26px; padding: 0; border-radius: 50%; font: 700 16px/1 var(--sans, inherit);
                    color: #fff; background: var(--accent); border: 2px solid #fff; display: none; }
-  #compui button.del { background: #d92d20; width: 18px; height: 18px; font-size: 12px; }
+  #compui button.arr { width: 34px; height: 34px; font-size: 20px; } #compui button.arr span { display: inline-block; }
+  #compui button.three { width: 28px; height: 28px; font-size: 14px; background: var(--ink); }
+  #compui button.del { background: #d92d20; width: 22px; height: 22px; font-size: 14px; }
   #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
   .dim { position: absolute; transform: translate(-50%, -50%); background: #fff; color: var(--accent-ink); font: 600 12px var(--mono); font-variant-numeric: tabular-nums; border: 1px solid var(--accent);
          border-radius: 4px; padding: 1px 5px; font-weight: 600; white-space: nowrap; }
@@ -2228,19 +2230,29 @@ function compClick(ev) {
   selCell = { s: best.sf.id, i, j }; invalidate();
 }
 const compBtns = {};
-for (const [k, txt, cls] of [['up', '+'], ['down', '+'], ['left', '+'], ['right', '+'], ['del', '×', 'del']]) {
-  const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; if (cls) b.className = cls;
-  b.title = t(k === 'del' ? 'c.del' : 'c.add'); b.setAttribute('aria-label', b.title);
+// per direction: an arrow (adds one tile) and a "3" further out (adds three in a row); the arrow is turned to point where the
+// next tile is on screen (user: on a slanted wall up / down / left / right were not readable with "+")
+const COMP_DIRS = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0] };
+for (const [k, txt, cls] of [...Object.keys(COMP_DIRS).flatMap(d => [[d, '➜', 'arr'], [d + '3', '3', 'three']]), ['del', '×', 'del']]) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = cls;
+  if (cls === 'arr') { const sp = document.createElement('span'); sp.textContent = txt; b.appendChild(sp); } else b.textContent = txt;
+  b.title = t(k === 'del' ? 'c.del' : cls === 'three' ? 'c.add3' : 'c.add'); b.setAttribute('aria-label', b.title);
   b.onclick = () => {
     const spec = compSpec(); if (!spec || !selCell) return;
-    const set = editable(spec)[selCell.s];
+    const set = editable(spec)[selCell.s], sf = spec.surf.find(s => s.id === selCell.s), valid = validCells(spec, sf);
     if (k === 'del') { set.delete(selCell.i + ',' + selCell.j); selCell = null; }
-    else { const [di, dj] = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0] }[k]; selCell = { s: selCell.s, i: selCell.i + di, j: selCell.j + dj }; set.add(selCell.i + ',' + selCell.j); }
+    else {
+      const [di, dj] = COMP_DIRS[k.replace('3', '')];
+      for (let n = 0; n < (cls === 'three' ? 3 : 1); n++) {
+        const c = (selCell.i + di) + ',' + (selCell.j + dj); if (!valid.has(c)) break;
+        selCell = { s: selCell.s, i: selCell.i + di, j: selCell.j + dj }; set.add(c);
+      }
+    }
     tilesChanged();
   };
   compui.appendChild(b); compBtns[k] = b;
 }
-const COMP_GAP = 30;
+const COMP_GAP = 52, COMP_GAP3 = 92;   // px from the selected tile to the arrows and to the "3" buttons
 function placeComp() {
   const spec = compSpec(), sf = spec && selCell && spec.surf.find(s => s.id === selCell.s);
   for (const b of Object.values(compBtns)) b.style.display = 'none';
@@ -2253,12 +2265,11 @@ function placeComp() {
   for (const [k, di, dj] of [['up', 0, 1], ['down', 0, -1], ['left', -1, 0], ['right', 1, 0]]) {
     const c = (i + di) + ',' + (j + dj);
     if (!valid.has(c) || set.has(c)) continue;
-    let p = scr(i + di, j + dj);
-    if (p && c0) {   // small tiles project to a few pixels: keep each + at least COMP_GAP px from the centre (user: the x covered them)
-      const dx = p[0] - c0[0], dy = p[1] - c0[1], d = Math.hypot(dx, dy) || 1;
-      if (d < COMP_GAP) p = [c0[0] + dx / d * COMP_GAP, c0[1] + dy / d * COMP_GAP];
-    }
-    show(compBtns[k], p);
+    const p = scr(i + di, j + dj); if (!p || !c0) continue;
+    const dx = p[0] - c0[0], dy = p[1] - c0[1], d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;   // screen direction of the next tile
+    show(compBtns[k], [c0[0] + ux * COMP_GAP, c0[1] + uy * COMP_GAP]);   // fixed distances: big tiles put their centre off screen
+    compBtns[k].firstChild.style.transform = `rotate(${Math.atan2(uy, ux)}rad)`;
+    show(compBtns[k + '3'], [c0[0] + ux * COMP_GAP3, c0[1] + uy * COMP_GAP3]);
   }
 }
 function fillClear(fill) {                                        // the surface of the selected tile, or every surface of the group

@@ -700,12 +700,12 @@ kit.write(out, {
   camera: kit.camera([-25, (ENTRY.from + ENTRY.to) / 2, 160], [300, 820, 120], 65),   // default view: standing in the front doorway, looking into ingresso and soggiorno
   spawn: kit.spawn([30, YI0 + 80], 0),
   // room views (user): from above each room's door, looking at the room's centre (orbit target there)   estimate
-  views: [   // eye just inside the door, near the ceiling (orbit views draw none), looking down the room
-    { name: 'Ingresso', eye: [15, YI0 + 80, H - 30], target: [XR - 60, YI0 + 80, 60], fov: 75 },
-    { name: 'Soggiorno', eye: [180, YS0 + 15, H - 30], target: [180, YS1 - 80, 40], fov: 75 },
-    { name: 'Cucina', eye: [-15, YK0 + 30, H - 30], target: [(XK0 + XK1) / 2, YS1 - 40, 40], fov: 80 },
-    { name: 'Bagno', eye: [XB0 + 65, YS0 + 15, H - 30], target: [XB0 + 65, YS1 - 60, 40], fov: 75 },
-    { name: 'Camera', eye: [270, YC1 - 15, H - 30], target: [(XC0 + XR) / 2, 60, 40], fov: 75 },
+  views: [   // user: low view (eye 150 cm) from a corner by the door, wide angle, so every wall of the room is in sight
+    { name: 'Ingresso', eye: [15, YI0 + 15, 150], target: [XR - 40, YI1 - 30, 110], fov: 90 },
+    { name: 'Soggiorno', eye: [15, YS0 + 15, 150], target: [ROOMS.soggiorno.w - 30, YS1 - 30, 110], fov: 90 },
+    { name: 'Cucina', eye: [XK1 - 10, YS1 - 10, 150], target: [XK0 + 30, YK0 + 40, 90], fov: 95 },
+    { name: 'Bagno', eye: [XB0 + 15, YS0 + 90, 150], target: [XR - 15, YS1 - 30, 110], fov: 95 },
+    { name: 'Camera', eye: [XR - 15, YC1 - 15, 150], target: [XC0 + 30, 30, 110], fov: 90 },
   ],
   look: 'real',
   shade: [[-TS - 300, YC1, 0, -TS, YK0 - TK, H]],   // the common stair behind the front door is a closed space: no daylight comes in from there (depth estimate)
