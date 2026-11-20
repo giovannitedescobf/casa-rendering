@@ -6,7 +6,8 @@
 // 2. clashes: each movable piece (moved.json offsets applied) against the fixed shell (walls, not floors) and against
 //    the other movable pieces of the groups checked, part by part (item bounding boxes), as the viewer's drag does.
 // Groups checked: the ones given, else moved.json "_groups", else the scene's defaultOn. Rotated pieces are checked
-// without their rotation (reported). Exit code 1 when a clash is found.
+// turned as the viewer turns them. Parts flagged "iw" (built into the wall on purpose: a pipe through it, a wall piece
+// of a door set) are not checked against the walls. Exit code 1 when a clash is found.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -50,14 +51,22 @@ for (const it of scene.items) {
   if (!k) continue;
   const off = moved[k] || [0, 0];
   const p = pieces.get(k) || { k, off, parts: [] };
-  p.parts.push({ n: it.n, b: [b[0] + off[0], b[1] + off[1], b[2], b[3] + off[0], b[4] + off[1], b[5]] });
+  p.parts.push({ n: it.n, b, iw: !!it.iw });
   pieces.set(k, p);
+}
+for (const p of pieces.values()) {                       // place each part as the viewer does: turn about the centre of the piece's plan, then shift
+  const x0 = Math.min(...p.parts.map(a => a.b[0])), x1 = Math.max(...p.parts.map(a => a.b[3])), y0 = Math.min(...p.parts.map(a => a.b[1])), y1 = Math.max(...p.parts.map(a => a.b[4]));
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, a = (p.off[2] || 0) * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+  for (const q of p.parts) {
+    const b = q.b, pts = [[b[0], b[1]], [b[3], b[1]], [b[3], b[4]], [b[0], b[4]]].map(([x, y]) => [cx + c * (x - cx) - sn * (y - cy) + p.off[0], cy + sn * (x - cx) + c * (y - cy) + p.off[1]]);
+    q.b = [Math.min(...pts.map(v => v[0])), Math.min(...pts.map(v => v[1])), b[2], Math.max(...pts.map(v => v[0])), Math.max(...pts.map(v => v[1])), b[5]];
+  }
 }
 
 console.log(`groups checked: ${[...on].join(', ') || '(none)'}`);
 const saved = [...pieces.values()].filter(p => moved[p.k]);
 console.log(saved.length ? 'saved positions (moved.json, cm):' : 'saved positions: none for these pieces');
-for (const p of saved) console.log(`  ${p.k}: dx ${cm(p.off[0])}, dy ${cm(p.off[1])}${p.off[2] ? `, turned ${p.off[2]}° (clash check ignores the turn)` : ''}`);
+for (const p of saved) console.log(`  ${p.k}: dx ${cm(p.off[0])}, dy ${cm(p.off[1])}${p.off[2] ? `, turned ${p.off[2]}°` : ''}`);
 
 const hit = (a, b, s = 0.3) => a[3] - s > b[0] && a[0] + s < b[3] && a[4] - s > b[1] && a[1] + s < b[4] && a[5] > b[2] + 1 && a[2] + 1 < b[5];
 const inPoly = (o, x, y) => { let c = false; for (let i = 0, j = o.length - 1; i < o.length; j = i++) if ((o[i][1] > y) !== (o[j][1] > y) && x < (o[j][0] - o[i][0]) * (y - o[i][1]) / (o[j][1] - o[i][1]) + o[i][0]) c = !c; return c; };
@@ -70,14 +79,16 @@ const hitWall = (a, w) => {                               // a box wall: its box
 // pieces of a group that follows another one ("follow", e.g. chairs and their table) are designed together: not checked against each other
 const tagsOf = k => { const it = scene.items.find(i => moveKey(i) === k), t = new Set(); for (const g of [].concat(it.g)) { t.add(g); const d = groups.find(x => x.id === g); if (d?.variant) t.add(d.variant); } return t; };
 const followOf = k => { const it = scene.items.find(i => moveKey(i) === k); return [].concat(it.g).map(g => groups.find(x => x.id === g)?.follow).find(Boolean); };
+const variants = k => { const it = scene.items.find(i => moveKey(i) === k); return new Set([].concat(it.g).map(g => groups.find(x => x.id === g)?.variant).filter(Boolean)); };
+const exclusive = (a, b) => { const va = variants(a); return [...variants(b)].some(v => va.has(v)); };   // never on together
 const linked = (a, b) => { const fa = followOf(a), fb = followOf(b); return (fa && tagsOf(b).has(fa)) || (fb && tagsOf(a).has(fb)); };
 const out = [];
 const list = [...pieces.values()];
 for (const p of list) {
-  for (const w of shell) { const q = p.parts.find(a => hitWall(a.b, w)); if (q) { out.push(`${p.k} is inside the wall ${w.n} (${q.n})`); break; } }
+  for (const w of shell) { const q = p.parts.find(a => !a.iw && hitWall(a.b, w)); if (q) { out.push(`${p.k} is inside the wall ${w.n} (${q.n})`); break; } }
 }
 for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
-  if (linked(list[i].k, list[j].k)) continue;
+  if (linked(list[i].k, list[j].k) || exclusive(list[i].k, list[j].k)) continue;
   let f = null;
   for (const a of list[i].parts) { f = list[j].parts.find(b => hit(a.b, b.b)) && a; if (f) break; }
   if (f) out.push(`${list[i].k} overlaps ${list[j].k} (${f.n})`);

@@ -1171,6 +1171,24 @@ function rotateMv(step = 45) {                                    // key R: +45;
     for (const o of model.children) if (o.userData.mv === f) placeMv(o);
     also.push({ k: f, prev: fp });
   }
+  {                                                                // walls and furniture are solid: undo a turn that sinks the set in deeper
+    const keys = new Set([mvKey, ...also.map(e => e.k)]), wb = o => new THREE.Box3().setFromObject(o);
+    const obst = model.children.filter(o => o.isMesh && o.visible && o.userData.mv && !keys.has(o.userData.mv)).map(wb);
+    const parts = () => model.children.filter(o => o.isMesh && keys.has(o.userData.mv)).map(o => { const b = wb(o); b.iw = o.userData.iw; return b; });
+    const after = pen(parts(), obst, [0, 0]);
+    if (after > 0) {
+      const undo = [{ k: mvKey, prev }, ...also];
+      const before = (() => { const keep = undo.map(e => [e.k, moved.get(e.k)]);
+        for (const e of undo) { if (e.prev) moved.set(e.k, e.prev); else moved.delete(e.k); for (const o of model.children) if (o.userData.mv === e.k) placeMv(o); }
+        const v = pen(parts(), obst, [0, 0]);
+        for (const [k, v2] of keep) { moved.set(k, v2); for (const o of model.children) if (o.userData.mv === k) placeMv(o); }
+        return v; })();
+      if (after > before + 1e-6) {
+        for (const e of undo) { if (e.prev) moved.set(e.k, e.prev); else moved.delete(e.k); for (const o of model.children) if (o.userData.mv === e.k) placeMv(o); }
+        invalidate(); return;
+      }
+    }
+  }
   mvUndo.push({ k: mvKey, prev, also }); mvRedo = [];
   if (selected) refreshDims();
   saveMoved();
@@ -1232,7 +1250,8 @@ function build(data) {
       t.add(id); if (d?.variant) t.add(d.variant); mvTags.set(mesh.userData.mv, t);
       if (d?.follow) mvFollow.set(mesh.userData.mv, d.follow);
     }
-    mesh.userData.solid = !!(item.box || item.rbox);      // a closed volume: no light probe inside it
+    mesh.userData.solid = !!(item.box || item.rbox);
+    mesh.userData.iw = !!item.iw;                         // a part built into the wall on purpose (a pipe through it): no wall collision      // a closed volume: no light probe inside it
     mesh.receiveShadow = true; mesh.castShadow = casts(mesh) && !(realLook && item.em);   // a glowing shade is the light's own source: it must not shadow it
     model.add(mesh);
     addCollider(item);
@@ -2021,20 +2040,19 @@ function startDrag(ev, hit) {
   for (const o of model.children) if (o.isMesh && o.userData.mv === mvKey) box.expandByObject(o);
   drag = { z, p, off, id: ev.pointerId, k: mvKey, prev: moved.has(mvKey) ? [...moved.get(mvKey)] : null,
     base: [box.min.x - off[0], box.min.y - off[1], box.min.z, box.max.x - off[0], box.max.y - off[1], box.max.z] };
-  drag.free = hitsWall(drag.base, off);                           // already inside a wall: don't lock it there
   drag.fol = followersOf(mvKey).map(f => {                         // linked pieces travel with it, by the same shift
     const fo = moved.has(f) ? [...moved.get(f)] : null, o0 = fo || [0, 0], fb = new THREE.Box3();
     for (const o of model.children) if (o.isMesh && o.userData.mv === f) fb.expandByObject(o);
-    const base = [fb.min.x - o0[0], fb.min.y - o0[1], fb.min.z, fb.max.x - o0[0], fb.max.y - o0[1], fb.max.z];
-    return { k: f, prev: fo, off: o0, base, free: hitsWall(base, o0) };
+    return { k: f, prev: fo, off: o0 };
   });
   const keys = new Set([mvKey, ...drag.fol.map(f => f.k)]);
   // other furniture is solid too (user): each part of the piece (its own box, as placed now, minus the offset) against the
   // parts of every other movable piece on screen, so a chair seat stops at a table's base but slides under its top
   const wb = o => new THREE.Box3().setFromObject(o);
-  drag.parts = model.children.filter(o => o.isMesh && keys.has(o.userData.mv)).map(o => { const b = wb(o); b.min.x -= off[0]; b.max.x -= off[0]; b.min.y -= off[1]; b.max.y -= off[1]; return b; });
-  const obst = model.children.filter(o => o.isMesh && o.visible && o.userData.mv && !keys.has(o.userData.mv)).map(wb);
-  drag.obst = obst.filter(q => !partsHit(drag.parts, [q], off));    // already overlapping at the start: ignore that one, so it can be pulled apart
+  drag.parts = model.children.filter(o => o.isMesh && keys.has(o.userData.mv)).map(o => { const b = wb(o); b.min.x -= off[0]; b.max.x -= off[0]; b.min.y -= off[1]; b.max.y -= off[1]; b.iw = o.userData.iw; return b; });
+  drag.obst = model.children.filter(o => o.isMesh && o.visible && o.userData.mv && !keys.has(o.userData.mv)).map(wb);
+  // walls and furniture are solid (user rule): a piece that starts inside something (an old saved position) can only move
+  // so that it sinks in less, never deeper or into something else
   controls.enabled = false;
   tipEl.style.display = 'none';
 }
@@ -2060,8 +2078,7 @@ renderer.domElement.addEventListener('pointermove', ev => {
   const n = Math.ceil(Math.hypot(want[0] - cur[0], want[1] - cur[1]) / 2);
   for (let i = 1; i <= n; i++) {
     const t1 = [off[0] + (want[0] - cur[0]) / n, off[1] + (want[1] - cur[1]) / n];
-    const ok = o => (drag.free || !hitsWall(drag.base, o)) && !partsHit(drag.parts, drag.obst, o) &&
-      drag.fol.every(f => f.free || !hitsWall(f.base, [f.off[0] + o[0] - drag.off[0], f.off[1] + o[1] - drag.off[1]]));
+    const now = pen(drag.parts, drag.obst, off), ok = o => { const v = pen(drag.parts, drag.obst, o); return v === 0 || v < now - 1e-6; };
     off = [t1, [t1[0], off[1]], [off[0], t1[1]]].find(ok) || off;   // slide along a wall or a piece
   }
   const rot = cur[2];                                              // keep the piece's rotation
@@ -2093,6 +2110,19 @@ function hitsWall(b, off) {
 }
 // Does a part of the moving piece (boxes without the offset), shifted by off, overlap one of the boxes q? Shrunk 0.3" so
 // touching is allowed; a box counts only above the piece's bottom + 1" (a rug under a chair does not block it).
+// How far a piece is sunk into walls and other pieces: the summed plan area of the overlaps of its parts (boxes without the
+// offset, shifted by off) with the shell walls (iw parts skipped) and with the boxes qs. 0 = free.
+function pen(parts, qs, off) {
+  let s = 0;
+  for (const p of parts) {
+    const x0 = p.min.x + off[0] + 0.3, x1 = p.max.x + off[0] - 0.3, y0 = p.min.y + off[1] + 0.3, y1 = p.max.y + off[1] - 0.3;
+    const ov = (a0, a1, b0, b1) => Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
+    if (!p.iw && hitsWall([p.min.x, p.min.y, p.min.z, p.max.x, p.max.y, p.max.z], off))
+      for (const w of walls) { const k = w.b; if (k[5] > p.min.z + 1 && k[2] < p.max.z) s += ov(x0, x1, k[0], k[3]) * ov(y0, y1, k[1], k[4]) + 1e-3; }
+    for (const q of qs) if (q.min.z < p.max.z && q.max.z > p.min.z + 1) s += ov(x0, x1, q.min.x, q.max.x) * ov(y0, y1, q.min.y, q.max.y);
+  }
+  return s;
+}
 function partsHit(parts, qs, off) {
   for (const p of parts) {
     const x0 = p.min.x + off[0] + 0.3, x1 = p.max.x + off[0] - 0.3, y0 = p.min.y + off[1] + 0.3, y1 = p.max.y + off[1] - 0.3;

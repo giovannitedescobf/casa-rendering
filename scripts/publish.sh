@@ -20,8 +20,11 @@ step "thumbnails"
 npm run -s thumbs >/dev/null 2>&1 || fail "npm run thumbs"
 
 if [ $TEST = 1 ]; then
-  step "tests (npm test)"
-  out=$(npm test 2>&1) || { echo "$out" | grep -E "FAIL|Error" | head -20; fail "npm test"; }
+  git fetch -q origin main 2>/dev/null || true
+  # only the model changed (no viewer, server or test code): the slow engine checks (indirect light, quality, ~4 min) are skipped
+  if git diff --name-only origin/main -- public server.js scripts/smoke.js scripts/build-static.js scripts/projects.js | grep -q .; then Q=0; else Q=1; fi
+  step "tests (npm test$( [ $Q = 1 ] && echo ', quick: viewer unchanged'))"
+  out=$(SMOKE_QUICK=$Q npm test 2>&1) || { echo "$out" | grep -E "FAIL|Error" | head -20; fail "npm test"; }
   echo "$out" | tail -1
 fi
 

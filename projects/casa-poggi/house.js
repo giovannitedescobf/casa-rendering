@@ -279,6 +279,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     tube('/Condizionatore/Motore_Ventola', [60, 62, 64, 255], [[cx, y0 + 0.2, cz], [cx, y0 - 0.5, cz]], [11, 11], 24);   // fan grille on the front
     tube('/Condizionatore/Motore_Mozzo', WH, [[cx, y0 - 0.5, cz], [cx, y0 - 1, cz]], [3, 3], 16);
     tube('/Condizionatore/Motore_Tubo', BK, [[x1 - 8, y1, cz], [x1 - 8, -TE + 1, cz], [x1 - 8, -TE + 1, cz + 25]], [1.5, 1.5, 1.5], 12);   // black pipe behind, into the facade
+    kit.items[kit.items.length - 1].iw = 1;                     // built into the wall on purpose: no wall collision for this part
   });
 }
 
@@ -612,6 +613,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   defGroup('porta-cucina', 'Porta a soffietto cucina (vetro, grigio scuro)', 'Porte');
   group('porta-cucina', () => {
     box('/Porta_Cucina/Porta_Muro_Sopra', WHITE, x - 10, y0, DH, x, y1, H);   // wall from the door head to the ceiling, flush with the wall face
+    kit.items[kit.items.length - 1].iw = 1;                               // part of the wall: no wall collision
     const leaf = (n, A, B) => {                      // one leaf from hinge line A to hinge line B (plan points)
       const d = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], nr = [-d[1], d[0]];
       const P = (u, v) => [A[0] + d[0] * u + nr[0] * v, A[1] + d[1] * u + nr[1] * v];
