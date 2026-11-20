@@ -2293,7 +2293,7 @@ const COMP_DIRS = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0] };
 for (const [k, txt, cls] of [...Object.keys(COMP_DIRS).flatMap(d => [[d, '➜', 'arr'], [d + '3', '3', 'three']]), ['del', '×', 'del']]) {
   const b = document.createElement('button'); b.type = 'button'; b.className = cls;
   if (cls === 'arr') { const sp = document.createElement('span'); sp.textContent = txt; b.appendChild(sp); } else b.textContent = txt;
-  b.title = t(k === 'del' ? 'c.del' : cls === 'three' ? 'c.add3' : 'c.add'); b.setAttribute('aria-label', b.title);
+  b.title = k === 'del' ? t('c.del') : cls === 'three' ? t('c.add3') : t('c.add'); b.setAttribute('aria-label', b.title);
   b.onclick = () => {
     const spec = compSpec(); if (!spec || !selCell) return;
     const set = editable(spec)[selCell.s], sf = spec.surf.find(s => s.id === selCell.s), valid = validCells(spec, sf);

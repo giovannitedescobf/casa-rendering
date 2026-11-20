@@ -19,6 +19,8 @@ Every object you add must keep the project's realistic look (`look: 'real'`):
 4. **Verify like the rest**: day and night screenshot of the new object, `npm test`, and the PR description lists these four points as done.
 
 ## 1. Understand what to add
+- **A product link (user rule): download the maker's photos and data yourself before modelling**, even when the user sends no photo: the page text for sizes and finish, every product image (Shopify shops: `<product url>.json` lists them full size; otherwise the `og:image` / gallery URLs in the HTML), into the scratchpad, look at them all side by side, and take shape (legs, bases, profiles) and colours (sampled from the photos) from there. Never draw a part from the text alone.
+- **Saved positions (user rule, ALWAYS)**: before placing or moving anything run `node scripts/check-scene.mjs <id> <groups>`: it lists what `moved.json` holds for those pieces. The user's drags and turns are added to the generator's coordinates, so if you change the generator position of a piece the user moved, fold the saved offset into the generator and remove it from `moved.json` in the same change (otherwise it is moved twice), and place related pieces (chairs of a table) from the position the user chose.
 Ask only what is missing, one question at a time:
 - which project and which room (and where in it: against which wall, how far from a corner);
 - what it is and its overall size (W x D x H in cm); if the user has a **datasheet or dimensioned drawing** (they may paste a PNG), read it into a small table first: overall W/D/H, body depth, door depth, handle protrusion, rear spacers, foot height, split lines. Drawings often give two depths (body, and body + door + handle): the door is a separate part that sticks out. Convert mm to cm. Say back what each number was taken to mean and what is a guess (hinge side, colours) and wait for a correction;
@@ -45,6 +47,8 @@ kit.group('wardrobe-v2', () => {
 - Estimates (colours, hidden thicknesses) get an `// estimate` comment, measured values `// measured`.
 
 ## 4. Verify and show
+- `node scripts/check-scene.mjs <id> <groups>` (no browser, ~1 s): every moved piece against the walls and the other pieces, with the saved offsets applied; fix every clash it reports for the new piece before taking a screenshot. Pieces that belong together (a table and its chairs) get `{follow: '<leader group or variant>'}` so they move and turn as a set.
+- Publish with `scripts/publish.sh "message"` (regenerate, thumbnails, tests, commit, merge, push, wait for the site).
 1. Regenerate (`node projects/<id>/<generator>.js`) and run `npm test` (also checks that `scene.json` equals the generator's output).
 2. Show it: headless screenshot of `/<id>/?g=<group ids>&cam=...` or ask the user to open `/<id>/` and tick the group; compare variants side by side when there are several.
 3. Ask what is next: adjust it, add the alternative, move on. Do not commit or push without asking; `check-and-publish` does that cleanly.
