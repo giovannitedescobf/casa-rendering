@@ -13,6 +13,7 @@
 #     untracked `git config publish.url`).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+PUBLISH_TRAILER="${PUBLISH_TRAILER:-$(git config --get publish.trailer || true)}"
 MSG="${1:?usage: scripts/publish.sh \"message\" [--thumbs] [--full|--quick]}"; shift
 THUMBS=0; FULL=0; QUICK=0
 for a in "$@"; do case "$a" in --thumbs) THUMBS=1 ;; --full) FULL=1 ;; --quick) QUICK=1 ;; *) echo "unknown option $a" >&2; exit 2 ;; esac; done
