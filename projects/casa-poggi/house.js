@@ -124,13 +124,15 @@ wall('/Casa/Tramezzo_Soggiorno_Bagno', C.wall, [ROOMS.soggiorno.w, YS0, XB0, YS1
 wall('/Casa/Tramezzo_Bagno_Ingresso', C.wall, [ROOMS.soggiorno.w, YI1, XR, YS0], H,   // starts under the soggiorno/bagno partition: closed corner
    [{ from: XB0 + 30, to: XB0 + 30 + 70, head: DOOR_H }]);
 
-// ---------- front door: brown leaf, open 90 degrees outward onto the common stair landing, hinged on the north jamb ----------
+// ---------- front door: brown leaf, closed (user), flush with the outer face of the wall, hinged on the north jamb ----------
 const DOOR_C = [112, 72, 44, 255], DOOR_T = 5;
 defGroup('porte', 'Porta di ingresso', 'Porte', null, { fixed: true });
 group('porte', () => {
   const XO = -TS;                                                       // outer face of the wall
-  box('/Casa/Porta_Ingresso/Anta', DOOR_C, XO - (ENTRY_W - 4), ENTRY.to - DOOR_T, 0, XO, ENTRY.to, DOOR_H - 2);
-  tube('/Casa/Porta_Ingresso/Maniglia', [200, 200, 200, 255], [[XO - (ENTRY_W - 14), ENTRY.to - DOOR_T - 1, 105], [XO - (ENTRY_W - 14), ENTRY.to - DOOR_T - 7, 105], [XO - (ENTRY_W - 26), ENTRY.to - DOOR_T - 7, 105]], [1.2, 1.2, 1.2]);
+  box('/Casa/Porta_Ingresso/Anta', DOOR_C, XO, ENTRY.from + 1, 0, XO + DOOR_T, ENTRY.to - 1, DOOR_H - 2);
+  const hy = ENTRY.from + 8;                                            // lever on both faces, near the free (south) edge
+  tube('/Casa/Porta_Ingresso/Maniglia', [200, 200, 200, 255], [[XO + DOOR_T, hy, 105], [XO + DOOR_T + 6, hy, 105], [XO + DOOR_T + 6, hy + 12, 105]], [1.2, 1.2, 1.2]);
+  tube('/Casa/Porta_Ingresso/Maniglia_Fuori', [200, 200, 200, 255], [[XO, hy, 105], [XO - 6, hy, 105], [XO - 6, hy + 12, 105]], [1.2, 1.2, 1.2]);
 });
 
 // ---------- cream paint on the walls of camera and soggiorno (bagno, cucina, ingresso stay white) ----------
@@ -165,9 +167,9 @@ group('porte', () => {
 // ---------- glass ----------
 box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.sill, BAGNO_WIN.to, YS1 + 16, BAGNO_WIN.head);
 
-// ---------- bathroom door (from the user's photo): cream leaf with 5 raised panels, hinged on the east jamb, left open into the bagno ----------
+// ---------- bathroom door (from the user's photo): cream leaf with 5 raised panels, hinged on the east jamb, closed (user) ----------
 // the viewer can't rotate boxes, so the leaf and its panels are slab polygons in a local frame (u along the leaf, v across it)   open angle, panel sizes estimate
-{ const BD = { x0: XB0 + 30, x1: XB0 + 100, ang: 90, t: 4, c: [242, 234, 214, 255], p: [238, 229, 208, 255] };
+{ const BD = { x0: XB0 + 30, x1: XB0 + 100, ang: 0, t: 4, c: [242, 234, 214, 255], p: [238, 229, 208, 255] };
   const a = BD.ang * Math.PI / 180, w = BD.x1 - BD.x0 - 2, hx = BD.x1 - 1, hy = YS0;
   const u = [-Math.cos(a), Math.sin(a)], v = [Math.sin(a), Math.cos(a)];
   const P = (pu, pv) => [hx + u[0] * pu + v[0] * pv, hy + u[1] * pu + v[1] * pv];
@@ -185,15 +187,15 @@ box('/Casa/Vetro_Finestra_Bagno', C.glass, BAGNO_WIN.from, YS1 + 14, BAGNO_WIN.s
 }
 
 // ---------- double door ingresso / camera (from the user's photo): 2 white leaves of 50 x 210 (rails and panel scaled from the photo), glass above, a recessed
-// panel below, brass handle on the right leaf; hinged on the jambs, opening into the camera, drawn partly open so the
-// passage stays free. One movable piece (every leaf name starts with "Porta", no digits)   sizes user, open angle estimate
-{ const CD = { w: 50, h: DOOR_H, t: 4, ang: 75, st: 8, top: 9, bot: 60, pTop: 9, pBot: 15, c: [246, 245, 240, 255], glass: [225, 222, 212, 150] };
+// panel below, brass handle on the right leaf; hinged on the jambs, opening into the camera, drawn closed (user; ang = open angle).
+// One movable piece (every leaf name starts with "Porta", no digits)   sizes user, open angle estimate
+{ const CD = { w: 50, h: DOOR_H, t: 4, ang: 0, st: 8, top: 9, bot: 60, pTop: 9, pBot: 15, c: [246, 245, 240, 255], glass: [225, 222, 212, 150] };
   defGroup('porta-camera', 'Porta doppia camera (vetro, 100 x 210)', 'Porte');
   group('porta-camera', () => {
     const a = CD.ang * Math.PI / 180;
     const leaf = (n, hx, sgn) => {                     // sgn +1: hinge on the west jamb, -1: on the east jamb
       const u = [sgn * Math.cos(a), -Math.sin(a)], v = [Math.sin(a), sgn * Math.cos(a)];
-      const hy = YC1 - 0.5;
+      const hy = YC1 - 0.5 + (sgn < 0 && CD.ang === 0 ? CD.t : 0);   // closed: both leaves in the same plane
       const P = (pu, pv) => [hx + u[0] * pu + v[0] * pv, hy + u[1] * pu + v[1] * pv];
       const q = (u0, u1, v0, v1) => ccw([P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)]);
       const part = (m, c, u0, u1, v0, v1, z0, z1) => slab(`/Porta_Camera/Porta_${n}_${m}`, c, q(u0, u1, v0, v1), z0, z1);
@@ -573,10 +575,10 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // bifold glass door between soggiorno and cucina (from the user's photo), flush with the soggiorno west wall face (x = 0),
 // from the end of that wall to the pier; 250 cm high under an 80 cm wall up to the ceiling. Door + wall above are one
 // movable piece (every leaf name starts with "Porta", no digits). Two halves, each = 2 leaves hinged at its jamb,
-// meeting in the middle; drawn half open, folded towards the soggiorno
+// meeting in the middle; drawn closed (user; th = half fold angle)
 // door height user; leaf frame sizes, transom heights (from the photo) and the opening angle estimate
 { const DH = 250, y0 = YK0 - TK, y1 = YS1 - KP.d, x = 0, GR = [62, 64, 67, 255], GL = [205, 218, 222, 60];
-  const L = (y1 - y0) / 4, th = 35 * Math.PI / 180, fw = 4, ft = 1.5;   // leaf width, half fold angle, frame width, half thickness
+  const L = (y1 - y0) / 4, th = 0, fw = 4, ft = 1.5;   // leaf width, half fold angle, frame width, half thickness
   defGroup('porta-cucina', 'Porta a soffietto cucina (vetro, grigio scuro)', 'Porte');
   group('porta-cucina', () => {
     box('/Porta_Cucina/Porta_Muro_Sopra', WHITE, x - 10, y0, DH, x, y1, H);   // wall from the door head to the ceiling, flush with the wall face

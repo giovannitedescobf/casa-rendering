@@ -1,6 +1,6 @@
 // Realistic finishing details (on by default): white skirting boards in every
-// room, the porte-finestre (fixed frame + two glazed leaves drawn open 90 degrees inward, so the balconies stay reachable
-// in first person), stone thresholds, the bathroom window frame and the architraves around the interior doors.
+// room, the porte-finestre (fixed frame + two glazed leaves, drawn closed on
+// request), stone thresholds, the bathroom window frame and the architraves around the interior doors.
 // Two fixed groups (finishes, like the paint and the floors: they belong to the walls and never move).
 // every size here is an estimate (typical joinery), none was measured
 module.exports = function (kit, d) {
@@ -39,16 +39,16 @@ module.exports = function (kit, d) {
       B(`${P}_Telaio_Dx`, WH, O.to - FR.w, y(FR.d0), 0, O.to, y(FR.d1), PF.h);
       B(`${P}_Telaio_Alto`, WH, O.from + FR.w, y(FR.d0), zt, O.to - FR.w, y(FR.d1), PF.h);
       B(`${P}_Soglia`, STONE, O.from, y(0), 0, O.to, y(35), 0.6);
-      const lw = (O.to - O.from) / 2 - FR.w;                           // leaf width; open leaves run from the frame into the room
-      for (const [m, xa, xb] of [['Sx', O.from + FR.w, O.from + FR.w + FR.t], ['Dx', O.to - FR.w - FR.t, O.to - FR.w]]) {
-        const L = (k, c, v0, v1, z0, z1, inset = 0) => B(`${P}_Anta_${m}_${k}`, c, xa + inset, y(FR.d0 - v0), z0, xb - inset, y(FR.d0 - v1), z1);
+      const lw = (O.to - O.from) / 2 - FR.w;                           // leaf width; leaves closed (user), in the plane of the frame
+      for (const [m, xh, sx] of [['Sx', O.from + FR.w, 1], ['Dx', O.to - FR.w, -1]]) {
+        const L = (k, c, v0, v1, z0, z1, inset = 0) => B(`${P}_Anta_${m}_${k}`, c, xh + sx * v0, y(FR.d0 + 1 + inset), z0, xh + sx * v1, y(FR.d0 + 1 + FR.t - inset), z1);
         L('Montante_Cerniera', WH, 0, 6, 2, zt); L('Montante_Battuta', WH, lw - 6, lw, 2, zt);
         L('Traverso_Basso', WH, 6, lw - 6, 2, 14); L('Traverso_Medio', WH, 6, lw - 6, 95, 101); L('Traverso_Alto', WH, 6, lw - 6, zt - 6, zt);
         L('Vetro', GL, 6, lw - 6, 14, zt - 6, 2);
         items[items.length - 1].ne = 1;
       }
-      const hx = O.from + FR.w + FR.t, hy = y(FR.d0 - lw + 3);         // lever handle on the free stile of the west leaf
-      tube(`${P}_Maniglia`, BRASS, [[hx, hy, 105], [hx + 5, hy, 105], [hx + 5, hy, 93]], [0.9, 0.9, 0.9]);
+      const hx = O.from + FR.w + lw - 3;                                // lever handle on the free stile of the west leaf, room side
+      tube(`${P}_Maniglia`, BRASS, [[hx, y(FR.d0 + 1), 105], [hx, y(FR.d0 - 4), 105], [hx - 10, y(FR.d0 - 4), 105]], [0.9, 0.9, 0.9]);
       items[items.length - 1].mt = [1, 0.3];
     };
     portaFinestra('Soggiorno', SOG_PF, YS1, 1);
