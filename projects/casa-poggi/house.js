@@ -464,12 +464,15 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 
 // The Masie "Ilan" dining armchair x 4 (maker's page: 71 x 56.5 x 60 cm, seat 46 high, 51 x 48, cushion ~4.5, armrests 66,
 // back 13.5 high; steel frame, velvet back, fabric seat; colour "Giallo Curry": sage green frame, rust seat, curry back,
-// sampled from the maker's photo). Around the Lewis table (round Ø120 set-up), one per side, seat front under the edge of the top (closer, neighbouring chairs collide)
-// (the arms at 66 cm pass under it). Each chair is its own movable piece (own path). Tube radius, bends estimate.
-{ const TX = ROOMS.soggiorno.w - 113, TY = YS1 - 118, D = 60, FR = [150, 165, 120, 255], SEAT = [196, 120, 60, 255], BACK = [190, 138, 38, 255];
-  defGroup('sedie-ilan', 'Sedie Ilan x 4 (velluto giallo curry)', 'Arredi');
+// sampled from the maker's photo). Around the Lewis table, on the diagonals (user: so the set fits closer to the corner:
+// the reach towards each wall is 83 cm from the table centre instead of 90 with one chair per side), seat front under the
+// top (closer, neighbouring chairs collide). Each chair is its own movable piece and follows the table ("follow": dragged
+// or turned with it). Tube radius, bends estimate.
+{ const TX = ROOMS.soggiorno.w - 113, TY = YS1 - 118, D = 59, FR = [150, 165, 120, 255], SEAT = [196, 120, 60, 255], BACK = [190, 138, 38, 255];
+  defGroup('sedie-ilan', 'Sedie Ilan x 4 (velluto giallo curry)', 'Arredi', null, { follow: 'tavolo-lewis' });
   group('sedie-ilan', () => {
-    for (const [n, f] of [['Ovest', [1, 0]], ['Est', [-1, 0]], ['Sud', [0, 1]], ['Nord', [0, -1]]]) {
+    const r2 = Math.SQRT1_2;
+    for (const [n, f] of [['NordEst', [-r2, -r2]], ['NordOvest', [r2, -r2]], ['SudEst', [-r2, r2]], ['SudOvest', [r2, r2]]]) {
       const cx = TX - f[0] * D, cy = TY - f[1] * D, l = [f[1], -f[0]];
       const W = (u, v, z) => [cx + u * l[0] + v * f[0], cy + u * l[1] + v * f[1], z];
       const P = `/Sedia_Ilan_${n}/Sedia_`, T = (k, pts) => tube(P + k, FR, pts.map(q => W(...q)), pts.map(() => 1), 8);
@@ -478,9 +481,11 @@ const balcony = (n, x0, x1, y0, y1, side) => {
         T(`Gamba_Dietro_${k}`, [[s * 25.5, -27, 0], [s * 24, -27.5, 60]]);                                       // back leg up to the backrest
       }
       T('Telaio_Seduta', [[-25.5, -26, 43], [-25.5, 23, 43], [25.5, 23, 43], [25.5, -26, 43], [-25.5, -26, 43]]);
-      const a = W(-25.5, -23, 0), b = W(25.5, 24, 0);
-      rbox(P + 'Cuscino_Seduta', SEAT, [Math.min(a[0], b[0]), Math.min(a[1], b[1]), 43.5, Math.max(a[0], b[0]), Math.max(a[1], b[1]), 48.5], 9, 2.2, 1);
-      const arc = (dv) => Array.from({ length: 13 }, (_, i) => { const u = -25 + 50 * i / 12; return W(u, -30 + 7 * (u / 25) ** 2 + dv, 0).slice(0, 2); });
+      const lp = (u, v) => W(u, v, 0).slice(0, 2), seat = [];             // seat cushion: rounded rectangle in the chair's frame (it is turned 45 degrees)
+      for (const [u0, v0, a0] of [[17, 15, 0], [-17, 15, 90], [-17, -14, 180], [17, -14, 270]])
+        for (let k = 0; k <= 4; k++) { const a = (a0 + 22.5 * k) * Math.PI / 180; seat.push(lp(u0 + 8.5 * Math.cos(a), v0 + 9 * Math.sin(a))); }
+      slab(P + 'Cuscino_Seduta', SEAT, ccw(seat), 43.5, 48.5);
+      const arc = (dv) => Array.from({ length: 13 }, (_, i) => { const u = -25 + 50 * i / 12; return lp(u, -30 + 7 * (u / 25) ** 2 + dv); });
       slab(P + 'Schienale', BACK, ccw([...arc(0), ...arc(4).reverse()]), 57.5, 71);
     }
   });

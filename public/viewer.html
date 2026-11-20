@@ -1084,10 +1084,12 @@ function saveMoved() {
 function undoMove(back = true) {
   const u = (back ? mvUndo : mvRedo).pop();
   if (!u) return;
-  (back ? mvRedo : mvUndo).push({ k: u.k, prev: moved.has(u.k) ? [...moved.get(u.k)] : null });
-  if (u.prev) moved.set(u.k, u.prev); else moved.delete(u.k);
-  const off = u.prev || [0, 0];
-  for (const o of model.children) if (o.userData.mv === u.k) placeMv(o);
+  const list = [{ k: u.k, prev: u.prev }, ...(u.also || [])], now = e => ({ k: e.k, prev: moved.has(e.k) ? [...moved.get(e.k)] : null });
+  (back ? mvRedo : mvUndo).push({ ...now(list[0]), also: list.slice(1).map(now) });
+  for (const e of list) {
+    if (e.prev) moved.set(e.k, e.prev); else moved.delete(e.k);
+    for (const o of model.children) if (o.userData.mv === e.k) placeMv(o);
+  }
   if (selected) refreshDims();
   saveMoved();
 }
@@ -1137,6 +1139,15 @@ let mvKey = null;                                                  // the piece 
 // moved.json value per piece: [dx, dy] or [dx, dy, degrees]: a rotation about the vertical axis through the centre of
 // the piece's plan (pivots), then the shift. Key R turns the selected piece by 45 degrees.
 const pivots = new Map();
+// Linked pieces (user: the chairs go with their table): a group with "follow": "<group id or variant>" moves and turns
+// with the piece of that group whenever that piece is dragged or turned; it can still be moved on its own.
+const mvTags = new Map(), mvFollow = new Map();                   // piece key -> its group ids and variants; piece key -> what it follows
+function followersOf(k) {
+  const tags = mvTags.get(k) || new Set(), out = [];
+  for (const [f, t] of mvFollow) if (f !== k && tags.has(t) && model.children.some(o => o.isMesh && o.userData.mv === f)) out.push(f);
+  return out;
+}
+const pivotAt = k => { const b = pivots.get(k), off = moved.get(k) || [0, 0]; return b && [(b.min.x + b.max.x) / 2 + off[0], (b.min.y + b.max.y) / 2 + off[1]]; };
 function placeMv(o) {
   const k = o.userData.mv, off = moved.get(k) || [0, 0], b = pivots.get(k);
   if (!b) return;
@@ -1148,10 +1159,19 @@ function placeMv(o) {
 function rotateMv(step = 45) {                                    // key R: +45; the two turn buttons: +/-15 (counter-clockwise seen from above is +)
   if (!mvKey) return;
   const prev = moved.has(mvKey) ? [...moved.get(mvKey)] : null, off = prev ? [...prev] : [0, 0];
-  const deg = (((off[2] || 0) + step) % 360 + 360) % 360;
+  const deg = (((off[2] || 0) + step) % 360 + 360) % 360, c0 = pivotAt(mvKey), a = step * Math.PI / 180, also = [];
   moved.set(mvKey, deg ? [off[0], off[1], deg] : [off[0], off[1]]);
   for (const o of model.children) if (o.userData.mv === mvKey) placeMv(o);
-  mvUndo.push({ k: mvKey, prev }); mvRedo = [];
+  for (const f of followersOf(mvKey)) {                            // linked pieces turn about the leader's centre
+    const fp = moved.has(f) ? [...moved.get(f)] : null, fo = fp || [0, 0], c = pivotAt(f);
+    if (!c || !c0) continue;
+    const dx = c[0] - c0[0], dy = c[1] - c0[1], nx = c0[0] + dx * Math.cos(a) - dy * Math.sin(a), ny = c0[1] + dx * Math.sin(a) + dy * Math.cos(a);
+    const fd = (((fo[2] || 0) + step) % 360 + 360) % 360, n = [fo[0] + nx - c[0], fo[1] + ny - c[1]];
+    moved.set(f, fd ? [...n, fd] : n);
+    for (const o of model.children) if (o.userData.mv === f) placeMv(o);
+    also.push({ k: f, prev: fp });
+  }
+  mvUndo.push({ k: mvKey, prev, also }); mvRedo = [];
   if (selected) refreshDims();
   saveMoved();
 }
@@ -1173,7 +1193,7 @@ function build(data) {
     sun.shadow.radius = real ? LOOK.radius : 1;   // (a 4096 px map stalled software GL: several viewers open at once never finished loading)
     sun.shadow.map?.dispose(); sun.shadow.map = null;
   }
-  fixedGroups.clear();
+  fixedGroups.clear(); mvTags.clear(); mvFollow.clear();
   for (const g of data.groups || []) if (g.fixed) fixedGroups.add(g.id);
   colliders = [];
   walls = [];
@@ -1207,6 +1227,11 @@ function build(data) {
     mesh.userData.glass = glass;
     mesh.userData.shell = !gs.length || gs.every(id => fixedGroups.has(id));   // walls, floors, fixed finishes
     mesh.userData.mv = moveKey(item);
+    if (mesh.userData.mv) for (const id of gs) {                    // linked pieces: tags and "follow" of the piece's groups
+      const d = (data.groups || []).find(g => g.id === id), t = mvTags.get(mesh.userData.mv) || new Set();
+      t.add(id); if (d?.variant) t.add(d.variant); mvTags.set(mesh.userData.mv, t);
+      if (d?.follow) mvFollow.set(mesh.userData.mv, d.follow);
+    }
     mesh.userData.solid = !!(item.box || item.rbox);      // a closed volume: no light probe inside it
     mesh.receiveShadow = true; mesh.castShadow = casts(mesh) && !(realLook && item.em);   // a glowing shade is the light's own source: it must not shadow it
     model.add(mesh);
@@ -1997,11 +2022,18 @@ function startDrag(ev, hit) {
   drag = { z, p, off, id: ev.pointerId, k: mvKey, prev: moved.has(mvKey) ? [...moved.get(mvKey)] : null,
     base: [box.min.x - off[0], box.min.y - off[1], box.min.z, box.max.x - off[0], box.max.y - off[1], box.max.z] };
   drag.free = hitsWall(drag.base, off);                           // already inside a wall: don't lock it there
+  drag.fol = followersOf(mvKey).map(f => {                         // linked pieces travel with it, by the same shift
+    const fo = moved.has(f) ? [...moved.get(f)] : null, o0 = fo || [0, 0], fb = new THREE.Box3();
+    for (const o of model.children) if (o.isMesh && o.userData.mv === f) fb.expandByObject(o);
+    const base = [fb.min.x - o0[0], fb.min.y - o0[1], fb.min.z, fb.max.x - o0[0], fb.max.y - o0[1], fb.max.z];
+    return { k: f, prev: fo, off: o0, base, free: hitsWall(base, o0) };
+  });
+  const keys = new Set([mvKey, ...drag.fol.map(f => f.k)]);
   // other furniture is solid too (user): each part of the piece (its own box, as placed now, minus the offset) against the
   // parts of every other movable piece on screen, so a chair seat stops at a table's base but slides under its top
   const wb = o => new THREE.Box3().setFromObject(o);
-  drag.parts = model.children.filter(o => o.isMesh && o.userData.mv === mvKey).map(o => { const b = wb(o); b.min.x -= off[0]; b.max.x -= off[0]; b.min.y -= off[1]; b.max.y -= off[1]; return b; });
-  const obst = model.children.filter(o => o.isMesh && o.visible && o.userData.mv && o.userData.mv !== mvKey).map(wb);
+  drag.parts = model.children.filter(o => o.isMesh && keys.has(o.userData.mv)).map(o => { const b = wb(o); b.min.x -= off[0]; b.max.x -= off[0]; b.min.y -= off[1]; b.max.y -= off[1]; return b; });
+  const obst = model.children.filter(o => o.isMesh && o.visible && o.userData.mv && !keys.has(o.userData.mv)).map(wb);
   drag.obst = obst.filter(q => !partsHit(drag.parts, [q], off));    // already overlapping at the start: ignore that one, so it can be pulled apart
   controls.enabled = false;
   tipEl.style.display = 'none';
@@ -2028,11 +2060,18 @@ renderer.domElement.addEventListener('pointermove', ev => {
   const n = Math.ceil(Math.hypot(want[0] - cur[0], want[1] - cur[1]) / 2);
   for (let i = 1; i <= n; i++) {
     const t1 = [off[0] + (want[0] - cur[0]) / n, off[1] + (want[1] - cur[1]) / n];
-    off = [t1, [t1[0], off[1]], [off[0], t1[1]]].find(o => (drag.free || !hitsWall(drag.base, o)) && !partsHit(drag.parts, drag.obst, o)) || off;   // slide along a wall or a piece
+    const ok = o => (drag.free || !hitsWall(drag.base, o)) && !partsHit(drag.parts, drag.obst, o) &&
+      drag.fol.every(f => f.free || !hitsWall(f.base, [f.off[0] + o[0] - drag.off[0], f.off[1] + o[1] - drag.off[1]]));
+    off = [t1, [t1[0], off[1]], [off[0], t1[1]]].find(ok) || off;   // slide along a wall or a piece
   }
   const rot = cur[2];                                              // keep the piece's rotation
   moved.set(mvKey, rot ? [off[0], off[1], rot] : [off[0], off[1]]);
   for (const o of model.children) if (o.userData.mv === mvKey) placeMv(o);
+  for (const f of drag.fol) {
+    const n = [f.off[0] + off[0] - drag.off[0], f.off[1] + off[1] - drag.off[1]];
+    moved.set(f.k, f.off[2] ? [...n, f.off[2]] : n);
+    for (const o of model.children) if (o.userData.mv === f.k) placeMv(o);
+  }
   if (selected) refreshDims();
 });
 // Does the piece's footprint (its box shifted by off, shrunk 0.5" so touching is allowed) cross a wall?
@@ -2063,7 +2102,7 @@ function partsHit(parts, qs, off) {
 }
 const endDrag = () => { clearTimeout(mvTimer); mvTimer = null; if (drag) {
   const now = moved.get(drag.k) || [0, 0], was = drag.prev || [0, 0];
-  if (Math.hypot(now[0] - was[0], now[1] - was[1]) > 0.01) { mvUndo.push({ k: drag.k, prev: drag.prev }); mvRedo = []; }
+  if (Math.hypot(now[0] - was[0], now[1] - was[1]) > 0.01) { mvUndo.push({ k: drag.k, prev: drag.prev, also: drag.fol.map(f => ({ k: f.k, prev: f.prev })) }); mvRedo = []; }
   drag = null; controls.enabled = !fp; saveMoved(); } };
 renderer.domElement.addEventListener('pointerup', endDrag);
 renderer.domElement.addEventListener('pointercancel', endDrag);
