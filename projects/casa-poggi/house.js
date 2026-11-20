@@ -5,7 +5,7 @@
 // Basic shell only: walls, openings, floor, balconies. No furniture, no materials yet (neutral colours).
 const path = require('path');
 const kit = require('../../scripts/scene-kit').createScene({ defaultOn: ['porte', 'armadio', 'porta-bagno', 'pittura', 'condizionatore', 'split-camera', 'lampada-terra', 'gatto', 'libreria', 'consolle-50', 'divano-soderhamn', 'credenza-zoom', 'porta-camera', 'pavimento-terrazzo', 'battiscopa', 'infissi'] });
-const { box, wall, slab, tube, rbox, group, defGroup, light } = kit;
+const { box, wall, slab, tube, rbox, group, defGroup, light, mesh } = kit;
 
 // ---------- dimensions (cm) ----------
 const H = 330;                     // ceiling height                                   measured
@@ -431,22 +431,32 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   });
 }
 
-// Nimara "Lewis" round extending dining table, oak veneer, varnished (maker's page): Ø120 x 75 cm, two 40 cm leaves
-// make it 160 / 200 cm long, central base Ø64 cm (slatted). One group per length chained with "alt" (L = next length).
-// User: in the soggiorno, in the corner right of the balcony door (north-east), facing the cucina; the east end stays
-// 5 cm off the east wall and the leaves extend west. Top 3 cm, slat and column sizes estimate. Grain texture procedural.
-{ const R = 60, XE = ROOMS.soggiorno.w - 5, CY = YS1 - 5 - R, OAK = [200, 164, 120, 255], LENS = [120, 160, 200], id = L => `tavolo-lewis-${L}`;
+// Nimara "Lewis" round extending dining table, oak veneer, varnished (maker's page and photos): Ø120 x 75 cm, two 40 cm leaves
+// make it 160 / 200 cm long. Base (photos): a cone of vertical oak slats, Ø64 at the floor, narrower at the top, with a dark
+// core; it is split in two halves that slide apart with the top, each half closed on its cut side by a flat trapezoid oak panel.
+// One group per length chained with "alt" (L = next length). User: in the soggiorno, in the corner right of the balcony door
+// (north-east), facing the cucina; the east end stays 5 cm off the east wall and the leaves extend west.
+// Colour sampled from the maker's photos (honey oak); top 3 cm, cone top Ø40, slat size estimate. Grain texture procedural.
+{ const R = 60, XE = ROOMS.soggiorno.w - 5, CY = YS1 - 5 - R, OAK = [188, 154, 118, 255], SLAT = [166, 122, 84, 255], CORE = [52, 40, 32, 255];
+  const RB = 32, RT = 20, ZT = 72, NS = 14, LENS = [120, 160, 200], id = L => `tavolo-lewis-${L}`;
   LENS.forEach((L, i) => defGroup(id(L), `Tavolo Lewis rovere – ${L === 120 ? 'tondo Ø120' : `allungato a ${L} cm`}`, 'Arredi', 'tavolo-lewis', { alt: id(LENS[(i + 1) % LENS.length]) }));
   for (const L of LENS) group(id(L), () => {
-    const S = L - 2 * R, xr = XE - R, xl = xr - S, CX = (xl + xr) / 2, top = [];
+    const S = L - 2 * R, xr = XE - R, xl = xr - S, top = [];
     for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + Math.PI * k / 16; top.push([xr + R * Math.cos(a), CY + R * Math.sin(a)]); }
     for (let k = 0; k <= 16; k++) { const a = Math.PI / 2 + Math.PI * k / 16; top.push([xl + R * Math.cos(a), CY + R * Math.sin(a)]); }
-    slab('/Tavolo_Lewis/Tavolo_Piano', OAK, top, 72, 75);
+    slab('/Tavolo_Lewis/Tavolo_Piano', OAK, top, ZT, ZT + 3);
     kit.items[kit.items.length - 1].tex = { url: 'textures/rovere-lewis.webp', tile: kit.inch(40) };
-    tube('/Tavolo_Lewis/Tavolo_Base', OAK, [[CX, CY, 0], [CX, CY, 3]], [32, 32], 24);
-    tube('/Tavolo_Lewis/Tavolo_Testa', OAK, [[CX, CY, 68], [CX, CY, 72]], [24, 24], 24);
-    for (let f = 0; f < 12; f++) { const a = 2 * Math.PI * f / 12, x = CX + 17 * Math.cos(a), y = CY + 17 * Math.sin(a);
-      box(`/Tavolo_Lewis/Tavolo_Doga_${'abcdefghijkl'[f]}`, OAK, x - 2.5, y - 2.5, 3, x + 2.5, y + 2.5, 68); }
+    for (const [h, cx, dir] of [['Est', xr, 1], ['Ovest', xl, -1]]) {   // half cone: slats on the outer half circle, panel on the cut
+      const P = (r, a, z) => [cx + dir * r * Math.cos(a), CY + r * Math.sin(a), z];
+      for (let f = 0; f < NS; f++) { const a = -Math.PI / 2 + Math.PI * (f + 0.5) / NS;
+        tube(`/Tavolo_Lewis/Tavolo_Doga_${h}_${'abcdefghijklmn'[f]}`, SLAT, [P(RB - 1.3, a, 0), P(RT - 1.3, a, ZT)], [1.3, 1.3], 6); }
+      const core = []; for (let k = 0; k < 8; k++) { const a0 = -Math.PI / 2 + Math.PI * k / 8, a1 = a0 + Math.PI / 8;
+        core.push([P(RB - 3, a0, 0), P(RB - 3, a1, 0), P(RT - 3, a1, ZT), P(RT - 3, a0, ZT)]); }
+      mesh(`/Tavolo_Lewis/Tavolo_Anima_${h}`, CORE, core);
+      const q = (o) => [[cx + dir * o, CY - RB, 0], [cx + dir * o, CY + RB, 0], [cx + dir * o, CY + RT, ZT], [cx + dir * o, CY - RT, ZT]];
+      mesh(`/Tavolo_Lewis/Tavolo_Pannello_${h}`, OAK, [q(0), q(2), [q(0)[0], q(0)[1], q(2)[1], q(2)[0]], [q(0)[2], q(0)[3], q(2)[3], q(2)[2]],
+        [q(0)[3], q(0)[0], q(2)[0], q(2)[3]], [q(0)[1], q(0)[2], q(2)[2], q(2)[1]]]);
+    }
   });
 }
 
