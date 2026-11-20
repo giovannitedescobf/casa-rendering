@@ -34,7 +34,8 @@ done
 if [ $THUMBS = 1 ]; then step "thumbnails"; npm run -s thumbs >/dev/null 2>&1 || fail "npm run thumbs"; fi
 
 git fetch -q origin main 2>/dev/null || true
-if [ $QUICK = 1 ] || [ $FULL = 0 ] && ! { git diff --name-only origin/main; git ls-files -o --exclude-standard; } | grep -qE '^(public/|server\.js|scripts/(smoke|build-static|projects|scene-kit)\.js|package)'; then
+code_changed() { { git diff --name-only origin/main; git ls-files -o --exclude-standard; } | grep -qE '^(public/|server\.js|scripts/(smoke|build-static|projects|scene-kit)\.js|package)'; }
+if [ $QUICK = 1 ] || { [ $FULL = 0 ] && ! code_changed; }; then
   step "tests (quick: only project data changed)"; MODE=1
 else
   step "tests (full: viewer / server / build code changed)"; MODE=0
