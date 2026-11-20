@@ -437,9 +437,9 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // make it 160 / 200 cm long. Base (photos): a cone of vertical oak slats, Ø64 at the floor, narrower at the top, with a dark
 // core; it is split in two halves that slide apart with the top, each half closed on its cut side by a flat trapezoid oak panel.
 // One group per length chained with "alt" (L = next length). User: in the soggiorno, in the corner right of the balcony door
-// (north-east), facing the cucina; centre 92 cm off the north and east walls (user: room for the chairs), leaves extend west.
+// (north-east), facing the cucina; centre 113 cm off the east wall and 118 cm off the north wall (where the user dragged it; chairs share it), leaves extend west.
 // Colour sampled from the maker's photos (honey oak); top 3 cm, cone top Ø40, slat size estimate. Grain texture procedural.
-{ const R = 60, XE = ROOMS.soggiorno.w - 92 + R, CY = YS1 - 92, OAK = [188, 154, 118, 255], SLAT = [166, 122, 84, 255], CORE = [52, 40, 32, 255];
+{ const R = 60, XE = ROOMS.soggiorno.w - 113 + R, CY = YS1 - 118, OAK = [188, 154, 118, 255], SLAT = [166, 122, 84, 255], CORE = [52, 40, 32, 255];
   const RB = 32, RT = 20, ZT = 72, NS = 14, LENS = [120, 160, 200], id = L => `tavolo-lewis-${L}`;
   LENS.forEach((L, i) => defGroup(id(L), `Tavolo Lewis rovere – ${L === 120 ? 'tondo Ø120' : `allungato a ${L} cm`}`, 'Arredi', 'tavolo-lewis', { alt: id(LENS[(i + 1) % LENS.length]) }));
   for (const L of LENS) group(id(L), () => {
@@ -466,7 +466,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // back 13.5 high; steel frame, velvet back, fabric seat; colour "Giallo Curry": sage green frame, rust seat, curry back,
 // sampled from the maker's photo). Around the Lewis table (round Ø120 set-up), one per side, seat front under the edge of the top (closer, neighbouring chairs collide)
 // (the arms at 66 cm pass under it). Each chair is its own movable piece (own path). Tube radius, bends estimate.
-{ const TX = ROOMS.soggiorno.w - 92, TY = YS1 - 92, D = 60, FR = [150, 165, 120, 255], SEAT = [196, 120, 60, 255], BACK = [190, 138, 38, 255];
+{ const TX = ROOMS.soggiorno.w - 113, TY = YS1 - 118, D = 60, FR = [150, 165, 120, 255], SEAT = [196, 120, 60, 255], BACK = [190, 138, 38, 255];
   defGroup('sedie-ilan', 'Sedie Ilan x 4 (velluto giallo curry)', 'Arredi');
   group('sedie-ilan', () => {
     for (const [n, f] of [['Ovest', [1, 0]], ['Est', [-1, 0]], ['Sud', [0, 1]], ['Nord', [0, -1]]]) {
