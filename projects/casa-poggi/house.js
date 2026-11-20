@@ -437,9 +437,9 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 // make it 160 / 200 cm long. Base (photos): a cone of vertical oak slats, Ø64 at the floor, narrower at the top, with a dark
 // core; it is split in two halves that slide apart with the top, each half closed on its cut side by a flat trapezoid oak panel.
 // One group per length chained with "alt" (L = next length). User: in the soggiorno, in the corner right of the balcony door
-// (north-east), facing the cucina; the east end stays 5 cm off the east wall and the leaves extend west.
+// (north-east), facing the cucina; centre 92 cm off the north and east walls (user: room for the chairs), leaves extend west.
 // Colour sampled from the maker's photos (honey oak); top 3 cm, cone top Ø40, slat size estimate. Grain texture procedural.
-{ const R = 60, XE = ROOMS.soggiorno.w - 5, CY = YS1 - 5 - R, OAK = [188, 154, 118, 255], SLAT = [166, 122, 84, 255], CORE = [52, 40, 32, 255];
+{ const R = 60, XE = ROOMS.soggiorno.w - 92 + R, CY = YS1 - 92, OAK = [188, 154, 118, 255], SLAT = [166, 122, 84, 255], CORE = [52, 40, 32, 255];
   const RB = 32, RT = 20, ZT = 72, NS = 14, LENS = [120, 160, 200], id = L => `tavolo-lewis-${L}`;
   LENS.forEach((L, i) => defGroup(id(L), `Tavolo Lewis rovere – ${L === 120 ? 'tondo Ø120' : `allungato a ${L} cm`}`, 'Arredi', 'tavolo-lewis', { alt: id(LENS[(i + 1) % LENS.length]) }));
   for (const L of LENS) group(id(L), () => {
@@ -460,6 +460,31 @@ const balcony = (n, x0, x1, y0, y1, side) => {
         [q(0)[3], q(0)[0], q(2)[0], q(2)[3]], [q(0)[1], q(0)[2], q(2)[2], q(2)[1]]]);
     }
   });
+}
+
+// The Masie "Ilan" dining armchair x 4 (maker's page: 71 x 56.5 x 60 cm, seat 46 high, 51 x 48, cushion ~4.5, armrests 66,
+// back 13.5 high; steel frame, velvet back, fabric seat; colour "Giallo Curry": sage green frame, rust seat, curry back,
+// sampled from the maker's photo). Around the Lewis table (round Ø120 set-up), one per side, seat front under the edge of the top (closer, neighbouring chairs collide)
+// (the arms at 66 cm pass under it). Each chair is its own movable piece (own path). Tube radius, bends estimate.
+{ const TX = ROOMS.soggiorno.w - 92, TY = YS1 - 92, D = 60, FR = [150, 165, 120, 255], SEAT = [196, 120, 60, 255], BACK = [190, 138, 38, 255];
+  defGroup('sedie-ilan', 'Sedie Ilan x 4 (velluto giallo curry)', 'Arredi');
+  group('sedie-ilan', () => {
+    for (const [n, f] of [['Ovest', [1, 0]], ['Est', [-1, 0]], ['Sud', [0, 1]], ['Nord', [0, -1]]]) {
+      const cx = TX - f[0] * D, cy = TY - f[1] * D, l = [f[1], -f[0]];
+      const W = (u, v, z) => [cx + u * l[0] + v * f[0], cy + u * l[1] + v * f[1], z];
+      const P = `/Sedia_Ilan_${n}/Sedia_`, T = (k, pts) => tube(P + k, FR, pts.map(q => W(...q)), pts.map(() => 1), 8);
+      for (const [k, s] of [['Sx', -1], ['Dx', 1]]) {
+        T(`Gamba_Bracciolo_${k}`, [[s * 26.5, 25, 0], [s * 26.5, 24, 66], [s * 26.5, -14, 66], [s * 24, -24, 63]]);   // front leg rising into the armrest
+        T(`Gamba_Dietro_${k}`, [[s * 25.5, -27, 0], [s * 24, -27.5, 60]]);                                       // back leg up to the backrest
+      }
+      T('Telaio_Seduta', [[-25.5, -26, 43], [-25.5, 23, 43], [25.5, 23, 43], [25.5, -26, 43], [-25.5, -26, 43]]);
+      const a = W(-25.5, -23, 0), b = W(25.5, 24, 0);
+      rbox(P + 'Cuscino_Seduta', SEAT, [Math.min(a[0], b[0]), Math.min(a[1], b[1]), 43.5, Math.max(a[0], b[0]), Math.max(a[1], b[1]), 48.5], 9, 2.2, 1);
+      const arc = (dv) => Array.from({ length: 13 }, (_, i) => { const u = -25 + 50 * i / 12; return W(u, -30 + 7 * (u / 25) ** 2 + dv, 0).slice(0, 2); });
+      slab(P + 'Schienale', BACK, ccw([...arc(0), ...arc(4).reverse()]), 57.5, 71);
+    }
+  });
+  kit.items.filter(i => /^\/Sedia_Ilan_/.test(i.n) && !i.tube).forEach(i => { i.ne = 1; });
 }
 
 // Mogg Costantina Opal floor lamp (Nava + Arosio): a totem of 7 opal glass elements (cylinders, cones, double cones)
@@ -684,7 +709,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     [/^\/(Split_Camera|Condizionatore)\//, 0.4],                         // plastic, painted sheet metal
     [/Credenza_(Teca|Gamba)|^\/Gabbia_Cucina\/Gabbia_(Montante|Traverso)|^\/Porta_Cucina\/Porta_(Sud|Nord)/, 0.4],   // powder-coated steel, aluminium
     [/Credenza_Mobile|Libreria_Montante_.*_Fusto|Libreria_Contenitore/, 0.45],   // satin walnut
-    [/^\/Libreria\//, 0.55], [/Consolle_Piano/, 0.5], [/^\/Consolle_Marshall\//, 0.45], [/^\/Tavolo_Lewis\//, 0.45],
+    [/^\/Libreria\//, 0.55], [/Consolle_Piano/, 0.5], [/^\/Consolle_Marshall\//, 0.45], [/^\/Tavolo_Lewis\//, 0.45], [/Sedia_(Gamba|Telaio)/, 0.4], [/^\/Sedia_Ilan_/, 1],
     [/Divano_(Gamba|Telaio)/, 0.3], [/_Piede_/, 0.5], [/^\/Divano_/, 1],  // chrome legs, steel frame, plastic feet, fabric
     [/Gatto_(Occhio|Naso)/, 0.25], [/^\/Gatto\//, 1],
     [/Lampada_Vetro/, 0.3],                                              // opal glass
@@ -699,7 +724,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     [/^\/Casa\/Camera\/Parquet/, 1.5],                                    // plank gaps
     [/Balcone_Cortile\/Piastrelle/, 1.2],
     [/^\/Divano_Redoute\//, 2],                                          // corduroy ribs
-    [/^\/Divano_Soderhamn\//, 0.8],                                      // woven fabric
+    [/^\/Divano_Soderhamn\//, 0.8], [/^\/Sedia_Ilan_.*(Cuscino|Schienale)/, 0.8],                                      // woven fabric
     [/^\/(Credenza_Zoom|Consolle_Marshall|Libreria|Tavolo_Lewis)\//, 0.8],            // walnut grain (textured faces only)
     [/^\/Pittura\/|^\/Casa\/(Muro|Tramezzo|Pilastro)_/, 0.25],            // plaster
   ];
@@ -711,7 +736,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     'pavimento-terrazzo': [SC, 'Pavimenti'], 'pavimento-marazzi': [SC, 'Pavimenti'], 'pavimento-crogiolo': [SC, 'Pavimenti'],
     'pavimento-san-giuliano': [SC, 'Pavimenti'], 'pavimento-verde-de-lumi': [SC, 'Pavimenti'], 'pavimento-arcobaleno': [SC, 'Pavimenti'],
     'credenza-zoom': [S, 'Arredi'], 'divano-soderhamn': [S, 'Divani'], 'divano-redoute': [S, 'Divani'], 'divano-redoute-aperto': [S, 'Divani'],
-    'libreria': [S, 'Arredi'], 'lampada-terra': [S, 'Luci'], 'gatto': [S, 'Animali'],
+    'libreria': [S, 'Arredi'], 'sedie-ilan': [S, 'Tavoli'], 'lampada-terra': [S, 'Luci'], 'gatto': [S, 'Animali'],
     'porte': [IC, 'Porte'], 'armadio': [IC, 'Arredi'],
     'gabbia-cucina': [CU, 'Pareti e vetrate'], 'porta-cucina': [CU, 'Porte'],
     'porta-bagno': [B, 'Porte'], 'rivestimento-rombini': [B, 'Rivestimenti'], 'rivestimento-punto': [B, 'Rivestimenti'], 'rivestimento-pico': [B, 'Rivestimenti'], 'rivestimento-pulse': [B, 'Rivestimenti'], 'rivestimento-reed': [B, 'Rivestimenti'], 'rivestimento-blunotte': [B, 'Rivestimenti'], 'rivestimento-laguna': [B, 'Rivestimenti'],
