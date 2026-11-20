@@ -431,6 +431,25 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   });
 }
 
+// Nimara "Lewis" round extending dining table, oak veneer, varnished (maker's page): Ø120 x 75 cm, two 40 cm leaves
+// make it 160 / 200 cm long, central base Ø64 cm (slatted). One group per length chained with "alt" (L = next length).
+// User: in the soggiorno, in the corner right of the balcony door (north-east), facing the cucina; the east end stays
+// 5 cm off the east wall and the leaves extend west. Top 3 cm, slat and column sizes estimate. Grain texture procedural.
+{ const R = 60, XE = ROOMS.soggiorno.w - 5, CY = YS1 - 5 - R, OAK = [200, 164, 120, 255], LENS = [120, 160, 200], id = L => `tavolo-lewis-${L}`;
+  LENS.forEach((L, i) => defGroup(id(L), `Tavolo Lewis rovere – ${L === 120 ? 'tondo Ø120' : `allungato a ${L} cm`}`, 'Arredi', 'tavolo-lewis', { alt: id(LENS[(i + 1) % LENS.length]) }));
+  for (const L of LENS) group(id(L), () => {
+    const S = L - 2 * R, xr = XE - R, xl = xr - S, CX = (xl + xr) / 2, top = [];
+    for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + Math.PI * k / 16; top.push([xr + R * Math.cos(a), CY + R * Math.sin(a)]); }
+    for (let k = 0; k <= 16; k++) { const a = Math.PI / 2 + Math.PI * k / 16; top.push([xl + R * Math.cos(a), CY + R * Math.sin(a)]); }
+    slab('/Tavolo_Lewis/Tavolo_Piano', OAK, top, 72, 75);
+    kit.items[kit.items.length - 1].tex = { url: 'textures/rovere-lewis.webp', tile: kit.inch(40) };
+    tube('/Tavolo_Lewis/Tavolo_Base', OAK, [[CX, CY, 0], [CX, CY, 3]], [32, 32], 24);
+    tube('/Tavolo_Lewis/Tavolo_Testa', OAK, [[CX, CY, 68], [CX, CY, 72]], [24, 24], 24);
+    for (let f = 0; f < 12; f++) { const a = 2 * Math.PI * f / 12, x = CX + 17 * Math.cos(a), y = CY + 17 * Math.sin(a);
+      box(`/Tavolo_Lewis/Tavolo_Doga_${'abcdefghijkl'[f]}`, OAK, x - 2.5, y - 2.5, 3, x + 2.5, y + 2.5, 68); }
+  });
+}
+
 // Mogg Costantina Opal floor lamp (Nava + Arosio): a totem of 7 opal glass elements (cylinders, cones, double cones)
 // on a polished chrome disc base   overall Ø 40 (base), H 178 (retailer datasheets); element profiles traced from the
 // user's product photo (scaled on the 40 cm base disc), so their sizes are estimate
@@ -653,7 +672,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     [/^\/(Split_Camera|Condizionatore)\//, 0.4],                         // plastic, painted sheet metal
     [/Credenza_(Teca|Gamba)|^\/Gabbia_Cucina\/Gabbia_(Montante|Traverso)|^\/Porta_Cucina\/Porta_(Sud|Nord)/, 0.4],   // powder-coated steel, aluminium
     [/Credenza_Mobile|Libreria_Montante_.*_Fusto|Libreria_Contenitore/, 0.45],   // satin walnut
-    [/^\/Libreria\//, 0.55], [/Consolle_Piano/, 0.5], [/^\/Consolle_Marshall\//, 0.45],
+    [/^\/Libreria\//, 0.55], [/Consolle_Piano/, 0.5], [/^\/Consolle_Marshall\//, 0.45], [/^\/Tavolo_Lewis\//, 0.45],
     [/Divano_(Gamba|Telaio)/, 0.3], [/_Piede_/, 0.5], [/^\/Divano_/, 1],  // chrome legs, steel frame, plastic feet, fabric
     [/Gatto_(Occhio|Naso)/, 0.25], [/^\/Gatto\//, 1],
     [/Lampada_Vetro/, 0.3],                                              // opal glass
@@ -669,7 +688,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     [/Balcone_Cortile\/Piastrelle/, 1.2],
     [/^\/Divano_Redoute\//, 2],                                          // corduroy ribs
     [/^\/Divano_Soderhamn\//, 0.8],                                      // woven fabric
-    [/^\/(Credenza_Zoom|Consolle_Marshall|Libreria)\//, 0.8],            // walnut grain (textured faces only)
+    [/^\/(Credenza_Zoom|Consolle_Marshall|Libreria|Tavolo_Lewis)\//, 0.8],            // walnut grain (textured faces only)
     [/^\/Pittura\/|^\/Casa\/(Muro|Tramezzo|Pilastro)_/, 0.25],            // plaster
   ];
   for (const i of kit.items) { if (i.mt || i.c[3] < 255 || !(i.tex || i.box || i.rbox)) continue; const f = RELIEF.find(([re]) => re.test(i.n)); if (f) i.bp = f[1]; } }
@@ -689,7 +708,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
     'pittura': [TC, 'Pareti'], 'battiscopa': [TC, 'Finiture'], 'infissi': [TC, 'Infissi'],
   };
   for (const g of kit.GROUPS) {
-    const p = PLACE[g.id] || (g.id.startsWith('consolle-') ? [S, 'Tavoli'] : null);
+    const p = PLACE[g.id] || (g.id.startsWith('consolle-') || g.id.startsWith('tavolo-lewis-') ? [S, 'Tavoli'] : null);
     if (!p) throw new Error('group without a room: ' + g.id);
     [g.room, g.cat] = p;
   }
