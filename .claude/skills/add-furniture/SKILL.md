@@ -48,7 +48,7 @@ kit.group('wardrobe-v2', () => {
 
 ## 4. Verify and show
 - `node scripts/check-scene.mjs <id> <groups>` (no browser, ~1 s): every moved piece against the walls and the other pieces, with the saved offsets applied; fix every clash it reports for the new piece before taking a screenshot. Pieces that belong together (a table and its chairs) get `{follow: '<leader group or variant>'}` so they move and turn as a set.
-- Publish with `scripts/publish.sh "message"` (regenerate, thumbnails, tests, commit, merge, push, wait for the site).
+- Publish with `scripts/publish.sh "message"` (regenerate, clash check, quick tests for data-only changes, commit, merge, push; the site rebuild is watched in the background). Fast path, user rule: page + images in one fetch, model, `check-scene.mjs`, one screenshot, publish.
 1. Regenerate (`node projects/<id>/<generator>.js`) and run `npm test` (also checks that `scene.json` equals the generator's output).
 2. Show it: headless screenshot of `/<id>/?g=<group ids>&cam=...` or ask the user to open `/<id>/` and tick the group; compare variants side by side when there are several.
 3. Ask what is next: adjust it, add the alternative, move on. Do not commit or push without asking; `check-and-publish` does that cleanly.

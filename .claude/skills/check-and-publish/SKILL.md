@@ -7,6 +7,8 @@ description: Use before committing or pushing changes in this repo, when the use
 
 Reply in the user's language; commit messages and repo files in English.
 
+**Fast route (user: speed first, this repo's default once publishing is authorised):** `scripts/publish.sh "message"` does steps 2-5 in one go: regenerate, clash check, quick tests when only project data changed (full suite when viewer / server / build / test code changed, or `--full`), commit, merge, push; thumbnails only with `--thumbs`. Use the steps below by hand only when it stops or for a first public release.
+
 ## 1. Look at what changed
 `git status -sb` and `git diff --stat`. Say what is there in one or two lines. Flag anything that should not be committed: `server.log`, `dist/`, `node_modules/`, screenshots, `.env`, local settings, `CLAUDE.local.md` (all git-ignored; if one shows up as untracked, stop and tell the user), and anything that looks like personal data (an address, an email, a phone number, photos) in project folders, comments or commit history.
 

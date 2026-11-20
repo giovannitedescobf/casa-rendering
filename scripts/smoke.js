@@ -223,6 +223,14 @@ function freePort() {
       ok(`thumbnails load (${withThumb} expected)`, (await home.$$eval('a.card img', i => i.filter(x => x.naturalWidth > 0).length)) === withThumb);
       await home.close();
 
+      if (process.env.SMOKE_MODEL === '1') {   // only project data changed (publish.sh): every viewer must still load all its objects without errors;
+        for (const id of ids) {                 // the viewer-engine checks below (~7 min on software GL) test code that did not change
+          const info = list.find(p => p.id === id), p = await open(`/${id}/`);
+          await loaded(p);
+          ok(`${id}: viewer loads ${info.items} objects without errors`, (await p.textContent('#status')).startsWith(info.items + ' objects') && !p.errors.length, p.errors.join('; '));
+          await p.close();
+        }
+      } else {
       for (const id of ids) {
         const info = list.find(p => p.id === id), p = await open(`/${id}/`);
         await loaded(p);
@@ -239,9 +247,7 @@ function freePort() {
           if (sc.look === 'real') {
             ok(`${id}: reflection probes are valid points inside the model (or absent)`, !sc.probes || (Array.isArray(sc.probes) && sc.probes.every(q => Array.isArray(q) && q.length === 3 && q.every(Number.isFinite))), JSON.stringify(sc.probes));
             ok(`${id}: realistic look: an orbit view is the open model (ceiling hidden, not casting), no outlines`, !s1.ceiling && !s1.ceilingCast && s1.shellCast === true && s1.outlines === 0, JSON.stringify(s1));
-            const QUICK = process.env.SMOKE_QUICK === '1';   // only the model changed (publish.sh): skip the slow viewer-engine checks below (indirect light, quality levels: ~4 min)
-            if (QUICK) console.log('  skip indirect light and quality checks (SMOKE_QUICK=1)');
-            if (sc.ceiling && !QUICK) {   // first person (closed rooms): the indirect light, forced on software GL with a coarse grid and two passes, must reach the screen without errors
+            if (sc.ceiling) {   // first person (closed rooms): the indirect light, forced on software GL with a coarse grid and two passes, must reach the screen without errors
               const q = await browser.newPage({ viewport: { width: 700, height: 460 }, locale: 'en-US' }), qe = [];
               q.on('pageerror', e => qe.push(e.message)); q.on('console', m => m.type() === 'error' && qe.push(m.text()));
               await q.addInitScript(() => { window.__forceGI = { cols: 24, iters: 2 }; });
@@ -251,7 +257,7 @@ function freePort() {
               ok(`${id}: indirect light: the volume is computed, exposed and shown (forced on software GL)`, !!done && !qe.length && gd.gain > 0.5 && gd.gain <= 40 && gd.cur.some(v => v > 0) && gd.cur.every(Number.isFinite), qe.join('; ') || JSON.stringify(gd && { gain: gd.gain, iter: gd.iter }));
               await q.close();
             }
-            if (!QUICK) {   // quality steps: a forced level is applied and remembered (the automatic steps need a slow real GPU, checked by hand with the GPU string overridden)
+            {   // quality steps: a forced level is applied and remembered (the automatic steps need a slow real GPU, checked by hand with the GPU string overridden)
               const q = await browser.newPage({ viewport: { width: 700, height: 460 }, locale: 'en-US' });
               await q.addInitScript(() => { window.__forceQuality = true; });
               await q.goto(`${base}/${id}/?q=3`, { waitUntil: 'commit' }); await loaded(q);
@@ -260,7 +266,7 @@ function freePort() {
               ok(`${id}: quality level 3 (?q=3): pixel ratio 1, no automatic AO, remembered`, qs.s.quality === 3 && qs.s.dpr === 1 && !qs.s.ao && qs.saved === '3', JSON.stringify({ q: qs.s.quality, dpr: qs.s.dpr, ao: qs.s.ao, saved: qs.saved }));
               await q.evaluate(() => localStorage.removeItem('quality')); await q.close();
             }
-            if (!QUICK) {   // the Quality buttons: a level chosen by hand applies (also on software GL), stops the automatic steps, survives a reload; Auto gives it back
+            {   // the Quality buttons: a level chosen by hand applies (also on software GL), stops the automatic steps, survives a reload; Auto gives it back
               const q = await browser.newPage({ viewport: { width: 1300, height: 820 }, locale: 'en-US' });
               await q.goto(`${base}/${id}/`, { waitUntil: 'commit' }); await loaded(q);
               // DOM clicks: with the whole scene on software GL a frame can take longer than Playwright's actionability wait (it timed out)
@@ -406,6 +412,7 @@ function freePort() {
         const r = await Promise.all(pages.map(p => p.evaluate(() => window.__r)));
         ok('touching one project reloads its viewer and not the other one', r[0] >= 1 && r[1] === 0, JSON.stringify(r));
         for (const p of pages) await p.close();
+      }
       }
       await browser.close();
     }
