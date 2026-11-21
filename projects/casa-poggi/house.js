@@ -372,13 +372,19 @@ const balcony = (n, x0, x1, y0, y1, side) => {
   // seat 49 (product drawing). Open (shop photo): arms and back stay, a white mattress on a grey steel frame folds out, 168 x 200 in all.
   // Two groups, closed and open, with "alt" pointing at each other: select the sofa and press L to switch. Both use the
   // same path and first word ("Divano"), so they share the moved offset   mattress thickness and frame estimate
-  { const W = 168, { B, R, T } = sofa(YC - W / 2), C = [120, 54, 38, 255], C2 = [104, 46, 32, 255], FT = [26, 25, 24, 255];
+  // Model YDE 2 posti. Colours: rust (Mogano, user's fabric photo) and Cannella, the ochre yellow (laredoute.it prod-351277814,
+  // colour swatch photo, fabric median 210,150,66). Same item paths in every colour = one shared saved position.
+  for (const [gid, name, C, C2, tex] of [
+    ['divano-redoute', 'ruggine', [120, 54, 38, 255], [104, 46, 32, 255], 'velluto-coste-ruggine'],
+    ['divano-redoute-cannella', 'giallo cannella', [210, 150, 66, 255], [185, 132, 58, 255], 'velluto-coste-cannella'],
+  ]) { const W = 168, { B, R, T } = sofa(YC - W / 2), FT = [26, 25, 24, 255];
     const MT = [238, 238, 234, 255], GR = [90, 92, 96, 255], WH = [246, 246, 244, 255];
     const feet = (n) => { for (const [u, v] of [[10, 10], [W - 10, 10], [10, 90], [W - 10, 90]])   // round black feet under the arms, slightly tapered (photo)
       T(`/Divano_Redoute/Divano_${n}_Piede_${u < W / 2 ? 'Sx' : 'Dx'}${v < 50 ? 'Retro' : 'Fronte'}`, FT, [[u, v, 0], [u, v, 5.5]], [2.1, 2.5]); };
-    defGroup('divano-redoute', 'Divano letto La Redoute 168 (velluto a coste ruggine) – chiuso', 'Arredi', 'divano', { alt: 'divano-redoute-aperto' });
-    defGroup('divano-redoute-aperto', 'Divano letto La Redoute 168 (velluto a coste ruggine) – aperto', 'Arredi', 'divano', { alt: 'divano-redoute' });
-    group('divano-redoute', () => {                 // proportions from the La Redoute front photo: low base, thick seat cushions overhanging the front, armrests ~58 cm
+    defGroup(gid, `Divano letto La Redoute 168 (velluto a coste ${name}) – chiuso`, 'Arredi', 'divano', { alt: `${gid}-aperto` });
+    defGroup(`${gid}-aperto`, `Divano letto La Redoute 168 (velluto a coste ${name}) – aperto`, 'Arredi', 'divano', { alt: gid });
+    const first = kit.items.length;
+    group(gid, () => {                 // proportions from the La Redoute front photo: low base, thick seat cushions overhanging the front, armrests ~58 cm
       feet('Chiuso');
       R('/Divano_Redoute/Divano_Base', C2, 18, W - 18, 0, 95, 5, 27, 6, 5, 3);
       R('/Divano_Redoute/Divano_Bracciolo_Sx', C, 0, 19, 0, 100, 5, 58, 9.2, 9.2, 6);
@@ -389,7 +395,7 @@ const balcony = (n, x0, x1, y0, y1, side) => {
       R('/Divano_Redoute/Divano_Cuscino_Sx', C, 20, W / 2 - 1, 4, 30, 44, 80, 10, 12, 4);
       R('/Divano_Redoute/Divano_Cuscino_Dx', C, W / 2 + 1, W - 20, 4, 30, 44, 80, 10, 12, 4);
     });
-    group('divano-redoute-aperto', () => {
+    group(`${gid}-aperto`, () => {
       feet('Aperto');
       R('/Divano_Redoute/Divano_Aperto_Bracciolo_Sx', C, 0, 19, 0, 100, 5, 58, 9.2, 9.2, 6);
       R('/Divano_Redoute/Divano_Aperto_Bracciolo_Dx', C, W - 19, W, 0, 100, 5, 58, 9.2, 9.2, 6);
@@ -405,9 +411,9 @@ const balcony = (n, x0, x1, y0, y1, side) => {
     });
     // corduroy velvet (user: ribbed, not plain; no black lines): the fabric pieces get the ribbed texture
     // (scripts/corduroy-texture.py, colour of the user's fabric photo, 5 mm ribs), no outlines on any piece
-    kit.items.filter(i => i.n.startsWith('/Divano_Redoute/')).forEach(i => {
+    kit.items.slice(first).filter(i => i.n.startsWith('/Divano_Redoute/')).forEach(i => {
       i.ne = 1;
-      if (i.rbox && (i.c === C || i.c === C2)) i.tex = { url: 'textures/velluto-coste-ruggine.webp', tile: kit.inch(14) };   // 28 ribs per tile = 5 mm
+      if (i.rbox && (i.c === C || i.c === C2)) i.tex = { url: `textures/${tex}.webp`, tile: kit.inch(14) };   // 28 ribs per tile = 5 mm
     });
   }
 }
@@ -750,7 +756,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
   const PLACE = {
     'pavimento-terrazzo': [SC, 'Pavimenti'], 'pavimento-marazzi': [SC, 'Pavimenti'], 'pavimento-crogiolo': [SC, 'Pavimenti'],
     'pavimento-san-giuliano': [SC, 'Pavimenti'], 'pavimento-verde-de-lumi': [SC, 'Pavimenti'], 'pavimento-arcobaleno': [SC, 'Pavimenti'],
-    'credenza-zoom': [S, 'Arredi'], 'divano-soderhamn': [S, 'Divani'], 'divano-soderhamn-giallo': [S, 'Divani'], 'divano-redoute': [S, 'Divani'], 'divano-redoute-aperto': [S, 'Divani'],
+    'credenza-zoom': [S, 'Arredi'], 'divano-soderhamn': [S, 'Divani'], 'divano-soderhamn-giallo': [S, 'Divani'], 'divano-redoute': [S, 'Divani'], 'divano-redoute-aperto': [S, 'Divani'], 'divano-redoute-cannella': [S, 'Divani'], 'divano-redoute-cannella-aperto': [S, 'Divani'],
     'libreria': [S, 'Arredi'], 'sedie-ilan': [S, 'Tavoli'], 'lampada-terra': [S, 'Luci'], 'gatto': [S, 'Animali'],
     'porte': [IC, 'Porte'], 'armadio': [IC, 'Arredi'],
     'gabbia-cucina': [CU, 'Pareti e vetrate'], 'porta-cucina': [CU, 'Porte'],
