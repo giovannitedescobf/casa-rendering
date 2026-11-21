@@ -46,12 +46,24 @@
   "infissi",
   "lampada-terra",
   "libreria",
-  "pavimento-arcobaleno",
+  "pavimento-crogiolo",
   "pittura",
   "porta-bagno",
   "porta-camera",
   "porte",
+  "sedie-ilan",
   "split-camera",
-  "tavolo-lewis-120"
- ]
+  "tavolo-lewis-160"
+ ],
+ "_deleted": [
+  "pavimento-marazzi"
+ ],
+ "_tiles": {
+  "rivestimento-rombini": {
+   "bagno-est": [],
+   "bagno-nord": [],
+   "bagno-ovest": [],
+   "bagno-sud": []
+  }
+ }
 }
