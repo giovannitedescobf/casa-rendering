@@ -684,8 +684,9 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
 // ---------- tile composer (viewer): materials laid tile by tile, only on the surfaces of the rooms they belong to ----------
 // Floors for soggiorno + ingresso/corridoio: Grandinetti terrazzo 60 x 60 (product photos of one tile; every tile gets a
 // random 90-degree turn so no two neighbours look identical), default = the whole floor, same variant as the other floors.
-// Verde de' Lumi: binder recoloured with scripts/recolor-binder.py (140,150,125 -> 121,149,127) so that under the warm
-// sun the render shows the sage green of the product photos (measured: binder hue 97-98 in sun and shade, photos 94-97).
+// Verde de' Lumi: binder recoloured with scripts/recolor-binder.py from the original photo texture (140,150,125 -> 102,118,105;
+// user: the earlier 121,149,127 was a highlighter green), reference the darker Prachtscherben photo #677765. Measured on the
+// render: shade hue 92, sat 0.07, L 0.50; sun hue 88, sat 0.11, L 0.57.
 { const FLOOR = [{ id: 'soggiorno-corridoio', o: [0, YI0, 0], poly: [[0, 0], [XR, 0], [XR, ROOMS.ingresso.d], [ROOMS.soggiorno.w, ROOMS.ingresso.d], [ROOMS.soggiorno.w, YS1 - YI0], [0, YS1 - YI0]] }];
   for (const [id, label, img] of [['pavimento-san-giuliano', '208 San Giuliano', 'san-giuliano'], ['pavimento-verde-de-lumi', "213 Verde de' Lumi", 'verde-de-lumi'], ['pavimento-arcobaleno', '212 Arcobaleno', 'arcobaleno']]) {
     defGroup(id, `Pavimento Grandinetti ${label} (60 x 60)`, 'Finiture', 'pavimento', { fixed: true });
