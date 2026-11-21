@@ -1,6 +1,6 @@
 {
  "/Condizionatore/Motore#": [
-  2.36,
+  2.84,
   -0.49
  ],
  "/Consolle_Marshall/Consolle#": [
@@ -13,47 +13,69 @@
   -4.89
  ],
  "/Divano_Redoute/Divano#": [
-  0,
-  -4.6
+  -0.48,
+  6.26
+ ],
+ "/Divano_Soderhamn/Divano#": [
+  102.7,
+  7.07,
+  180
  ],
  "/Gatto/Gatto#": [
   -114.71,
   50.31
  ],
  "/Lampada/Lampada#": [
-  1,
-  63.17
+  118.76,
+  -19.61
  ],
  "/Lampada/Lampada#7": [
   0.59,
   -0.42
  ],
  "/Libreria/Libreria#": [
-  83.45,
-  4.66
+  12.85,
+  0.6
+ ],
+ "/Sedia_Ilan_Est/Sedia#": [
+  -18.46,
+  -22.25
+ ],
+ "/Sedia_Ilan_Nord/Sedia#": [
+  -25.35,
+  -18.01
+ ],
+ "/Sedia_Ilan_Ovest/Sedia#": [
+  -23.04,
+  -21.17
+ ],
+ "/Sedia_Ilan_Sud/Sedia#": [
+  -20.42,
+  -21.79
  ],
  "/Split_Camera/Split#": [
   5.87,
   -0.41
  ],
+ "/Tavolo_Lewis/Tavolo#": [
+  -12.65,
+  -16.68
+ ],
  "_groups": [
   "armadio",
   "battiscopa",
   "condizionatore",
-  "credenza-zoom",
-  "divano-redoute",
+  "divano-redoute-cannella",
   "gatto",
   "infissi",
-  "lampada-terra",
   "libreria",
-  "pavimento-crogiolo",
+  "pavimento-terrazzo",
   "pittura",
   "porta-bagno",
   "porta-camera",
   "porte",
-  "sedie-ilan",
   "split-camera",
-  "tavolo-lewis-160"
+  "tavolo-lewis-120"
  ],
  "_deleted": [
   "pavimento-marazzi"
