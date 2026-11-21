@@ -344,9 +344,15 @@ const balcony = (n, x0, x1, y0, y1, side) => {
 
   // IKEA Söderhamn 3-seat, Alhamn orange-red velvet: 198 x 99 x 83 cm, seat 40, armrest 69, legs 14 (product drawing)
   // thin armrest panels, 2 seat cushions, 2 back + 2 lumbar cushions, chrome legs   cushion sizes estimate (from the photo)
-  { const W = 198, { B, R, T } = sofa(YC - W / 2), C = [170, 60, 34, 255], C2 = [152, 50, 28, 255], CH = [205, 208, 212, 255];
-    defGroup('divano-soderhamn', 'Divano IKEA Söderhamn 3 posti (Alhamn arancione-rosso)', 'Arredi', 'divano');
-    group('divano-soderhamn', () => {
+  // Colours: Alhamn deep orange-red, and Alhamn dark yellow-brown (ikea.com, art. s59621644): the yellow is the IKEA white-background
+  // photo's lit fabric (upper quartile 122,80,45) brightened like the orange one was (x1.3), hue 28 as in the photos.
+  // Same item paths in both groups, so they share the saved position; same variant 'divano' = one sofa at a time.
+  for (const [gid, label, C, C2] of [
+    ['divano-soderhamn', 'Divano IKEA Söderhamn 3 posti (Alhamn arancione-rosso)', [170, 60, 34, 255], [152, 50, 28, 255]],
+    ['divano-soderhamn-giallo', 'Divano IKEA Söderhamn 3 posti (Alhamn giallo scuro-marrone)', [158, 104, 56, 255], [140, 92, 48, 255]],
+  ]) { const W = 198, { B, R, T } = sofa(YC - W / 2), CH = [205, 208, 212, 255];
+    defGroup(gid, label, 'Arredi', 'divano');
+    group(gid, () => {
       for (const [u, v, s] of [[12, 10, 'Sx'], [W - 12, 10, 'Dx'], [12, 89, 'Sx'], [W - 12, 89, 'Dx']])
         T(`/Divano_Soderhamn/Divano_Gamba_${s}_${v < 50 ? 'Retro' : 'Fronte'}`, CH, [[u, v, 0], [u, v, 14]], [1.1, 1.1]);
       R('/Divano_Soderhamn/Divano_Base', C2, 6, W - 6, 2, 97, 14, 30, 2, 2);
@@ -744,7 +750,7 @@ const out = process.argv[2] || path.join(__dirname, 'scene.json');
   const PLACE = {
     'pavimento-terrazzo': [SC, 'Pavimenti'], 'pavimento-marazzi': [SC, 'Pavimenti'], 'pavimento-crogiolo': [SC, 'Pavimenti'],
     'pavimento-san-giuliano': [SC, 'Pavimenti'], 'pavimento-verde-de-lumi': [SC, 'Pavimenti'], 'pavimento-arcobaleno': [SC, 'Pavimenti'],
-    'credenza-zoom': [S, 'Arredi'], 'divano-soderhamn': [S, 'Divani'], 'divano-redoute': [S, 'Divani'], 'divano-redoute-aperto': [S, 'Divani'],
+    'credenza-zoom': [S, 'Arredi'], 'divano-soderhamn': [S, 'Divani'], 'divano-soderhamn-giallo': [S, 'Divani'], 'divano-redoute': [S, 'Divani'], 'divano-redoute-aperto': [S, 'Divani'],
     'libreria': [S, 'Arredi'], 'sedie-ilan': [S, 'Tavoli'], 'lampada-terra': [S, 'Luci'], 'gatto': [S, 'Animali'],
     'porte': [IC, 'Porte'], 'armadio': [IC, 'Arredi'],
     'gabbia-cucina': [CU, 'Pareti e vetrate'], 'porta-cucina': [CU, 'Porte'],
